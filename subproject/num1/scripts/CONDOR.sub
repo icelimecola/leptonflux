@@ -1,0 +1,59 @@
+# ============================================== PARAMETERS
+# ========== CONDOR
+ncpu = 0
+# memory = 0
+jf = 0
+# ========== CODE1
+n = 0
+pwd = 0
+i0 = 0
+# ========== CODE2
+list = 0
+nfpj = 0
+
+
+
+
+
+# ============================================== HTCONDOR
+# ========== BASIC
+executable              = ./scripts/CODE.sh
+arguments               = $(pwd) $(list) $(ProcId)+$(i0) $(nfpj)
+# ========== DEBUG
+# ----------
+# log                     = /dev/null
+# log                     = 00.2-condor/log/log-$(ClusterId).$(ProcId).txt
+# error                   = 00.2-condor/error/error-$(ClusterId).$(ProcId).txt
+# ----------
+log                     = condor/log/log-$(ClusterId).txt
+output                  = condor/output/output-$(ClusterId).$(ProcId).txt
+error                   = condor/output/output-$(ClusterId).$(ProcId).txt
+# ========== HARDWARE
+# universe                = vanilla
+request_cpus            = $(ncpu)
+# request_memory          = $(memory)
+# request_disk            = 1G
+
+
+
+
+# ============================================== CERN
+# ========== JobFlavour--1h/2h/8h/1d/3d
+# +JobFlavour = "microcentury"
+# +JobFlavour = "longlunch"
+# +JobFlavour = "workday"
+# +JobFlavour = "tomorrow"
+# +JobFlavour = "testmatch"
++JobFlavour = "$(jf)"
+# ========== maxruntime
+# +MaxRuntime = 3600
+# ========== EOS
+# output_destination = root://eosuser.cern.ch//eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/00-DATA/$(ClusterId)/
+# MY.XRDCP_CREATE_DIR = True
+
+
+
+
+# ============================================== QUENE
+# queue
+queue $(n)
