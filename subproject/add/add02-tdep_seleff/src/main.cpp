@@ -64,7 +64,7 @@ void INIT(int argc, char *argv[], VarConf &var){
 	var.nt = 6000;
 	var.tmin = 1305417600;
 	var.tmax = 1823817600;
-	//====pass
+	//====get
 	if(argc > 1) var.fpath = argv[1];
 	if(argc > 2) var.fname = argv[2];
 	if(argc > 3) var.fpathname = argv[3];
@@ -109,44 +109,35 @@ void INIT(int argc, char *argv[], VarConf &var){
 
 //==================================================== FITHIST_
 void HIST(VarConf &var, TH1D *h){
-	int xvalue = 0;
-	double yvalue = 0.0;
-	double yerrvalue = 0.0;
+	//====init var
+	int x = 0;
+	double y = 0.0;
+	double yerr = 0.0;
 	double elow = -1.0;
 	double eup = -1.0;
-	bool has_yerr = false;
+	//====init chain
 	TChain chain(var.tname);
 	chain.Add(var.fpathname);
-	chain.SetBranchAddress(var.xname, &xvalue);
-	chain.SetBranchAddress(var.yname, &yvalue);
-	if(chain.GetBranch(var.yerrname)){
-		chain.SetBranchAddress(var.yerrname, &yerrvalue);
-		has_yerr = true;
-	}
-
-	//---- elow/eup branch: lowercase first, fallback to legacy uppercase
-	if(chain.GetBranch("elow")) chain.SetBranchAddress("elow", &elow);
-	else if(chain.GetBranch("Elow")) chain.SetBranchAddress("Elow", &elow);
-	if(chain.GetBranch("eup")) chain.SetBranchAddress("eup", &eup);
-	else if(chain.GetBranch("Eup")) chain.SetBranchAddress("Eup", &eup);
-
+	//====setbranch
+	chain.SetBranchAddress(var.xname, &x);
+	chain.SetBranchAddress(var.yname, &y);
+	chain.SetBranchAddress(var.yerrname, &yerr);
+	chain.SetBranchAddress("Elow", &elow);
+	chain.SetBranchAddress("Eup", &eup);
+	//====fill hist
 	int nx = chain.GetEntries();
 	for(int ix=0; ix<nx; ix++){
 		chain.GetEntry(ix);
-		h->Fill((double)xvalue, yvalue);
-		if(has_yerr){
-			int ibin = h->FindBin((double)xvalue);
-			h->SetBinError(ibin, yerrvalue);
-		}
+		h->Fill((double)x, y);
+		h->SetBinError(h->FindBin((double)x), yerr);
 	}
-	//---- write back to config (single-file path uses one energy bin)
 	var.elow = elow;
 	var.eup = eup;
+	//====print
 	cout<<"IN HIST ===== pattern="<<var.fpathname
 		<<" n_entry_total="<<nx
 		<<" elow="<<var.elow
 		<<" eup="<<var.eup
-		<<" has_yerr="<<has_yerr
 		<<" h_sum="<<h->Integral()
 		<<endl;
 }
@@ -154,17 +145,18 @@ void HIST(VarConf &var, TH1D *h){
 
 //==================================================== FITDRAW_
 void DRAW(const VarConf &var, TH1D *h){
+	//====init--var
 	const int x_unix_low = 1305849600;
 	// const int x_unix_up  = 1635811200;
 	const int x_unix_up  = 1761955200;
-
+	//====init--output
 	TFile *fout = TFile::Open(var.foutname_root, "RECREATE");
 	h->Write();
-
+	//====init--canvas
 	TCanvas *c = new TCanvas("c","c",1000,600);
 	TAxis *xaxis = h->GetXaxis();
 	TAxis *yaxis = h->GetYaxis();
-
+	//====canvas
 	h->SetStats(0);
 	h->SetNameTitle("", "");
 	c->SetTopMargin(0.13);
@@ -174,7 +166,7 @@ void DRAW(const VarConf &var, TH1D *h){
 	c->cd();
 	gPad->SetGridx();
 	gPad->SetGridy();
-
+	//====x
 	xaxis->SetRangeUser(x_unix_low, x_unix_up);
 	xaxis->SetNameTitle("Date", "Date");
 	xaxis->CenterTitle();
@@ -186,7 +178,7 @@ void DRAW(const VarConf &var, TH1D *h){
 	xaxis->SetTimeDisplay(1);
 	xaxis->SetTimeFormat("%b/%d/%Y");
 	xaxis->SetNdivisions(-505);
-
+	//====y
 	yaxis->SetNameTitle("expstime", var.ytitle);
 	yaxis->CenterTitle();
 	yaxis->SetTitleFont(62);
@@ -199,12 +191,11 @@ void DRAW(const VarConf &var, TH1D *h){
 	h->SetLineColor(kBlue);
 	if(var.has_ymin) h->SetMinimum(var.ymin);
 	if(var.has_ymax) h->SetMaximum(var.ymax);
-
+	//====draw
 	gStyle->SetEndErrorSize(0);
 	TGaxis::SetMaxDigits(3);
 	h->Draw("E1X0P");
-
-	//==================================================== add total title
+	//====draw title
 	c->cd(0);
 	TLatex latex;
 	latex.SetNDC();
@@ -213,16 +204,15 @@ void DRAW(const VarConf &var, TH1D *h){
 	latex.SetTextAlign(22);
 	if(var.elow>0 && var.eup>0) latex.DrawLatex(0.5, 0.97, Form("Energy %g to %g GeV", var.elow, var.eup));
 	else latex.DrawLatex(0.5, 0.97, "Energy N/A");
-
+	//====write
 	c->SaveAs(var.foutname_pdf);
 	fout->cd();
 	c->Write();
 	delete c;
-
 	fout->Write();
 	fout->Close();
 	delete fout;
-
+	//====print
 	cout<<"IN DRAW ===== output root: "<<var.foutname_root<<endl;
 	cout<<"IN DRAW ===== output pdf : "<<var.foutname_pdf<<endl;
 }
@@ -231,7 +221,7 @@ void DRAW(const VarConf &var, TH1D *h){
 
 //==================================================== FIT_RUN_
 int ADD_TIME(int argc, char *argv[]){
-	VarConf var;
+	VarConf var{};
 	INIT(argc, argv, var);
 	TH1D *htime = new TH1D("htime","htime",var.nt, var.tmin, var.tmax);
 	HIST(var, htime);
