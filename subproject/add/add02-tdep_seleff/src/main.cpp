@@ -45,7 +45,7 @@ struct VarConf{
 
 //==================================================== INIT_
 void INIT(int argc, char *argv[], VarConf &var){
-	//---- 260421 default cfg for tfit
+	//====init var
 	var.fpath = "datain/26*/dataiss/tfit/";
 	var.fname = "fitresult_enebin03_1.33GeV.root";
 	var.fpathname = ""; // Initialize fpathname as an empty string
@@ -61,16 +61,10 @@ void INIT(int argc, char *argv[], VarConf &var){
 	var.foutname = "htime";
 	var.elow = -1.0;
 	var.eup = -1.0;
-
-	// const double width_tbin = 60*60*24;  //---- 86400[s]
-	// static const int nt=6000;
-	// const double tmin = 1305417600;      //---- Sun May 15 2011 00:00:00 GMT+0000
-	// const double tmax = 1823817600;
 	var.nt = 6000;
 	var.tmin = 1305417600;
 	var.tmax = 1823817600;
-
-	//---- argv override (保持简单)
+	//====pass
 	if(argc > 1) var.fpath = argv[1];
 	if(argc > 2) var.fname = argv[2];
 	if(argc > 3) var.fpathname = argv[3];
@@ -91,12 +85,11 @@ void INIT(int argc, char *argv[], VarConf &var){
 		var.ymax = atof(argv[14]);
 		var.has_ymax = true;
 	}
-
-	//---- name + suffix
+	//====process
 	if(var.fpathname.Length() == 0) var.fpathname = var.fpath + var.fname;
 	var.foutname_root = var.foutname + ".root";
 	var.foutname_pdf = var.foutname + ".pdf";
-
+	//====print
 	cout<<"IN INIT_conf ===== fpath="<<var.fpath
 		<<" fname="<<var.fname
 		<<" fpathname="<<var.fpathname
