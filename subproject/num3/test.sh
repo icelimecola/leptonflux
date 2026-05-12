@@ -34,7 +34,7 @@ LISTNAME=tbin-num_posi.txt
 # ==========
 LIST=$LISTDIR/$LISTNAME
 # ==============================================
-for ENEBIN in $(seq 17 17); do
+for ENEBIN in $(seq 18 18); do
 # for ENEBIN in $(seq 40 40); do
     echo "===== TEST START ====="
     echo "Transferring ENEBIN=$ENEBIN ..."

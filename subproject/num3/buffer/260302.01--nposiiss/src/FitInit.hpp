@@ -187,28 +187,32 @@ void FitInit::INIT_TREEARRAY_BuildBrand(const vector<int>& index, int i,TTree**&
 	ins_treearray[i]->Branch("posfrac", &(fitR.posfrac), "posfrac/D");
 	ins_treearray[i]->Branch("posfrac_err", &(fitR.posfrac_err), "posfrac_err/D");
 	//----260407
+	//----tof
 	ins_treearray[i]->Branch("nTOFpass", &(fitR.nTOFpass), "nTOFpass/D");
 	ins_treearray[i]->Branch("nTOFpass_err", &(fitR.nTOFpass_err), "nTOFpass_err/D");
 	ins_treearray[i]->Branch("nTOFtotal", &(fitR.nTOFtotal), "nTOFtotal/D");
 	ins_treearray[i]->Branch("nTOFtotal_err", &(fitR.nTOFtotal_err), "nTOFtotal_err/D");
+	ins_treearray[i]->Branch("tofeff", &(fitR.tofeff), "tofeff/D");
+	ins_treearray[i]->Branch("tofeff_err", &(fitR.tofeff_err), "tofeff_err/D");
+	//----trd
 	ins_treearray[i]->Branch("nTRDpass", &(fitR.nTRDpass), "nTRDpass/D");
 	ins_treearray[i]->Branch("nTRDpass_err", &(fitR.nTRDpass_err), "nTRDpass_err/D");
 	ins_treearray[i]->Branch("nTRDtotal", &(fitR.nTRDtotal), "nTRDtotal/D");
 	ins_treearray[i]->Branch("nTRDtotal_err", &(fitR.nTRDtotal_err), "nTRDtotal_err/D");
+	ins_treearray[i]->Branch("trdeff", &(fitR.trdeff), "trdeff/D");
+	ins_treearray[i]->Branch("trdeff_err", &(fitR.trdeff_err), "trdeff_err/D");
+	//----ecal
 	ins_treearray[i]->Branch("nECALpass", &(fitR.nECALpass), "nECALpass/D");
 	ins_treearray[i]->Branch("nECALpass_err", &(fitR.nECALpass_err), "nECALpass_err/D");
 	ins_treearray[i]->Branch("nECALtotal", &(fitR.nECALtotal), "nECALtotal/D");
 	ins_treearray[i]->Branch("nECALtotal_err", &(fitR.nECALtotal_err), "nECALtotal_err/D");
+	ins_treearray[i]->Branch("ecaleff", &(fitR.ecaleff), "ecaleff/D");
+	ins_treearray[i]->Branch("ecaleff_err", &(fitR.ecaleff_err), "ecaleff_err/D");
+	//----trk
 	ins_treearray[i]->Branch("nTrkpass", &(fitR.nTrkpass), "nTrkpass/D");
 	ins_treearray[i]->Branch("nTrkpass_err", &(fitR.nTrkpass_err), "nTrkpass_err/D");
 	ins_treearray[i]->Branch("nTrktotal", &(fitR.nTrktotal), "nTrktotal/D");
 	ins_treearray[i]->Branch("nTrktotal_err", &(fitR.nTrktotal_err), "nTrktotal_err/D");
-	ins_treearray[i]->Branch("tofeff", &(fitR.tofeff), "tofeff/D");
-	ins_treearray[i]->Branch("tofeff_err", &(fitR.tofeff_err), "tofeff_err/D");
-	ins_treearray[i]->Branch("trdeff", &(fitR.trdeff), "trdeff/D");
-	ins_treearray[i]->Branch("trdeff_err", &(fitR.trdeff_err), "trdeff_err/D");
-	ins_treearray[i]->Branch("ecaleff", &(fitR.ecaleff), "ecaleff/D");
-	ins_treearray[i]->Branch("ecaleff_err", &(fitR.ecaleff_err), "ecaleff_err/D");
 	ins_treearray[i]->Branch("trkeff", &(fitR.trkeff), "trkeff/D");
 	ins_treearray[i]->Branch("trkeff_err", &(fitR.trkeff_err), "trkeff_err/D");
 }

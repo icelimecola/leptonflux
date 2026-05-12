@@ -42,8 +42,8 @@ ncpu=1
 # ========== JobFlavour--20m/1h/2h/8h/1d/3d
 # jf="espresso"
 # jf="microcentury"
-jf="longlunch"
-# jf="workday"
+# jf="longlunch"
+jf="workday"
 # jf="tomorrow"
 # jf="testmatch"
 
