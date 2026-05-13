@@ -1,6 +1,5 @@
 # yname|yerrname|ytitle|ymin|ymax
 #---- one line = one output group
-trigeff|trigeff_err|Trigger Efficiency|0.6|1.1
 tofeff|tofeff_err|TOF Efficiency|0.99|1.01
 trdeff|trdeff_err|TRD Efficiency|0.6|1.1
 ecaleff|ecaleff_err|ECAL Efficiency|0.6|1.1
