@@ -15,14 +15,15 @@ YMIN=""
 YMAX=""
 FOUTNAME="htime"
 # ----tbin
-NT=6000
-TMIN=1305417600
-TMAX=1823817600
-# NT=225
+# NT=6000
 # TMIN=1305417600
-# TMAX=1830297600
+# TMAX=1823817600
+NT=225
+TMIN=1305417600
+TMAX=1830297600
 # ----xrange
-XMIN=1305849600
+# XMIN=1305849600
+XMIN=1307750400
 XMAX=1761955200
 # ====for run.sh
 BATCH_DIR="datain/260421.01--tfit/dataiss/tfit"
@@ -169,6 +170,7 @@ SAFE_TAG(){
     printf '%s' "${tag}"
 }
 
+# ============ pattern 1 ============
 RUN_ONE(){
     local fpathname_now="$1"
     local foutname_now="$2"
@@ -219,6 +221,8 @@ RUN_ONE(){
     fi
 }
 
+
+# ============ pattern 2 ============
 RUN_BY_VARSET(){
     local fpathname_now="$1"
     local foutname_base="$2"
