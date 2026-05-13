@@ -167,7 +167,7 @@ void DRAW(const VarConf &var, TH1D *h){
 	TFile *fout = TFile::Open(var.foutname_root, "RECREATE");
 	h->Write();
 	//====init--canvas
-	TCanvas *c = new TCanvas("c","c",1000,600);
+	TCanvas *c = new TCanvas("c","c",1000,400);
 	TAxis *xaxis = h->GetXaxis();
 	TAxis *yaxis = h->GetYaxis();
 	//====canvas
