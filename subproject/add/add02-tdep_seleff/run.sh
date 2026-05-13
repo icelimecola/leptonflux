@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-#====================================================
+# ============ init ============
 #---- 260421 direct ROOT runner for src/main.cpp
 #---- 所有参数都在这里集中设置（不编译，直接 root -l -b -q）
 FPATH="datain/26*/dataiss/tfit/"
@@ -11,6 +11,8 @@ BATCH_DIR="datain/260421.01--tfit/dataiss/tfit"
 YNAME="trkeff"
 YERRNAME="trkeff_err"
 YTITLE="Tracker Efficiency"
+XMIN=""
+XMAX=""
 YMIN=""
 YMAX=""
 FOUTNAME="htime"
@@ -62,6 +64,8 @@ echo "IN RUN_ROOT ===== BATCH_DIR=${BATCH_DIR}"
 echo "IN RUN_ROOT ===== YNAME=${YNAME}"
 echo "IN RUN_ROOT ===== YERRNAME=${YERRNAME}"
 echo "IN RUN_ROOT ===== YTITLE=${YTITLE}"
+echo "IN RUN_ROOT ===== XMIN=${XMIN}"
+echo "IN RUN_ROOT ===== XMAX=${XMAX}"
 echo "IN RUN_ROOT ===== YMIN=${YMIN}"
 echo "IN RUN_ROOT ===== YMAX=${YMAX}"
 echo "IN RUN_ROOT ===== FOUTNAME=${FOUTNAME}"
@@ -166,6 +170,8 @@ RUN_ONE(){
   local yname_esc=""
   local yerrname_esc=""
   local ytitle_esc=""
+  local xmin_esc=""
+  local xmax_esc=""
   local ymin_esc=""
   local ymax_esc=""
   fpathname_use="$(NORMALIZE_FPATHNAME "${fpathname_now}")"
@@ -173,6 +179,8 @@ RUN_ONE(){
   yname_esc="$(ESC_CSTR "${YNAME}")"
   yerrname_esc="$(ESC_CSTR "${YERRNAME}")"
   ytitle_esc="$(ESC_CSTR "${YTITLE}")"
+  xmin_esc="$(ESC_CSTR "${XMIN}")"
+  xmax_esc="$(ESC_CSTR "${XMAX}")"
   ymin_esc="$(ESC_CSTR "${YMIN}")"
   ymax_esc="$(ESC_CSTR "${YMAX}")"
 
@@ -182,6 +190,7 @@ RUN_ONE(){
   fi
   echo "IN RUN_ROOT ===== foutname_now=${foutname_now}"
   echo "IN RUN_ROOT ===== yname_now=${YNAME} yerr_now=${YERRNAME}"
+  echo "IN RUN_ROOT ===== xmin_now=${XMIN} xmax_now=${XMAX}"
   echo "IN RUN_ROOT ===== ymin_now=${YMIN} ymax_now=${YMAX}"
 
   root_ver="$(root-config --version 2>/dev/null || echo "")"
@@ -189,7 +198,7 @@ RUN_ONE(){
     echo "IN RUN_ROOT ===== ROOT5 detected, use compiled binary"
     mkdir -p bin
     g++ -std=c++17 src/main.cpp $(root-config --cflags --libs) -o bin/main_utime_test.exe
-    ./bin/main_utime_test.exe "${FPATH}" "${FNAME}" "${fpathname_use}" "${YNAME}" "${YERRNAME}" "${YTITLE}" "${foutname_now}" "${TNAME}" "${XNAME}" "${NT}" "${TMIN}" "${TMAX}" "${YMIN}" "${YMAX}"
+    ./bin/main_utime_test.exe "${FPATH}" "${FNAME}" "${fpathname_use}" "${YNAME}" "${YERRNAME}" "${YTITLE}" "${foutname_now}" "${TNAME}" "${XNAME}" "${NT}" "${TMIN}" "${TMAX}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}"
   else
     local fpathname_esc
     local foutname_esc
@@ -197,7 +206,7 @@ RUN_ONE(){
     foutname_esc="$(ESC_CSTR "${foutname_now}")"
 
     local root_cmd
-    root_cmd="src/main.cpp(15,(char*[]){(char*)\"ADD_TIME\",(char*)\"${FPATH_ESC}\",(char*)\"${FNAME_ESC}\",(char*)\"${fpathname_esc}\",(char*)\"${yname_esc}\",(char*)\"${yerrname_esc}\",(char*)\"${ytitle_esc}\",(char*)\"${foutname_esc}\",(char*)\"${TNAME_ESC}\",(char*)\"${XNAME_ESC}\",(char*)\"${NT}\",(char*)\"${TMIN}\",(char*)\"${TMAX}\",(char*)\"${ymin_esc}\",(char*)\"${ymax_esc}\"})"
+    root_cmd="src/main.cpp(17,(char*[]){(char*)\"ADD_TIME\",(char*)\"${FPATH_ESC}\",(char*)\"${FNAME_ESC}\",(char*)\"${fpathname_esc}\",(char*)\"${yname_esc}\",(char*)\"${yerrname_esc}\",(char*)\"${ytitle_esc}\",(char*)\"${foutname_esc}\",(char*)\"${TNAME_ESC}\",(char*)\"${XNAME_ESC}\",(char*)\"${NT}\",(char*)\"${TMIN}\",(char*)\"${TMAX}\",(char*)\"${xmin_esc}\",(char*)\"${xmax_esc}\",(char*)\"${ymin_esc}\",(char*)\"${ymax_esc}\"})"
 
     echo "IN RUN_ROOT ===== root -l -b -q"
     root -l -b -q "${root_cmd}"

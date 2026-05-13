@@ -28,10 +28,14 @@ struct VarConf{
 	TString yname;
 	TString yerrname;
 	TString ytitle;
-	double ymin;
-	double ymax;
+	bool has_xmin;
+	bool has_xmax;
+	double xmin;
+	double xmax;
 	bool has_ymin;
 	bool has_ymax;
+	double ymin;
+	double ymax;
 	TString foutname;
 	TString foutname_root;
 	TString foutname_pdf;
@@ -54,10 +58,14 @@ void INIT(int argc, char *argv[], VarConf &var){
 	var.yname = "nele";
 	var.yerrname = "nele_err";
 	var.ytitle = "Electron Number";
-	var.ymin = 0.0;
-	var.ymax = 0.0;
+	var.has_xmin = false;
+	var.has_xmax = false;
+	var.xmin = 1305849600;
+	var.xmax = 1761955200;
 	var.has_ymin = false;
 	var.has_ymax = false;
+	var.ymin = 0.0;
+	var.ymax = 0.0;
 	var.foutname = "htime";
 	var.elow = -1.0;
 	var.eup = -1.0;
@@ -78,11 +86,19 @@ void INIT(int argc, char *argv[], VarConf &var){
 	if(argc > 11) var.tmin = atoi(argv[11]);
 	if(argc > 12) var.tmax = atoi(argv[12]);
 	if(argc > 13 && argv[13][0] != '\0'){
-		var.ymin = atof(argv[13]);
-		var.has_ymin = true;
+		var.xmin = atof(argv[13]);
+		var.has_xmin = true;
 	}
 	if(argc > 14 && argv[14][0] != '\0'){
-		var.ymax = atof(argv[14]);
+		var.xmax = atof(argv[14]);
+		var.has_xmax = true;
+	}
+	if(argc > 15 && argv[15][0] != '\0'){
+		var.ymin = atof(argv[15]);
+		var.has_ymin = true;
+	}
+	if(argc > 16 && argv[16][0] != '\0'){
+		var.ymax = atof(argv[16]);
 		var.has_ymax = true;
 	}
 	//====process
@@ -98,6 +114,8 @@ void INIT(int argc, char *argv[], VarConf &var){
 		<<" y="<<var.yname
 		<<" yerr="<<var.yerrname
 		<<" ytitle="<<var.ytitle
+		<<" xmin="<<(var.has_xmin ? Form("%g", var.xmin) : TString("N/A"))
+		<<" xmax="<<(var.has_xmax ? Form("%g", var.xmax) : TString("N/A"))
 		<<" ymin="<<(var.has_ymin ? Form("%g", var.ymin) : TString("N/A"))
 		<<" ymax="<<(var.has_ymax ? Form("%g", var.ymax) : TString("N/A"))
 		<<" outbase="<<var.foutname
@@ -145,10 +163,6 @@ void HIST(VarConf &var, TH1D *h){
 
 //==================================================== FITDRAW_
 void DRAW(const VarConf &var, TH1D *h){
-	//====init--var
-	const int x_unix_low = 1305849600;
-	// const int x_unix_up  = 1635811200;
-	const int x_unix_up  = 1761955200;
 	//====init--output
 	TFile *fout = TFile::Open(var.foutname_root, "RECREATE");
 	h->Write();
@@ -167,7 +181,8 @@ void DRAW(const VarConf &var, TH1D *h){
 	gPad->SetGridx();
 	gPad->SetGridy();
 	//====x
-	xaxis->SetRangeUser(x_unix_low, x_unix_up);
+	if(var.has_xmin && var.has_xmax) xaxis->SetRangeUser(var.xmin, var.xmax);
+	if(!var.has_xmin && !var.has_xmax) xaxis->SetRangeUser(var.xmin, var.xmax);
 	xaxis->SetNameTitle("Date", "Date");
 	xaxis->CenterTitle();
 	xaxis->SetTitleFont(62);
