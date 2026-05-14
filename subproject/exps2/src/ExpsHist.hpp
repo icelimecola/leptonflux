@@ -241,23 +241,23 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
 	if( first_call ){
 		//====h2--t vs ene
 		for(int isf=0;isf<nsf;isf++){
-			h2exp_st_TvE[isf] = new TH2D( Form("h2exp_st_TvE_sf%g", factor[isf]), Form("FOV 25, safety factor %g;Date;Energy [GeV];Collection Time[s]", factor[isf]), 
+			h2exp_st_TvE[isf] = new TH2D( Form("h2exp_st_TvE_sf%g", factor[isf]), Form("h2exp_st_TvE_sf%g", factor[isf]), 
 				nt, tmin, tmin+nt*wt,  nenebin, energy_bins);
-			h2exp_igrf_TvE[isf] = new TH2D( Form("h2exp_igrf_TvE_sf%g", factor[isf]), Form("FOV 25, safety factor %g;Date;Energy [GeV];Collection Time[s]", factor[isf]), 
+			h2exp_igrf_TvE[isf] = new TH2D( Form("h2exp_igrf_TvE_sf%g", factor[isf]), Form("h2exp_igrf_TvE_sf%g", factor[isf]), 
                 nt, tmin, tmin+nt*wt,  nenebin, energy_bins);
-			h2exp_ts05_TvE[isf] = new TH2D( Form("h2exp_ts05_TvE_sf%g", factor[isf]), Form("FOV 25, safety factor %g;Date;Energy [GeV];Collection Time[s]", factor[isf]), 
+			h2exp_ts05_TvE[isf] = new TH2D( Form("h2exp_ts05_TvE_sf%g", factor[isf]), Form("h2exp_ts05_TvE_sf%g", factor[isf]), 
                 nt, tmin, tmin+nt*wt,  nenebin, energy_bins);
 		}
 		//====h1ene
 		for(int ifov=0;ifov<nfov;ifov++){
         for(int isf=0;isf<nsf;isf++){
-            h1exp_st_E[ifov][isf] = new TH1D( Form("h1exp_st_E_fov%g_sf%g", fov[ifov], factor[isf]), Form("FOV %g degree, safety factor %g", fov[ifov], factor[isf]), 
+            h1exp_st_E[ifov][isf] = new TH1D( Form("h1exp_st_E_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_st_E_fov%g_sf%g", fov[ifov], factor[isf]), 
                 nenebin, energy_bins);
-            h1exp_igrf_E[ifov][isf] = new TH1D( Form("h1exp_igrf_E_fov%g_sf%g", fov[ifov], factor[isf]), Form("FOV %g degree, safety factor %g", fov[ifov], factor[isf]), 
+            h1exp_igrf_E[ifov][isf] = new TH1D( Form("h1exp_igrf_E_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_igrf_E_fov%g_sf%g", fov[ifov], factor[isf]), 
                 nenebin, energy_bins);
-            h1exp_st_Efine[ifov][isf] = new TH1D( Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("FOV %g degree, safety factor %g", fov[ifov], factor[isf]), 
+            h1exp_st_Efine[ifov][isf] = new TH1D( Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf]), 
                 nenebin_fine, energy_bins_fine);
-            h1exp_igrf_Efine[ifov][isf] = new TH1D( Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("FOV %g degree, safety factor %g", fov[ifov], factor[isf]), 
+            h1exp_igrf_Efine[ifov][isf] = new TH1D( Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf]), 
                 nenebin_fine, energy_bins_fine);
         }
 		}
@@ -265,9 +265,9 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
 		for(int ifov=0;ifov<nfov;ifov++){
         for(int isf=0;isf<nsf;isf++){
         for(int iene=0;iene<nenebin;iene++){
-			h1exp_st_T[ifov][isf][iene] = new TH1D( Form("h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), Form("FOV %g degree, safety factor %g, energy %g to %g GeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), 
+			h1exp_st_T[ifov][isf][iene] = new TH1D( Form("h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), Form("h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), 
                 nt, tmin, tmin+nt*wt);
-			h1exp_igrf_T[ifov][isf][iene] = new TH1D( Form("h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), Form("FOV %g degree, safety factor %g, energy %g to %g GeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), 
+			h1exp_igrf_T[ifov][isf][iene] = new TH1D( Form("h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), Form("h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), 
                 nt, tmin, tmin+nt*wt);
         }
         }
