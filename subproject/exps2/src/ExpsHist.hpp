@@ -1,6 +1,6 @@
 _Pragma("once")
 
-#include<iostream>
+#include <iostream>
 using namespace std;
 #include "TString.h"
 // #include "TChain.h"
@@ -13,32 +13,30 @@ using namespace std;
 #include "TTimeStamp.h"
 #include "TColor.h"
 #include "TGaxis.h"
-//-- 
 #include "VarMinitree.hpp"
 
-class ExpsHist:virtual public VarMinitree{
+class ExpsHist : virtual public VarMinitree{
     public:
-        ExpsHist(){cout<<"Constructor_AddExpsHist"<<endl;}
+		ExpsHist(){cout<<"Constructor_AddExpsHist"<<endl;}
         ~ExpsHist(){};
-    public:
-        TFile* ins_filein;
-        TCanvas* ins_can;
-    public:
-        //-- exps经纬度分布
-        //-- hist
-        TH2D *h2d_exposure_mLongVSmLat;
+	public:
+        TFile *ins_filein;
+        TCanvas *ins_can;
+	public:
+		//-- exps经纬度分布
+		TH2D *h2d_exposure_mLongVSmLat;
 		TH1D *h1d_exposure_mLat;
 		TH1D *h1d_exposure_mLong;
 		TH2D *h2d_exposure_gLongVSgLat;
 		TH1D *h1d_exposure_gLat;
 		TH1D *h1d_exposure_gLong;
-		TH1D *h1d_exposure_mLat2;   //--
-        //-- func
-        void EXPSHIST_AddHist(vector<TString>,int,int);
-        void EXPSHIST_WriteHist();
-        void EXPSHIST_DrawHist();
+		TH1D *h1d_exposure_mLat2;
+		//-- func
+		void EXPSHIST_AddHist(vector<TString>, int, int);
+		void EXPSHIST_WriteHist();
+		void EXPSHIST_DrawHist();
 	public:
-		//-- exps day-e 分布
+		//---- exps-TvE
 		TH2D *h2exp_st_TvE[nsf];
 		TH2D *h2exp_igrf_TvE[nsf];
 		TH2D *h2exp_ts05_TvE[nsf];
@@ -46,12 +44,12 @@ class ExpsHist:virtual public VarMinitree{
 		TH1D *h1exp_igrf_E[nfov][nsf];
 		TH1D *h1exp_st_Efine[nfov][nsf];
 		TH1D *h1exp_igrf_Efine[nfov][nsf];
-        TH1D *h1exp_st_T[nfov][nsf][nenebin];
+		TH1D *h1exp_st_T[nfov][nsf][nenebin];
 		TH1D *h1exp_igrf_T[nfov][nsf][nenebin];
-		//-- func
-		void EXPSHIST_AddHist_dayVSene(vector<TString>,int,int);
-        void EXPSHIST_WriteHist_dayVSene();
-        void EXPSHIST_DrawHist_dayVSene();
+		//---- func
+		void EXPSHIST_AddHist_dayVSene(vector<TString>, int, int);
+		void EXPSHIST_WriteHist_dayVSene();
+		void EXPSHIST_DrawHist_dayVSene();
 };
 
 //===============================================================================
@@ -214,36 +212,37 @@ void ExpsHist::EXPSHIST_DrawHist(){
 
 //===============================================================================
 void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int jobid,int nfilesperjob){
-    //============================================================= INIT
+	//============ init ============
 	//-- fov和sf的数组,在下文code中主要用于直方图命名
 	double fov[nfov] = { 25, 30, 35, 40 };
 	double factor[nsf] = { 1, 1.1, 1.2, 1.3, 1.4 };
+	//====set length
 	int nfov=1;
 	// int nsf=1;
 	int nsf=5;
-    //============================================================= INIT-VAR
+	//============ init--time ============
 	// TTimeStamp t0_timestamp(t0_unixtime);
 	// int t0_date=t0_timestamp.GetDate();
 	// int t0_year=t0_timestamp/10000;
 	// int t0_day=t0_timestamp.GetDayOfYear();
 	// int t0_index=1;
-	//============================================================= TIME BIN
-    //---- 1day--251101
-    const double width_tbin = 60*60*24;  //---- 86400[s]
+	//==== 1day
+	//---- 251101
+	const double width_tbin = 60*60*24;  //---- 86400[s]
 	// const int n_tbin = 27*120;
     // static const int n_tbin=290;
-    static const int n_tbin=5000;                   //---- (uesd by lj)
-    // // const double t0_unix = 1304179200;	    //---- 2011-04-30 16:00:00 GMT+0000 (uesd by lj)
-    // const double t0_unix = 1304121600;	    //---- 2011-04-30 00:00:00 GMT+0000 
-    const double t0_unix = 1305417600;	    //---- 2011-05-15 00:00:00 GMT+0000 
-    //---- 27days
-    // const double width_tbin = 60*60*24*27;
-    // // static const int n_tbin=120;
-    // static const int n_tbin=185;
-    // const double t0_unix = 1305417600;	//-- 2011-05-15 00:00:00 GMT+0000 
-    //---- event time
+	static const int n_tbin=5000;                   //---- (used by lj)
+	// // const double t0_unix = 1304179200;	    //---- 2011-04-30 16:00:00 GMT+0000 (used by lj)
+	// const double t0_unix = 1304121600;	        //---- 2011-04-30 00:00:00 GMT+0000
+	const double t0_unix = 1305417600;	            //---- 2011-05-15 00:00:00 GMT+0000
+	//==== 27days
+	// const double width_tbin = 60*60*24*27;
+	// // static const int n_tbin=120;
+	// static const int n_tbin=185;
+	// const double t0_unix = 1305417600;	        //---- 2011-05-15 00:00:00 GMT+0000
+	//---- event time
 	double event_unix = info_utime;
-	//============================================================= INIT-HIST
+	//============ init--hist ============
 	static int first_call = 1;
     if( first_call ){
 		for(int j=0;j<nsf;j++){
@@ -260,78 +259,67 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
 			h2exp_ts05_TvE[j] = new TH2D( Form("h2exp_ts05_TvE_sf%g", factor[j]), Form("FOV 25, safety factor %g;Date;Energy [GeV];Collection Time[s]", factor[j]), 
                 n_tbin, t0_unix, t0_unix+n_tbin*width_tbin,  nenebin, energy_bins);
 		}
-		for(int i=0;i<nfov;i++){
-        for(int j=0;j<nsf;j++){
-            //-- TH1D(const char *name,const char *title,Int_t nbinsx,const Float_t  *xbins);
-            //-- th1d(name,title,nx,xbins)
-            //-- 这是一个x轴为能量的一维直方图
-            //-- 按照fov,factor数组设置为nfov*snf维对象数组,也就是说每一个fov和每一个sf的取值都对应一个曝光时间数组
-            //-- 两组直方图分别对应stormer/igrf地磁场模型的普通bin和finebin
-            h1exp_st_E[i][j] = new TH1D( Form("h1exp_st_E_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]), 
+		//====h1ene
+		for(int ifov=0;ifov<nfov;ifov++){
+        for(int isf=0;isf<nsf;isf++){
+            h1exp_st_E[ifov][isf] = new TH1D( Form("h1exp_st_E_fov%g_sf%g", fov[ifov], factor[isf]), Form("FOV %g degree, safety factor %g", fov[ifov], factor[isf]), 
                 nenebin, energy_bins);
-            h1exp_igrf_E[i][j] = new TH1D( Form("h1exp_igrf_E_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]), 
+            h1exp_igrf_E[ifov][isf] = new TH1D( Form("h1exp_igrf_E_fov%g_sf%g", fov[ifov], factor[isf]), Form("FOV %g degree, safety factor %g", fov[ifov], factor[isf]), 
                 nenebin, energy_bins);
-            h1exp_st_Efine[i][j] = new TH1D( Form("h1exp_st_Efine_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]), 
+            h1exp_st_Efine[ifov][isf] = new TH1D( Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("FOV %g degree, safety factor %g", fov[ifov], factor[isf]), 
                 nenebin_fine, energy_bins_fine);
-            h1exp_igrf_Efine[i][j] = new TH1D( Form("h1exp_igrf_Efine_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]), 
+            h1exp_igrf_Efine[ifov][isf] = new TH1D( Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("FOV %g degree, safety factor %g", fov[ifov], factor[isf]), 
                 nenebin_fine, energy_bins_fine);
         }
 		}
-        for(int i=0;i<nfov;i++){
-        for(int j=0;j<nsf;j++){
-        for(int k=0;k<nenebin;k++){
-            h1exp_st_T[i][j][k] = new TH1D( Form("h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", fov[i], factor[j],energy_bins[k],energy_bins[k+1]), Form("FOV %g degree, safety factor %g, energy %g to %g GeV", fov[i], factor[j],energy_bins[k],energy_bins[k+1]), 
+		//====h1t
+		for(int ifov=0;ifov<nfov;ifov++){
+        for(int isf=0;isf<nsf;isf++){
+        for(int iene=0;iene<nenebin;iene++){
+            h1exp_st_T[ifov][isf][iene] = new TH1D( Form("h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), Form("FOV %g degree, safety factor %g, energy %g to %g GeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), 
                 n_tbin, t0_unix, t0_unix+n_tbin*width_tbin);
-            h1exp_igrf_T[i][j][k] = new TH1D( Form("h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", fov[i], factor[j],energy_bins[k],energy_bins[k+1]), Form("FOV %g degree, safety factor %g, energy %g to %g GeV", fov[i], factor[j],energy_bins[k],energy_bins[k+1]), 
+            h1exp_igrf_T[ifov][isf][iene] = new TH1D( Form("h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), Form("FOV %g degree, safety factor %g, energy %g to %g GeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), 
                 n_tbin, t0_unix, t0_unix+n_tbin*width_tbin);
         }
         }
 		}
 		first_call = 0;
     }
-	//============================================================= HIST--ADD
-    //-- 循环参数初始化
-    if (fullfilename_vector.size()==1){
-        jobid=1;
-        nfilesperjob=1;
-    }
-    //-- add hist
-    //-- 遍历expshist
-    for(int i=nfilesperjob*(jobid-1);i<nfilesperjob*(jobid);i++){
-        //-- 异常情况
-        if(i<0)break;
-        if(i>=fullfilename_vector.size())break;
-        //-- 读入第i个expshist
-        // if(i%500==0) cout<<"Adding File : "<<i<<" "<<fullfilename_vector.at(i)<<endl;
-        cout<<"Adding File : "<<i<<" "<<fullfilename_vector.at(i)<<endl;
-        ins_filein=new TFile(fullfilename_vector.at(i));
-        //-- 遍历 h2d & add hist
-		for(int j=0;j<nsf;j++){
-            if( h2exp_st_TvE[j] ) h2exp_st_TvE[j]->Add((TH2D*)ins_filein->Get(Form("h2exp_st_TvE_sf%g", factor[j])));
-			if( h2exp_igrf_TvE[j] ) h2exp_igrf_TvE[j]->Add((TH2D*)ins_filein->Get(Form("h2exp_igrf_TvE_sf%g", factor[j])));
-			if( h2exp_ts05_TvE[j] ) h2exp_ts05_TvE[j]->Add((TH2D*)ins_filein->Get(Form("h2exp_ts05_TvE_sf%g", factor[j])));
+	//============ add hist ============
+	if( fullfilename_vector.size() == 1 ){
+		jobid = 1;
+		nfilesperjob = 1;
+	}
+	for(int i=nfilesperjob*(jobid-1); i<nfilesperjob*jobid; i++){
+		if( i < 0 ) break;
+		if( i >= fullfilename_vector.size() ) break;
+		cout<<"Adding File : "<<i<<" "<<fullfilename_vector.at(i)<<endl;
+		ins_filein = new TFile(fullfilename_vector.at(i));
+		//====add--h2
+		for(int isf=0;isf<nsf;isf++){
+            if( h2exp_st_TvE[isf] ) h2exp_st_TvE[isf]->Add((TH2D*)ins_filein->Get(Form("h2exp_st_TvE_sf%g", factor[isf])));
+			if( h2exp_igrf_TvE[isf] ) h2exp_igrf_TvE[isf]->Add((TH2D*)ins_filein->Get(Form("h2exp_igrf_TvE_sf%g", factor[isf])));
+			if( h2exp_ts05_TvE[isf] ) h2exp_ts05_TvE[isf]->Add((TH2D*)ins_filein->Get(Form("h2exp_ts05_TvE_sf%g", factor[isf])));
 		}
-        //-- 遍历 h1d & add hist
-		for(int i=0;i<nfov;i++){
-        for(int j=0;j<nsf;j++){
-            if(h1exp_st_E[i][j]){
-                h1exp_st_E[i][j]->Add((TH1D*)ins_filein->Get(Form("h1exp_st_E_fov%g_sf%g", fov[i], factor[j])));
-                h1exp_igrf_E[i][j]->Add((TH1D*)ins_filein->Get(Form("h1exp_igrf_E_fov%g_sf%g", fov[i], factor[j])));
+		//====add--h1ene
+		for(int ifov=0;ifov<nfov;ifov++){
+        for(int isf=0;isf<nsf;isf++){
+            if( h1exp_st_E[ifov][isf] ){
+                h1exp_st_E[ifov][isf]->Add((TH1D*)ins_filein->Get(Form("h1exp_st_E_fov%g_sf%g", fov[ifov], factor[isf])));
+                h1exp_igrf_E[ifov][isf]->Add((TH1D*)ins_filein->Get(Form("h1exp_igrf_E_fov%g_sf%g", fov[ifov], factor[isf])));
             }
-            // if(h1d_exposure_ene_stormer_finebin[i][j]){
-            //     h1d_exposure_ene_stormer_finebin[i][j]->Add((TH1D*)ins_filein->Get(Form("h1d_exposure_dayVSene_stormer_finebin_fov%g_%g", fov[i], factor[j])));
-            //     h1d_exposure_ene_igrf_finebin[i][j]->Add((TH1D*)ins_filein->Get(Form("h1d_exposure_dayVSene_igrf_finebin_fov%g_%g", fov[i], factor[j])));
+            // if(h1exp_st_Efine[ifov][isf]){
+            //     h1exp_st_Efine[ifov][isf]->Add((TH1D*)ins_filein->Get(Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf])));
+            //     h1exp_igrf_Efine[ifov][isf]->Add((TH1D*)ins_filein->Get(Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf])));
             // }
         }
         }
-        //-- 遍历 h1d_day & add hist
-        for(int ifov=0; ifov<nfov; ifov++){
-        for(int jfactor=0; jfactor<nsf; jfactor++){
-        for(int kene=0; kene<nenebin; kene++){
-            if( energy_bins[kene] >= info_maxcf[ifov]*factor[jfactor] ){
-                h1exp_st_T[ifov][jfactor][kene]->Add((TH1D*)ins_filein->Get(Form("h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[jfactor],energy_bins[kene],energy_bins[kene+1])));
-                h1exp_igrf_T[ifov][jfactor][kene]->Add((TH1D*)ins_filein->Get(Form("h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[jfactor],energy_bins[kene],energy_bins[kene+1])));
-            }
+		//====add--h1t
+        for(int ifov=0;ifov<nfov;ifov++){
+        for(int isf=0;isf<nsf;isf++){
+        for(int iene=0;iene<nenebin;iene++){
+            h1exp_st_T[ifov][isf][iene]->Add((TH1D*)ins_filein->Get(Form("h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1])));
+            h1exp_igrf_T[ifov][isf][iene]->Add((TH1D*)ins_filein->Get(Form("h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1])));
         }
         }
         }
@@ -341,36 +329,37 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
 
 
 void ExpsHist::EXPSHIST_WriteHist_dayVSene(){
-    //====init
-    double fov[nfov] = { 25, 30, 35, 40 };
-    double factor[nsf] = { 1, 1.1, 1.2, 1.3, 1.4 };
+	//============ init ============
+	double fov[nfov] = { 25, 30, 35, 40 };
+	double factor[nsf] = { 1, 1.1, 1.2, 1.3, 1.4 };
 	int nfov=1;
 	// int nsf=1;
 	int nsf=5;
-	//====h2ene_t
-	for(int i=0;i<nsf;i++){
-		if( h2exp_st_TvE[i] ) h2exp_st_TvE[i]->Write();
-		if( h2exp_igrf_TvE[i] ) h2exp_igrf_TvE[i]->Write();
-		if( h2exp_ts05_TvE[i] ) h2exp_ts05_TvE[i]->Write();
+	//============ save ============
+	//====save--h2
+	for(int isf=0;isf<nsf;isf++){
+		if( h2exp_st_TvE[isf] ) h2exp_st_TvE[isf]->Write();
+		if( h2exp_igrf_TvE[isf] ) h2exp_igrf_TvE[isf]->Write();
+		if( h2exp_ts05_TvE[isf] ) h2exp_ts05_TvE[isf]->Write();
 	}
-    //====h1ene
-	for(int i=0;i<nfov;i++){
-    for(int j=0;j<nsf;j++){
-        if(h1exp_st_E[i][j]){
-            h1exp_st_E[i][j]->SetNameTitle(Form("h1exp_st_E_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]));
-            h1exp_st_E[i][j]->Write();
-            h1exp_igrf_E[i][j]->SetNameTitle(Form("h1exp_igrf_E_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]));
-            h1exp_igrf_E[i][j]->Write();
+	//====save--h1ene
+	for(int ifov=0;ifov<nfov;ifov++){
+    for(int isf=0;isf<nsf;isf++){
+        if(h1exp_st_E[ifov][isf]){
+            h1exp_st_E[ifov][isf]->SetNameTitle(Form("h1exp_st_E_fov%g_sf%g", fov[ifov], factor[isf]), Form("FOV %g degree, safety factor %g", fov[ifov], factor[isf]));
+            h1exp_st_E[ifov][isf]->Write();
+            h1exp_igrf_E[ifov][isf]->SetNameTitle(Form("h1exp_igrf_E_fov%g_sf%g", fov[ifov], factor[isf]), Form("FOV %g degree, safety factor %g", fov[ifov], factor[isf]));
+            h1exp_igrf_E[ifov][isf]->Write();
         }
     }
 	}
-    //====h1t
-    for(int i=0;i<nfov;i++){
-    for(int j=0;j<nsf;j++){
-    for(int k=0;k<nenebin;k++){
-        if(h1exp_st_T[i][j][k]){
-            h1exp_st_T[i][j][k]->Write();
-            h1exp_igrf_T[i][j][k]->Write();
+	//====save--h1t
+	for(int ifov=0;ifov<nfov;ifov++){
+    for(int isf=0;isf<nsf;isf++){
+    for(int iene=0;iene<nenebin;iene++){
+        if(h1exp_st_T[ifov][isf][iene]){
+            h1exp_st_T[ifov][isf][iene]->Write();
+            h1exp_igrf_T[ifov][isf][iene]->Write();
         }
     }
     }
