@@ -105,7 +105,7 @@ void ExpsHist::EXPSHIST_WriteHist(){
 	h1d_exposure_mLat2->Write();
 }
 void ExpsHist::EXPSHIST_DrawHist(){
-    TCanvas ins_can("c1","c1_title");
+    TCanvas ins_can("c1","c1_title",1000,400);
 	ins_can.Divide(2,2);
     TH2D *h2d_temp;
     TH1D *h1d_temp;
@@ -364,6 +364,8 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
 	// int nsf=1;
 	nsf=5;
 	int target_isf = 1;   //---- sf = 1.1
+	const double xmin = 1305849600;
+	const double xmax = 1761955200;
     //==================================================== temp var
     TH2D *h2d_temp;
     TH1D *h1d_temp;
@@ -372,7 +374,7 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
 	// for(int isf=0;isf<nsf;isf++){
     for(int isf=target_isf;isf<=target_isf;isf++){
         //============================ init
-        TCanvas ins_can(Form("ch2_igrf_sf%g", factor[isf]), Form("can_h2_igrf_sf%g", factor[isf]));
+        TCanvas ins_can(Form("ch2_igrf_sf%g", factor[isf]), Form("can_h2_igrf_sf%g", factor[isf]), 1000, 400);
         h2d_temp = h2exp_igrf_TvE[isf];
         xaxis=h2d_temp->GetXaxis();
         yaxis=h2d_temp->GetYaxis();
@@ -402,6 +404,7 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
         xaxis->SetTimeDisplay(1);
         // xaxis->SetTimeFormat("%m/%d/%Y");
         xaxis->SetTimeFormat("%b/%d/%Y");
+        xaxis->SetRangeUser(xmin, xmax);
         //============================ y axis
         yaxis->SetNameTitle("Energy","Energy [GeV]");
         yaxis->CenterTitle();               //-- 居中标题
@@ -428,7 +431,7 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
         // for(int isf=0;isf<nsf;isf++){
         for(int isf=target_isf;isf<=target_isf;isf++){
             //============================ init
-            TCanvas ins_can(Form("ch1e_igrf_fov%g_sf%g", 25., factor[isf]), Form("ch1e_igrf_fov%g_sf%g", 25., factor[isf]));
+            TCanvas ins_can(Form("ch1e_igrf_fov%g_sf%g", 25., factor[isf]), Form("ch1e_igrf_fov%g_sf%g", 25., factor[isf]), 1000, 400);
             // h1d_temp = h1exp_st_E[ifov][isf];
             h1d_temp = h1exp_igrf_E[ifov][isf];
             xaxis=h1d_temp->GetXaxis();
@@ -470,7 +473,7 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
         for(int isf=target_isf;isf<=target_isf;isf++){
 			for(int iene=0;iene<nenebin;iene++){
                 //============================ init
-                TCanvas ins_can(Form("ch1t_igrf_sf%g_ene%g", factor[isf], energy_bins[iene]), Form("ch1t_igrf_sf%g_ene%g", factor[isf], energy_bins[iene]));
+                TCanvas ins_can(Form("ch1t_igrf_sf%g_ene%g", factor[isf], energy_bins[iene]), Form("ch1t_igrf_sf%g_ene%g", factor[isf], energy_bins[iene]), 1000, 400);
                 h1d_temp = h1exp_igrf_T[ifov][isf][iene];
                 xaxis=h1d_temp->GetXaxis();
                 yaxis=h1d_temp->GetYaxis();
@@ -519,6 +522,7 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
                 // xaxis->SetTimeFormat("%m/%d/%Y");
                 xaxis->SetTimeFormat("%b/%d/%Y");
                 xaxis->SetNdivisions(-505);
+                xaxis->SetRangeUser(xmin, xmax);
                 //============================ y axis
                 yaxis->SetNameTitle("expstime","Exposure Time [s]");
                 yaxis->CenterTitle();

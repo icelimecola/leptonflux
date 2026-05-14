@@ -33,7 +33,8 @@ LISTNAME=hexps.txt
 LIST=$LISTDIR/$LISTNAME
 # ==========
 # NFPJ=2
-NFPJ=8
+# NFPJ=8
+NFPJ=15
 
 
 # ==============================================
