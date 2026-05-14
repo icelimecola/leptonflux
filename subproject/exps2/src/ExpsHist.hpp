@@ -302,7 +302,8 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
         if(i<0)break;
         if(i>=fullfilename_vector.size())break;
         //-- 读入第i个expshist
-        if(i%500==0) cout<<"Adding File : "<<i<<" "<<fullfilename_vector.at(i)<<endl;
+        // if(i%500==0) cout<<"Adding File : "<<i<<" "<<fullfilename_vector.at(i)<<endl;
+        cout<<"Adding File : "<<i<<" "<<fullfilename_vector.at(i)<<endl;
         ins_filein=new TFile(fullfilename_vector.at(i));
         //-- 遍历 h2d & add hist
 		// for(int j=0;j<nsf;j++){
