@@ -372,7 +372,7 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
 	// for(int isf=0;isf<nsf;isf++){
     for(int isf=target_isf;isf<=target_isf;isf++){
         //============================ init
-        TCanvas ins_can(Form("can_h2_igrf_sf%g", factor[isf]), Form("can_h2_igrf_sf%g", factor[isf]));
+        TCanvas ins_can(Form("ch2_igrf_sf%g", factor[isf]), Form("can_h2_igrf_sf%g", factor[isf]));
         h2d_temp = h2exp_igrf_TvE[isf];
         xaxis=h2d_temp->GetXaxis();
         yaxis=h2d_temp->GetYaxis();
@@ -421,14 +421,14 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
         //============================ draw & save
         h2d_temp->Draw("colz");
 	    ins_can.Write();
-        ins_can.SaveAs(Form("expshist_draw_h2_igrf_sf%g.pdf", factor[isf]));
+        ins_can.SaveAs(Form("h2exps_igrf_sf%g.pdf", factor[isf]));
     }
     //==================================================== H1--ENE
     for(int ifov=0;ifov<nfov;ifov++){
         // for(int isf=0;isf<nsf;isf++){
         for(int isf=target_isf;isf<=target_isf;isf++){
             //============================ init
-            TCanvas ins_can(Form("can_h1e_igrf_fov%g_sf%g", 25., factor[isf]), Form("can_h1e_igrf_fov%g_sf%g", 25., factor[isf]));
+            TCanvas ins_can(Form("ch1e_igrf_fov%g_sf%g", 25., factor[isf]), Form("ch1e_igrf_fov%g_sf%g", 25., factor[isf]));
             // h1d_temp = h1exp_st_E[ifov][isf];
             h1d_temp = h1exp_igrf_E[ifov][isf];
             xaxis=h1d_temp->GetXaxis();
@@ -461,7 +461,7 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
             //============================ draw & save
             h1d_temp->Draw("h");
             ins_can.Write();
-            ins_can.SaveAs(Form("expshist_draw_h1e_igrf_fov%g_sf%g.pdf", 25., factor[isf]));
+            ins_can.SaveAs(Form("h1eexps_igrf_fov%g_sf%g.pdf", 25., factor[isf]));
         }
     }
     //==================================================== H1--DAY
@@ -470,7 +470,7 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
         for(int isf=target_isf;isf<=target_isf;isf++){
 			for(int iene=0;iene<nenebin;iene++){
                 //============================ init
-                TCanvas ins_can(Form("can_h1t_igrf_sf%g_ene%g", factor[isf], energy_bins[iene]), Form("can_h1t_igrf_sf%g_ene%g", factor[isf], energy_bins[iene]));
+                TCanvas ins_can(Form("ch1t_igrf_sf%g_ene%g", factor[isf], energy_bins[iene]), Form("ch1t_igrf_sf%g_ene%g", factor[isf], energy_bins[iene]));
                 h1d_temp = h1exp_igrf_T[ifov][isf][iene];
                 xaxis=h1d_temp->GetXaxis();
                 yaxis=h1d_temp->GetYaxis();
@@ -532,7 +532,7 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
                 //============================ draw & save
                 h1d_temp->Draw("HIST");
                 ins_can.Write();
-                ins_can.SaveAs(Form("expshist_draw_h1t_igrf_sf%g_ene%g.pdf", factor[isf], energy_bins[iene]));
+                ins_can.SaveAs(Form("h1texps_igrf_sf%g_ene%g.pdf", factor[isf], energy_bins[iene]));
             } 
         }
     }

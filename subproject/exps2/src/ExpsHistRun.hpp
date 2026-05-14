@@ -28,14 +28,14 @@ void ExpsHistRun::EXPSHIST_RUN(){
     ins_expshist.EXPSHIST_AddHist_dayVSene(ins_filename.GetFullName(),jid,nfpj);
     //==================================================== SaveHist
     //-- 初始化hist输出文件,写入hist
-    TFile ins_fileout("expshist.root", "recreate");
+    TFile ins_fileout("hexps.root", "recreate");
     ins_fileout.cd();
     // ins_expshist.EXPSHIST_WriteHist();
     ins_expshist.EXPSHIST_WriteHist_dayVSene();
     ins_fileout.Close();
     //==================================================== EXPSHIST_DrawHist
     //-- 初始化canvas输出文件,写入canvas
-    TFile ins_fo("expshist_draw.root", "recreate");
+    TFile ins_fo("cexps.root", "recreate");
     ins_fo.cd();
     // ins_expshist.EXPSHIST_DrawHist();
     ins_expshist.EXPSHIST_DrawHist_dayVSene();
