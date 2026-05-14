@@ -306,11 +306,11 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
         cout<<"Adding File : "<<i<<" "<<fullfilename_vector.at(i)<<endl;
         ins_filein=new TFile(fullfilename_vector.at(i));
         //-- 遍历 h2d & add hist
-		// for(int j=0;j<nsf;j++){
-        //     if( h2exp_st_TvE[j] ) h2exp_st_TvE[j]->Add((TH2D*)ins_filein->Get(Form("h2exp_st_TvE_sf%g", factor[j])));
-		// 	if( h2exp_igrf_TvE[j] ) h2exp_igrf_TvE[j]->Add((TH2D*)ins_filein->Get(Form("h2exp_igrf_TvE_sf%g", factor[j])));
-		// 	if( h2exp_ts05_TvE[j] ) h2exp_ts05_TvE[j]->Add((TH2D*)ins_filein->Get(Form("h2exp_ts05_TvE_sf%g", factor[j])));
-		// }
+		for(int j=0;j<nsf;j++){
+            if( h2exp_st_TvE[j] ) h2exp_st_TvE[j]->Add((TH2D*)ins_filein->Get(Form("h2exp_st_TvE_sf%g", factor[j])));
+			if( h2exp_igrf_TvE[j] ) h2exp_igrf_TvE[j]->Add((TH2D*)ins_filein->Get(Form("h2exp_igrf_TvE_sf%g", factor[j])));
+			if( h2exp_ts05_TvE[j] ) h2exp_ts05_TvE[j]->Add((TH2D*)ins_filein->Get(Form("h2exp_ts05_TvE_sf%g", factor[j])));
+		}
         //-- 遍历 h1d & add hist
 		for(int i=0;i<nfov;i++){
         for(int j=0;j<nsf;j++){
@@ -325,16 +325,16 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
         }
         }
         //-- 遍历 h1d_day & add hist
-        // for(int ifov=0; ifov<nfov; ifov++){
-        // for(int jfactor=0; jfactor<nsf; jfactor++){
-        // for(int kene=0; kene<nenebin; kene++){
-        //     if( energy_bins[kene] >= info_maxcf[ifov]*factor[jfactor] ){
-        //         h1exp_st_T[ifov][jfactor][kene]->Add((TH1D*)ins_filein->Get(Form("h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[jfactor],energy_bins[kene],energy_bins[kene+1])));
-        //         h1exp_igrf_T[ifov][jfactor][kene]->Add((TH1D*)ins_filein->Get(Form("h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[jfactor],energy_bins[kene],energy_bins[kene+1])));
-        //     }
-        // }
-        // }
-        // }
+        for(int ifov=0; ifov<nfov; ifov++){
+        for(int jfactor=0; jfactor<nsf; jfactor++){
+        for(int kene=0; kene<nenebin; kene++){
+            if( energy_bins[kene] >= info_maxcf[ifov]*factor[jfactor] ){
+                h1exp_st_T[ifov][jfactor][kene]->Add((TH1D*)ins_filein->Get(Form("h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[jfactor],energy_bins[kene],energy_bins[kene+1])));
+                h1exp_igrf_T[ifov][jfactor][kene]->Add((TH1D*)ins_filein->Get(Form("h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[jfactor],energy_bins[kene],energy_bins[kene+1])));
+            }
+        }
+        }
+        }
     }
 }
 
@@ -348,11 +348,11 @@ void ExpsHist::EXPSHIST_WriteHist_dayVSene(){
 	// int nsf=1;
 	int nsf=5;
 	//====h2ene_t
-	// for(int i=0;i<nsf;i++){
-	// 	if( h2exp_st_TvE[i] ) h2exp_st_TvE[i]->Write();
-	// 	if( h2exp_igrf_TvE[i] ) h2exp_igrf_TvE[i]->Write();
-	// 	if( h2exp_ts05_TvE[i] ) h2exp_ts05_TvE[i]->Write();
-	// }
+	for(int i=0;i<nsf;i++){
+		if( h2exp_st_TvE[i] ) h2exp_st_TvE[i]->Write();
+		if( h2exp_igrf_TvE[i] ) h2exp_igrf_TvE[i]->Write();
+		if( h2exp_ts05_TvE[i] ) h2exp_ts05_TvE[i]->Write();
+	}
     //====h1ene
 	for(int i=0;i<nfov;i++){
     for(int j=0;j<nsf;j++){
@@ -365,16 +365,16 @@ void ExpsHist::EXPSHIST_WriteHist_dayVSene(){
     }
 	}
     //====h1t
-    // for(int i=0;i<nfov;i++){
-    // for(int j=0;j<nsf;j++){
-    // for(int k=0;k<nenebin;k++){
-    //     if(h1exp_st_T[i][j][k]){
-    //         h1exp_st_T[i][j][k]->Write();
-    //         h1exp_igrf_T[i][j][k]->Write();
-    //     }
-    // }
-    // }
-	// }
+    for(int i=0;i<nfov;i++){
+    for(int j=0;j<nsf;j++){
+    for(int k=0;k<nenebin;k++){
+        if(h1exp_st_T[i][j][k]){
+            h1exp_st_T[i][j][k]->Write();
+            h1exp_igrf_T[i][j][k]->Write();
+        }
+    }
+    }
+	}
 }
 
 
