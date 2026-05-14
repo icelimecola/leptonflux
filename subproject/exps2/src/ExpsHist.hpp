@@ -42,10 +42,10 @@ class ExpsHist:virtual public VarMinitree{
 		TH2D *h2exp_st_TvE[nsf];
 		TH2D *h2exp_igrf_TvE[nsf];
 		TH2D *h2exp_ts05_TvE[nsf];
-		TH1D *h1_exp_ene_stormer[nfov][nsf];
-		TH1D *h1_exp_ene_igrf[nfov][nsf];
-		TH1D *h1_exp_ene_stormer_finebin[nfov][nsf];
-		TH1D *h1_exp_ene_igrf_finebin[nfov][nsf];
+		TH1D *h1exp_st_E[nfov][nsf];
+		TH1D *h1exp_igrf_E[nfov][nsf];
+		TH1D *h1exp_st_Efine[nfov][nsf];
+		TH1D *h1exp_igrf_Efine[nfov][nsf];
         TH1D *h1exp_st_T[nfov][nsf][nenebin];
 		TH1D *h1exp_igrf_T[nfov][nsf][nenebin];
 		//-- func
@@ -267,13 +267,13 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
             //-- 这是一个x轴为能量的一维直方图
             //-- 按照fov,factor数组设置为nfov*snf维对象数组,也就是说每一个fov和每一个sf的取值都对应一个曝光时间数组
             //-- 两组直方图分别对应stormer/igrf地磁场模型的普通bin和finebin
-            h1_exp_ene_stormer[i][j] = new TH1D( Form("h1exp_st_E_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]), 
+            h1exp_st_E[i][j] = new TH1D( Form("h1exp_st_E_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]), 
                 nenebin, energy_bins);
-            h1_exp_ene_igrf[i][j] = new TH1D( Form("h1exp_igrf_E_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]), 
+            h1exp_igrf_E[i][j] = new TH1D( Form("h1exp_igrf_E_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]), 
                 nenebin, energy_bins);
-            h1_exp_ene_stormer_finebin[i][j] = new TH1D( Form("h1exp_st_Efine_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]), 
+            h1exp_st_Efine[i][j] = new TH1D( Form("h1exp_st_Efine_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]), 
                 nenebin_fine, energy_bins_fine);
-            h1_exp_ene_igrf_finebin[i][j] = new TH1D( Form("h1exp_igrf_Efine_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]), 
+            h1exp_igrf_Efine[i][j] = new TH1D( Form("h1exp_igrf_Efine_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]), 
                 nenebin_fine, energy_bins_fine);
         }
 		}
@@ -314,9 +314,9 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
         //-- 遍历 h1d & add hist
 		for(int i=0;i<nfov;i++){
         for(int j=0;j<nsf;j++){
-            if(h1_exp_ene_stormer[i][j]){
-                h1_exp_ene_stormer[i][j]->Add((TH1D*)ins_filein->Get(Form("h1exp_st_E_fov%g_sf%g", fov[i], factor[j])));
-                h1_exp_ene_igrf[i][j]->Add((TH1D*)ins_filein->Get(Form("h1exp_igrf_E_fov%g_sf%g", fov[i], factor[j])));
+            if(h1exp_st_E[i][j]){
+                h1exp_st_E[i][j]->Add((TH1D*)ins_filein->Get(Form("h1exp_st_E_fov%g_sf%g", fov[i], factor[j])));
+                h1exp_igrf_E[i][j]->Add((TH1D*)ins_filein->Get(Form("h1exp_igrf_E_fov%g_sf%g", fov[i], factor[j])));
             }
             // if(h1d_exposure_ene_stormer_finebin[i][j]){
             //     h1d_exposure_ene_stormer_finebin[i][j]->Add((TH1D*)ins_filein->Get(Form("h1d_exposure_dayVSene_stormer_finebin_fov%g_%g", fov[i], factor[j])));
@@ -356,11 +356,11 @@ void ExpsHist::EXPSHIST_WriteHist_dayVSene(){
     //====h1ene
 	for(int i=0;i<nfov;i++){
     for(int j=0;j<nsf;j++){
-        if(h1_exp_ene_stormer[i][j]){
-            h1_exp_ene_stormer[i][j]->SetNameTitle(Form("h1exp_st_E_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]));
-            h1_exp_ene_stormer[i][j]->Write();
-            h1_exp_ene_igrf[i][j]->SetNameTitle(Form("h1exp_igrf_E_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]));
-            h1_exp_ene_igrf[i][j]->Write();
+        if(h1exp_st_E[i][j]){
+            h1exp_st_E[i][j]->SetNameTitle(Form("h1exp_st_E_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]));
+            h1exp_st_E[i][j]->Write();
+            h1exp_igrf_E[i][j]->SetNameTitle(Form("h1exp_igrf_E_fov%g_sf%g", fov[i], factor[j]), Form("FOV %g degree, safety factor %g", fov[i], factor[j]));
+            h1exp_igrf_E[i][j]->Write();
         }
     }
 	}
@@ -446,8 +446,8 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
         for(int j=0;j<nsf;j++){
             //============================ init
             TCanvas ins_can("c2","c2_title");
-            // h1d_temp = h1_exp_ene_igrf[i][j];
-            h1d_temp = h1_exp_ene_stormer[i][j];
+            // h1d_temp = h1exp_igrf_E[i][j];
+            h1d_temp = h1exp_st_E[i][j];
             xaxis=h1d_temp->GetXaxis();
             yaxis=h1d_temp->GetYaxis();
             zaxis=h1d_temp->GetZaxis();
