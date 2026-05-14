@@ -354,17 +354,25 @@ void ExpsHist::EXPSHIST_WriteHist_dayVSene(){
 
 
 void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
-	int nfov=1;
+    //============ init ============
+	//====init array
+	double fov[nfov] = { 25, 30, 35, 40 };
+	double factor[nsf] = { 1, 1.1, 1.2, 1.3, 1.4 };
+	//====set length
+	int nfov,nsf;
+	nfov=1;
 	// int nsf=1;
-	int nsf=5;
+	nsf=5;
+	int target_isf = 1;   //---- sf = 1.1
     //==================================================== temp var
     TH2D *h2d_temp;
     TH1D *h1d_temp;
     TAxis *xaxis,*yaxis,*zaxis;
     //==================================================== H2
-	for(int isf=0;isf<nsf;isf++){
+	// for(int isf=0;isf<nsf;isf++){
+    for(int isf=target_isf;isf<=target_isf;isf++){
         //============================ init
-        TCanvas ins_can("c1","c1_title");
+        TCanvas ins_can(Form("can_h2_igrf_sf%g", factor[isf]), Form("can_h2_igrf_sf%g", factor[isf]));
         h2d_temp = h2exp_igrf_TvE[isf];
         xaxis=h2d_temp->GetXaxis();
         yaxis=h2d_temp->GetYaxis();
@@ -413,15 +421,16 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
         //============================ draw & save
         h2d_temp->Draw("colz");
 	    ins_can.Write();
-        ins_can.SaveAs("expshist_draw_h2d.pdf"); //-- 要改,因为因为前面还有循环
+        ins_can.SaveAs(Form("expshist_draw_h2_igrf_sf%g.pdf", factor[isf]));
     }
     //==================================================== H1--ENE
     for(int ifov=0;ifov<nfov;ifov++){
-        for(int isf=0;isf<nsf;isf++){
+        // for(int isf=0;isf<nsf;isf++){
+        for(int isf=target_isf;isf<=target_isf;isf++){
             //============================ init
-            TCanvas ins_can("c2","c2_title");
-            // h1d_temp = h1exp_igrf_E[ifov][isf];
-            h1d_temp = h1exp_st_E[ifov][isf];
+            TCanvas ins_can(Form("can_h1e_igrf_fov%g_sf%g", 25., factor[isf]), Form("can_h1e_igrf_fov%g_sf%g", 25., factor[isf]));
+            // h1d_temp = h1exp_st_E[ifov][isf];
+            h1d_temp = h1exp_igrf_E[ifov][isf];
             xaxis=h1d_temp->GetXaxis();
             yaxis=h1d_temp->GetYaxis();
             zaxis=h1d_temp->GetZaxis();
@@ -452,15 +461,16 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
             //============================ draw & save
             h1d_temp->Draw("h");
             ins_can.Write();
-            ins_can.SaveAs("expshist_draw_h1d_ene.pdf");
+            ins_can.SaveAs(Form("expshist_draw_h1e_igrf_fov%g_sf%g.pdf", 25., factor[isf]));
         }
     }
     //==================================================== H1--DAY
     for(int ifov=0;ifov<nfov;ifov++){
-        for(int isf=0;isf<nsf;isf++){
+        // for(int isf=0;isf<nsf;isf++){
+        for(int isf=target_isf;isf<=target_isf;isf++){
 			for(int iene=0;iene<nenebin;iene++){
                 //============================ init
-                TCanvas ins_can(Form("canvas_date_%g GeV",energy_bins[iene]),Form("canvas_date_%g GeV",energy_bins[iene]));
+                TCanvas ins_can(Form("can_h1t_igrf_sf%g_ene%g", factor[isf], energy_bins[iene]), Form("can_h1t_igrf_sf%g_ene%g", factor[isf], energy_bins[iene]));
                 h1d_temp = h1exp_igrf_T[ifov][isf][iene];
                 xaxis=h1d_temp->GetXaxis();
                 yaxis=h1d_temp->GetYaxis();
@@ -522,8 +532,7 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
                 //============================ draw & save
                 h1d_temp->Draw("HIST");
                 ins_can.Write();
-                // if(iene==nenebin-1) ins_can.SaveAs(Form("expshist_draw_h1d_day_ene%g.pdf",energy_bins[iene]));
-                ins_can.SaveAs(Form("expshist_draw_h1d_day_ene%g.pdf",energy_bins[iene]));
+                ins_can.SaveAs(Form("expshist_draw_h1t_igrf_sf%g_ene%g.pdf", factor[isf], energy_bins[iene]));
             } 
         }
     }
