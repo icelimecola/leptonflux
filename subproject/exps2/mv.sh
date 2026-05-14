@@ -4,4 +4,4 @@ rm -r dataiss
 mkdir -p ./dataiss/pdf
 # ============================================================ mv
 mv ./*.pdf ./dataiss/pdf/
-mv ./expshist*.root ./dataiss/
+mv ./*exps*.root ./dataiss/
