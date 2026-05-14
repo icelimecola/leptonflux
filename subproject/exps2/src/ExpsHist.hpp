@@ -213,51 +213,40 @@ void ExpsHist::EXPSHIST_DrawHist(){
 //===============================================================================
 void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int jobid,int nfilesperjob){
 	//============ init ============
-	//-- fov和sf的数组,在下文code中主要用于直方图命名
+	//====init array
 	double fov[nfov] = { 25, 30, 35, 40 };
 	double factor[nsf] = { 1, 1.1, 1.2, 1.3, 1.4 };
 	//====set length
-	int nfov=1;
+	int nfov,nsf;
+	nfov=1;
 	// int nsf=1;
-	int nsf=5;
+	nsf=5;
 	//============ init--time ============
-	// TTimeStamp t0_timestamp(t0_unixtime);
-	// int t0_date=t0_timestamp.GetDate();
-	// int t0_year=t0_timestamp/10000;
-	// int t0_day=t0_timestamp.GetDayOfYear();
-	// int t0_index=1;
-	//==== 1day
-	//---- 251101
-	const double width_tbin = 60*60*24;  //---- 86400[s]
-	// const int n_tbin = 27*120;
-    // static const int n_tbin=290;
-	static const int n_tbin=5000;                   //---- (used by lj)
-	// // const double t0_unix = 1304179200;	    //---- 2011-04-30 16:00:00 GMT+0000 (used by lj)
-	// const double t0_unix = 1304121600;	        //---- 2011-04-30 00:00:00 GMT+0000
-	const double t0_unix = 1305417600;	            //---- 2011-05-15 00:00:00 GMT+0000
-	//==== 27days
-	// const double width_tbin = 60*60*24*27;
-	// // static const int n_tbin=120;
-	// static const int n_tbin=185;
-	// const double t0_unix = 1305417600;	        //---- 2011-05-15 00:00:00 GMT+0000
-	//---- event time
+    //---- event time
 	double event_unix = info_utime;
+	//==== 1day
+	//----prl130posi--260419
+	const double wt = 60*60*24;  //---- 86400[s]
+	static const int nt=6000;
+	const double tmin = 1305417600;
+	const double tmax = tmin + nt*wt;	//----1823817600
+	//==== 27days
+	//----prl130posi--260421
+	// const double wt = 60*60*24*27;
+	// static const int nt=225;
+	// const double tmin = 1305417600;
+	// const double tmax = tmin + nt*wt;	//----1830297600
 	//============ init--hist ============
 	static int first_call = 1;
-    if( first_call ){
-		for(int j=0;j<nsf;j++){
-			//-- TH2D(const char *name,const char *title,Int_t nbinsx,Double_t xlow,Double_t xup,Int_t nbinsy,const Double_t *ybins);
-			//-- th2d(name,title,nx,xlow,xup,ny,ybins)
-			//-- n_tbin,t0,t0+n_tbin*86400,nbin,energy_bins
-			//-- 这是一个x轴为时间,y轴为能量的二维直方图
-			//-- 按照sf的数组factor设置为nsf维对象数组,也就是说每一个sf的取值都对应一个曝光时间数组
-			//-- 三个二位直方图分别按照三个地磁场模型stormer/igrf/ts05
-			h2exp_st_TvE[j] = new TH2D( Form("h2exp_st_TvE_sf%g", factor[j]), Form("FOV 25, safety factor %g;Date;Energy [GeV];Collection Time[s]", factor[j]), 
-				n_tbin, t0_unix, t0_unix+n_tbin*width_tbin,  nenebin, energy_bins);
-			h2exp_igrf_TvE[j] = new TH2D( Form("h2exp_igrf_TvE_sf%g", factor[j]), Form("FOV 25, safety factor %g;Date;Energy [GeV];Collection Time[s]", factor[j]), 
-                n_tbin, t0_unix, t0_unix+n_tbin*width_tbin,  nenebin, energy_bins);
-			h2exp_ts05_TvE[j] = new TH2D( Form("h2exp_ts05_TvE_sf%g", factor[j]), Form("FOV 25, safety factor %g;Date;Energy [GeV];Collection Time[s]", factor[j]), 
-                n_tbin, t0_unix, t0_unix+n_tbin*width_tbin,  nenebin, energy_bins);
+	if( first_call ){
+		//====h2--t vs ene
+		for(int isf=0;isf<nsf;isf++){
+			h2exp_st_TvE[isf] = new TH2D( Form("h2exp_st_TvE_sf%g", factor[isf]), Form("FOV 25, safety factor %g;Date;Energy [GeV];Collection Time[s]", factor[isf]), 
+				nt, tmin, tmin+nt*wt,  nenebin, energy_bins);
+			h2exp_igrf_TvE[isf] = new TH2D( Form("h2exp_igrf_TvE_sf%g", factor[isf]), Form("FOV 25, safety factor %g;Date;Energy [GeV];Collection Time[s]", factor[isf]), 
+                nt, tmin, tmin+nt*wt,  nenebin, energy_bins);
+			h2exp_ts05_TvE[isf] = new TH2D( Form("h2exp_ts05_TvE_sf%g", factor[isf]), Form("FOV 25, safety factor %g;Date;Energy [GeV];Collection Time[s]", factor[isf]), 
+                nt, tmin, tmin+nt*wt,  nenebin, energy_bins);
 		}
 		//====h1ene
 		for(int ifov=0;ifov<nfov;ifov++){
@@ -276,15 +265,16 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
 		for(int ifov=0;ifov<nfov;ifov++){
         for(int isf=0;isf<nsf;isf++){
         for(int iene=0;iene<nenebin;iene++){
-            h1exp_st_T[ifov][isf][iene] = new TH1D( Form("h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), Form("FOV %g degree, safety factor %g, energy %g to %g GeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), 
-                n_tbin, t0_unix, t0_unix+n_tbin*width_tbin);
-            h1exp_igrf_T[ifov][isf][iene] = new TH1D( Form("h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), Form("FOV %g degree, safety factor %g, energy %g to %g GeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), 
-                n_tbin, t0_unix, t0_unix+n_tbin*width_tbin);
+			h1exp_st_T[ifov][isf][iene] = new TH1D( Form("h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), Form("FOV %g degree, safety factor %g, energy %g to %g GeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), 
+                nt, tmin, tmin+nt*wt);
+			h1exp_igrf_T[ifov][isf][iene] = new TH1D( Form("h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), Form("FOV %g degree, safety factor %g, energy %g to %g GeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1]), 
+                nt, tmin, tmin+nt*wt);
         }
         }
 		}
+		//====reset
 		first_call = 0;
-    }
+	}
 	//============ add hist ============
 	if( fullfilename_vector.size() == 1 ){
 		jobid = 1;
@@ -330,11 +320,10 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
 
 void ExpsHist::EXPSHIST_WriteHist_dayVSene(){
 	//============ init ============
-	double fov[nfov] = { 25, 30, 35, 40 };
-	double factor[nsf] = { 1, 1.1, 1.2, 1.3, 1.4 };
-	int nfov=1;
+	int nfov,nsf;
+	nfov=1;
 	// int nsf=1;
-	int nsf=5;
+	nsf=5;
 	//============ save ============
 	//====save--h2
 	for(int isf=0;isf<nsf;isf++){
@@ -345,12 +334,8 @@ void ExpsHist::EXPSHIST_WriteHist_dayVSene(){
 	//====save--h1ene
 	for(int ifov=0;ifov<nfov;ifov++){
     for(int isf=0;isf<nsf;isf++){
-        if(h1exp_st_E[ifov][isf]){
-            h1exp_st_E[ifov][isf]->SetNameTitle(Form("h1exp_st_E_fov%g_sf%g", fov[ifov], factor[isf]), Form("FOV %g degree, safety factor %g", fov[ifov], factor[isf]));
-            h1exp_st_E[ifov][isf]->Write();
-            h1exp_igrf_E[ifov][isf]->SetNameTitle(Form("h1exp_igrf_E_fov%g_sf%g", fov[ifov], factor[isf]), Form("FOV %g degree, safety factor %g", fov[ifov], factor[isf]));
-            h1exp_igrf_E[ifov][isf]->Write();
-        }
+		if(h1exp_st_E[ifov][isf]) h1exp_st_E[ifov][isf]->Write();
+		if(h1exp_igrf_E[ifov][isf]) h1exp_igrf_E[ifov][isf]->Write();
     }
 	}
 	//====save--h1t
@@ -377,10 +362,10 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
     TH1D *h1d_temp;
     TAxis *xaxis,*yaxis,*zaxis;
     //==================================================== H2
-	for(int i=0;i<nsf;i++){
+	for(int isf=0;isf<nsf;isf++){
         //============================ init
         TCanvas ins_can("c1","c1_title");
-        h2d_temp = h2exp_igrf_TvE[i];
+        h2d_temp = h2exp_igrf_TvE[isf];
         xaxis=h2d_temp->GetXaxis();
         yaxis=h2d_temp->GetYaxis();
         zaxis=h2d_temp->GetZaxis();
@@ -431,12 +416,12 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
         ins_can.SaveAs("expshist_draw_h2d.pdf"); //-- 要改,因为因为前面还有循环
     }
     //==================================================== H1--ENE
-    for(int i=0;i<nfov;i++){
-        for(int j=0;j<nsf;j++){
+    for(int ifov=0;ifov<nfov;ifov++){
+        for(int isf=0;isf<nsf;isf++){
             //============================ init
             TCanvas ins_can("c2","c2_title");
-            // h1d_temp = h1exp_igrf_E[i][j];
-            h1d_temp = h1exp_st_E[i][j];
+            // h1d_temp = h1exp_igrf_E[ifov][isf];
+            h1d_temp = h1exp_st_E[ifov][isf];
             xaxis=h1d_temp->GetXaxis();
             yaxis=h1d_temp->GetYaxis();
             zaxis=h1d_temp->GetZaxis();
@@ -471,18 +456,18 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
         }
     }
     //==================================================== H1--DAY
-    for(int i=0;i<nfov;i++){
-        for(int j=0;j<nsf;j++){
-			for(int k=0;k<nenebin;k++){
+    for(int ifov=0;ifov<nfov;ifov++){
+        for(int isf=0;isf<nsf;isf++){
+			for(int iene=0;iene<nenebin;iene++){
                 //============================ init
-                TCanvas ins_can(Form("canvas_date_%g GeV",energy_bins[k]),Form("canvas_date_%g GeV",energy_bins[k]));
-                h1d_temp = h1exp_igrf_T[i][j][k];
+                TCanvas ins_can(Form("canvas_date_%g GeV",energy_bins[iene]),Form("canvas_date_%g GeV",energy_bins[iene]));
+                h1d_temp = h1exp_igrf_T[ifov][isf][iene];
                 xaxis=h1d_temp->GetXaxis();
                 yaxis=h1d_temp->GetYaxis();
                 zaxis=h1d_temp->GetZaxis();
                 //============================ hist
-                h1exp_igrf_T[i][j][k]->SetTitleFont(62,"t");
-                h1d_temp->SetNameTitle("",Form("Energy %g to %g GeV",energy_bins[k],energy_bins[k+1]));
+                h1exp_igrf_T[ifov][isf][iene]->SetTitleFont(62,"t");
+                h1d_temp->SetNameTitle("",Form("Energy %g to %g GeV",energy_bins[iene],energy_bins[iene+1]));
                 // gStyle->SetTitleFontSize();
                 gStyle->SetTitleFont(62,"T");
                 gStyle->SetTitleSize(0.05,"t");
@@ -537,8 +522,8 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
                 //============================ draw & save
                 h1d_temp->Draw("HIST");
                 ins_can.Write();
-                // if(k==nenebin-1) ins_can.SaveAs(Form("expshist_draw_h1d_day_ene%g.pdf",energy_bins[k]));
-                ins_can.SaveAs(Form("expshist_draw_h1d_day_ene%g.pdf",energy_bins[k]));
+                // if(iene==nenebin-1) ins_can.SaveAs(Form("expshist_draw_h1d_day_ene%g.pdf",energy_bins[iene]));
+                ins_can.SaveAs(Form("expshist_draw_h1d_day_ene%g.pdf",energy_bins[iene]));
             } 
         }
     }
