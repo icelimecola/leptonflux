@@ -90,9 +90,11 @@ void SelectRun::SECLECT_RUN(){
         // if(ins_select.utime<1305849600) continue;   //----2011.05.20
         // if(ins_select.utime>1635811200) continue;   //----2021.11.02
         //====cut--geomag
+        //----stormer
         // if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.2*ins_select.cf[0]) continue;
+        //----igrf
         // if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.0*ins_select.cfi[0]) continue;
-        if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.1*ins_select.cfi[0]) continue;
+        // if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.1*ins_select.cfi[0]) continue;
         // if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.2*ins_select.cfi[0]) continue;
         //==== reset
         ins_select.PROCESS_ResetVar();
