@@ -1,0 +1,16 @@
+# ============================================================ rm
+rm -r dataiss 
+# ============================================================ mkdir
+mkdir -p ./dataiss/tofeff/root
+mkdir -p ./dataiss/trdeff/root
+mkdir -p ./dataiss/ecaleff/root
+mkdir -p ./dataiss/trkeff/root
+# ============================================================ mv
+mv ./*tofeff.pdf ./dataiss/tofeff/
+mv ./*tofeff.root ./dataiss/tofeff/root/
+mv ./*trdeff.pdf ./dataiss/trdeff/
+mv ./*trdeff.root ./dataiss/trdeff/root/
+mv ./*ecaleff.pdf ./dataiss/ecaleff/
+mv ./*ecaleff.root ./dataiss/ecaleff/root/
+mv ./*trkeff.pdf ./dataiss/trkeff/
+mv ./*trkeff.root ./dataiss/trkeff/root/

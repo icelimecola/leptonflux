@@ -1,0 +1,3 @@
+# yname|yerrname|ytitle|ymin|ymax
+#---- one line = one output group
+trigeff|trigeff_err|Trigger Efficiency|0.6|1.1
