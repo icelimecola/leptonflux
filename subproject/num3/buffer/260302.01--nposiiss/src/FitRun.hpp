@@ -99,8 +99,8 @@ void FitRun::FIT_RUN_iene(int i_enebin,vector<int>bin_division,int printlv){
         // if(ins_fit.utime<1305849600) continue;
         // if(ins_fit.utime>1635811200) continue;
         //----260510
-        // if(ins_fit.utime<1305849600) continue;
-        // if(ins_fit.utime>1761955200) continue;
+        if(ins_fit.utime<1305849600) continue;
+        if(ins_fit.utime>1761955200) continue;
         //======== cut--geomag
         //====stormer
         // if(ins_fit.energy_bins[i_enebin]<1.2*ins_fit.cf[0]) continue;
