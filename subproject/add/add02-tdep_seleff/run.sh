@@ -15,14 +15,15 @@ YMIN=""
 YMAX=""
 FOUTNAME="htime"
 # ----tbin
-NT=6000
-TMIN=1305417600
-TMAX=1823817600
-# NT=225
+# NT=6000
 # TMIN=1305417600
-# TMAX=1830297600
+# TMAX=1823817600
+NT=225
+TMIN=1305417600
+TMAX=1830297600
 # ----xrange
-XMIN=1305849600
+# XMIN=1305849600
+XMIN=1307750400
 XMAX=1761955200
 # ====for run.sh
 BATCH_DIR="datain/260421.01--tfit/dataiss/tfit"
@@ -169,10 +170,13 @@ SAFE_TAG(){
     printf '%s' "${tag}"
 }
 
+# ============ pattern 1 ============
 RUN_ONE(){
     local fpathname_now="$1"
-    local foutname_now="$2"
+    local fpathname_mc_now="$2"
+    local foutname_now="$3"
     local fpathname_use=""
+    local fpathname_mc_use=""
     local yname_esc=""
     local yerrname_esc=""
     local ytitle_esc=""
@@ -180,7 +184,9 @@ RUN_ONE(){
     local xmax_esc=""
     local ymin_esc=""
     local ymax_esc=""
+    local fpathname_mc_esc=""
     fpathname_use="$(NORMALIZE_FPATHNAME "${fpathname_now}")"
+    fpathname_mc_use="$(NORMALIZE_FPATHNAME "${fpathname_mc_now}")"
 
     yname_esc="$(ESC_CSTR "${YNAME}")"
     yerrname_esc="$(ESC_CSTR "${YERRNAME}")"
@@ -189,10 +195,15 @@ RUN_ONE(){
     xmax_esc="$(ESC_CSTR "${XMAX}")"
     ymin_esc="$(ESC_CSTR "${YMIN}")"
     ymax_esc="$(ESC_CSTR "${YMAX}")"
+    fpathname_mc_esc="$(ESC_CSTR "${fpathname_mc_use}")"
 
     echo "IN RUN_ROOT ===== fpathname_now=${fpathname_now}"
     if [[ "${fpathname_use}" != "${fpathname_now}" ]]; then
         echo "IN RUN_ROOT ===== fpathname_norm=${fpathname_use}"
+    fi
+    echo "IN RUN_ROOT ===== fpathname_mc_now=${fpathname_mc_now}"
+    if [[ "${fpathname_mc_use}" != "${fpathname_mc_now}" ]]; then
+        echo "IN RUN_ROOT ===== fpathname_mc_norm=${fpathname_mc_use}"
     fi
     echo "IN RUN_ROOT ===== foutname_now=${foutname_now}"
     echo "IN RUN_ROOT ===== yname_now=${YNAME} yerr_now=${YERRNAME}"
@@ -204,7 +215,7 @@ RUN_ONE(){
         echo "IN RUN_ROOT ===== ROOT5 detected, use compiled binary"
         mkdir -p bin
         g++ -std=c++17 src/main.cpp $(root-config --cflags --libs) -o bin/main_utime_test.exe
-        ./bin/main_utime_test.exe "${FPATH}" "${FNAME}" "${fpathname_use}" "${YNAME}" "${YERRNAME}" "${YTITLE}" "${foutname_now}" "${TNAME}" "${XNAME}" "${NT}" "${TMIN}" "${TMAX}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}"
+        ./bin/main_utime_test.exe "${FPATH}" "${FNAME}" "${fpathname_use}" "${YNAME}" "${YERRNAME}" "${YTITLE}" "${foutname_now}" "${TNAME}" "${XNAME}" "${NT}" "${TMIN}" "${TMAX}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}" "${fpathname_mc_use}"
     else
         local fpathname_esc
         local foutname_esc
@@ -212,21 +223,23 @@ RUN_ONE(){
         foutname_esc="$(ESC_CSTR "${foutname_now}")"
 
         local root_cmd
-        root_cmd="src/main.cpp(17,(char*[]){(char*)\"ADD_TIME\",(char*)\"${FPATH_ESC}\",(char*)\"${FNAME_ESC}\",(char*)\"${fpathname_esc}\",(char*)\"${yname_esc}\",(char*)\"${yerrname_esc}\",(char*)\"${ytitle_esc}\",(char*)\"${foutname_esc}\",(char*)\"${TNAME_ESC}\",(char*)\"${XNAME_ESC}\",(char*)\"${NT}\",(char*)\"${TMIN}\",(char*)\"${TMAX}\",(char*)\"${xmin_esc}\",(char*)\"${xmax_esc}\",(char*)\"${ymin_esc}\",(char*)\"${ymax_esc}\"})"
+        root_cmd="src/main.cpp(18,(char*[]){(char*)\"ADD_TIME\",(char*)\"${FPATH_ESC}\",(char*)\"${FNAME_ESC}\",(char*)\"${fpathname_esc}\",(char*)\"${yname_esc}\",(char*)\"${yerrname_esc}\",(char*)\"${ytitle_esc}\",(char*)\"${foutname_esc}\",(char*)\"${TNAME_ESC}\",(char*)\"${XNAME_ESC}\",(char*)\"${NT}\",(char*)\"${TMIN}\",(char*)\"${TMAX}\",(char*)\"${xmin_esc}\",(char*)\"${xmax_esc}\",(char*)\"${ymin_esc}\",(char*)\"${ymax_esc}\",(char*)\"${fpathname_mc_esc}\"})"
 
         echo "IN RUN_ROOT ===== root -l -b -q"
         root -l -b -q "${root_cmd}"
     fi
 }
 
+# ============ pattern 2 ============
 RUN_BY_VARSET(){
     local fpathname_now="$1"
-    local foutname_base="$2"
+    local fpathname_mc_now="$2"
+    local foutname_base="$3"
     local ytag=""
     local i=0
 
     if [[ ${HAS_VARCFG} -eq 0 ]]; then
-        RUN_ONE "${fpathname_now}" "${foutname_base}"
+        RUN_ONE "${fpathname_now}" "${fpathname_mc_now}" "${foutname_base}"
         return
     fi
 
@@ -237,7 +250,7 @@ RUN_BY_VARSET(){
         YMIN="${CFG_YMIN[$i]}"
         YMAX="${CFG_YMAX[$i]}"
         ytag="$(SAFE_TAG "${YNAME}")"
-        RUN_ONE "${fpathname_now}" "${foutname_base}_${ytag}"
+        RUN_ONE "${fpathname_now}" "${fpathname_mc_now}" "${foutname_base}_${ytag}"
     done
 }
 
@@ -274,6 +287,36 @@ NORMALIZE_FPATHNAME(){
     printf '%s' "${p}*.root"
 }
 
+MATCH_MC_FPATHNAME(){
+    local p_iss="$1"
+    local p_mc=""
+
+    if [[ "${p_iss}" != *"dataiss/tfit"* ]]; then
+        return 1
+    fi
+
+    p_mc="${p_iss/dataiss\/tfit/datamc\/tfit}"
+    printf '%s' "${p_mc}"
+}
+
+HAS_MATCHED_ROOT(){
+    local pattern="$1"
+    local matches=()
+    shopt -s nullglob
+    matches=(${pattern})
+    shopt -u nullglob
+    [[ ${#matches[@]} -gt 0 ]]
+}
+
+RESOLVE_ISS_FPATHNAME(){
+    local p="$1"
+    if [[ -z "${p}" ]]; then
+        NORMALIZE_FPATHNAME "${FPATH}${FNAME}"
+        return
+    fi
+    NORMALIZE_FPATHNAME "${p}"
+}
+
 if [[ "${FPATHNAME}" == "__RUN_ALL__" ]]; then
     LOAD_VARCFG "${VARCFG}"
 
@@ -308,9 +351,21 @@ if [[ "${FPATHNAME}" == "__RUN_ALL__" ]]; then
             tag="ene${BASH_REMATCH[1]}_${BASH_REMATCH[2]}"
         fi
         foutname_now="${FOUTNAME}_${tag}"
+        fmc="$(MATCH_MC_FPATHNAME "${f}" || true)"
+
+        if [[ -z "${fmc}" ]]; then
+            echo "WARN RUN_ROOT ===== matched mc file not found: ${f}"
+            n_fail=$((n_fail+1))
+            continue
+        fi
+        if ! HAS_MATCHED_ROOT "${fmc}"; then
+            echo "WARN RUN_ROOT ===== matched mc file not found: ${fmc}"
+            n_fail=$((n_fail+1))
+            continue
+        fi
 
         if [[ ${HAS_VARCFG} -eq 0 ]]; then
-            if RUN_ONE "${f}" "${foutname_now}"; then
+            if RUN_ONE "${f}" "${fmc}" "${foutname_now}"; then
                 n_ok=$((n_ok+1))
             else
                 echo "WARN RUN_ROOT ===== failed: ${f}"
@@ -325,7 +380,7 @@ if [[ "${FPATHNAME}" == "__RUN_ALL__" ]]; then
                 YMAX="${CFG_YMAX[$i_var]}"
                 ytag="$(SAFE_TAG "${YNAME}")"
 
-                if RUN_ONE "${f}" "${foutname_now}_${ytag}"; then
+                if RUN_ONE "${f}" "${fmc}" "${foutname_now}_${ytag}"; then
                     n_ok=$((n_ok+1))
                 else
                     echo "WARN RUN_ROOT ===== failed: ${f} y=${YNAME}"
@@ -341,7 +396,17 @@ if [[ "${FPATHNAME}" == "__RUN_ALL__" ]]; then
     fi
 else
     LOAD_VARCFG "${VARCFG}"
-    RUN_BY_VARSET "${FPATHNAME}" "${FOUTNAME}"
+    f_iss_single="$(RESOLVE_ISS_FPATHNAME "${FPATHNAME}")"
+    f_mc_single="$(MATCH_MC_FPATHNAME "${f_iss_single}" || true)"
+    if [[ -z "${f_mc_single}" ]]; then
+        echo "ERR RUN_ROOT ===== matched mc file not found: ${f_iss_single}"
+        exit 6
+    fi
+    if ! HAS_MATCHED_ROOT "${f_mc_single}"; then
+        echo "ERR RUN_ROOT ===== matched mc file not found: ${f_mc_single:-${f_iss_single}}"
+        exit 6
+    fi
+    RUN_BY_VARSET "${f_iss_single}" "${f_mc_single}" "${FOUTNAME}"
 fi
 
 echo "IN RUN_ROOT ===== done"
