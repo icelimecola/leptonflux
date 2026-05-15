@@ -13,10 +13,15 @@ using namespace std;
 #include "TROOT.h"
 #include "TString.h"
 #include "TFile.h"
+#include "TGraph.h"
+#include "TGraphErrors.h"
+#include "TGraphSmooth.h"
 #include "TTree.h"
 #include "TChain.h"
 #include "TH1D.h"
 #include "TCanvas.h"
+#include "TLine.h"
+#include "TPad.h"
 #include "TStyle.h"
 #include "TGaxis.h"
 #include "TLatex.h"
@@ -168,6 +173,83 @@ double GET_HMAX(const TH1D *h){
 		if(value > hmax) hmax = value;
 	}
 	return hmax;
+}
+
+bool BUILD_RATIO_HIST(const TH1D *hiss, const TH1D *hmc, TH1D *hratio,
+		vector<double> &vx_ratio, vector<double> &vy_ratio,
+		vector<double> &vex_ratio, vector<double> &ve_ratio,
+		double &ratio_ymin, double &ratio_ymax){
+	double ratio_min = 0.0;
+	double ratio_max = 0.0;
+	bool is_first = true;
+
+	vx_ratio.clear();
+	vy_ratio.clear();
+	vex_ratio.clear();
+	ve_ratio.clear();
+	for(int ibin=1; ibin<=hiss->GetNbinsX(); ibin++){
+		double iss_y = hiss->GetBinContent(ibin);
+		double iss_err = hiss->GetBinError(ibin);
+		double mc_y = hmc->GetBinContent(ibin);
+		double mc_err = hmc->GetBinError(ibin);
+		double ratio = 0.0;
+		double ratio_err = 0.0;
+		double ratio_low = 0.0;
+		double ratio_high = 0.0;
+
+		if(mc_y == 0.0){
+			cerr<<"ERR BUILD_RATIO_HIST ===== MC bin content is zero"
+				<<" ibin="<<ibin
+				<<" elow="<<ENERGY_BINS[ibin - 1]
+				<<" eup="<<ENERGY_BINS[ibin]
+				<<endl;
+			return false;
+		}
+		if(iss_y == 0.0){
+			cerr<<"ERR BUILD_RATIO_HIST ===== ISS bin content is zero"
+				<<" ibin="<<ibin
+				<<" elow="<<ENERGY_BINS[ibin - 1]
+				<<" eup="<<ENERGY_BINS[ibin]
+				<<endl;
+			return false;
+		}
+
+		ratio = iss_y / mc_y;
+		ratio_err = ratio * sqrt(pow(iss_err / iss_y, 2) + pow(mc_err / mc_y, 2));
+		hratio->SetBinContent(ibin, ratio);
+		hratio->SetBinError(ibin, ratio_err);
+
+		vx_ratio.push_back(hratio->GetBinCenter(ibin));
+		vy_ratio.push_back(ratio);
+		vex_ratio.push_back(0.0);
+		ve_ratio.push_back(ratio_err);
+
+		ratio_low = ratio - ratio_err;
+		ratio_high = ratio + ratio_err;
+		if(is_first){
+			ratio_min = ratio_low;
+			ratio_max = ratio_high;
+			is_first = false;
+		}
+		else{
+			ratio_min = std::min(ratio_min, ratio_low);
+			ratio_max = std::max(ratio_max, ratio_high);
+		}
+	}
+
+	if(is_first){
+		cerr<<"ERR BUILD_RATIO_HIST ===== no valid ratio points"<<endl;
+		return false;
+	}
+
+	ratio_min = std::min(ratio_min, 1.0);
+	ratio_max = std::max(ratio_max, 1.0);
+	double ratio_span = ratio_max - ratio_min;
+	if(ratio_span <= 0.0) ratio_span = std::max(fabs(ratio_max), 1.0) * 0.2;
+	double ratio_margin = ratio_span * 0.15;
+	ratio_ymin = ratio_min - ratio_margin;
+	ratio_ymax = ratio_max + ratio_margin;
+	return true;
 }
 
 
@@ -404,26 +486,86 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	}
 	hiss->Write();
 	if(var.has_mc) hmc->Write();
+	TH1D *hratio = nullptr;
+	TGraphErrors *gratio = nullptr;
+	TGraph *gratio_smooth = nullptr;
+	TLine *line_ratio = nullptr;
+	vector<double> vx_ratio;
+	vector<double> vy_ratio;
+	vector<double> vex_ratio;
+	vector<double> ve_ratio;
+	double ratio_ymin = 0.0;
+	double ratio_ymax = 0.0;
 	//====init--canvas
-	TCanvas *c = new TCanvas("c","c",1000,400);
+	TCanvas *c = nullptr;
+	TPad *pad_top = nullptr;
+	TPad *pad_ratio = nullptr;
+	if(var.has_mc) c = new TCanvas("c","c",1000,700);
+	else c = new TCanvas("c","c",1000,400);
 	TAxis *xaxis = hiss->GetXaxis();
 	TAxis *yaxis = hiss->GetYaxis();
+	double xdrawmin = var.has_xmin ? var.xmin : ENERGY_BINS[0];
+	double xdrawmax = var.has_xmax ? var.xmax : ENERGY_BINS[NENEBIN];
 	//====canvas
 	hiss->SetStats(0);
 	if(var.has_mc) hmc->SetStats(0);
 	hiss->SetNameTitle("", "");
-	c->SetTopMargin(0.13);
-	c->SetBottomMargin(0.15);
-	c->SetLeftMargin(0.13);
-	c->SetRightMargin(0.08);
-	c->cd();
+	if(var.has_mc){
+		hratio = new TH1D("hratio", "hratio", NENEBIN, ENERGY_BINS);
+		hratio->SetDirectory(nullptr);
+		hratio->SetStats(0);
+		if(!BUILD_RATIO_HIST(hiss, hmc, hratio, vx_ratio, vy_ratio, vex_ratio, ve_ratio, ratio_ymin, ratio_ymax)){
+			delete hratio;
+			delete c;
+			fout->Close();
+			delete fout;
+			return false;
+		}
+		gratio = new TGraphErrors(vx_ratio.size(), &vx_ratio[0], &vy_ratio[0], &vex_ratio[0], &ve_ratio[0]);
+		gratio->SetName("gratio");
+		TGraphSmooth *smoother = new TGraphSmooth("ratio_smoother");
+		TGraph *gratio_smooth_tmp = smoother->SmoothLowess(gratio, "", 0.30);
+		if(gratio_smooth_tmp == nullptr){
+			cerr<<"ERR DRAW ===== failed to build ratio smooth graph"<<endl;
+			delete smoother;
+			delete gratio;
+			delete hratio;
+			delete c;
+			fout->Close();
+			delete fout;
+			return false;
+		}
+		gratio_smooth = static_cast<TGraph *>(gratio_smooth_tmp->Clone("gratio_smooth"));
+		delete smoother;
+		gratio_smooth->SetName("gratio_smooth");
+		line_ratio = new TLine(xdrawmin, 1.0, xdrawmax, 1.0);
+
+		pad_top = new TPad("pad_top", "pad_top", 0.0, 0.32, 1.0, 1.0);
+		pad_ratio = new TPad("pad_ratio", "pad_ratio", 0.0, 0.0, 1.0, 0.32);
+		pad_top->SetTopMargin(0.13);
+		pad_top->SetBottomMargin(0.03);
+		pad_top->SetLeftMargin(0.13);
+		pad_top->SetRightMargin(0.08);
+		pad_ratio->SetTopMargin(0.03);
+		pad_ratio->SetBottomMargin(0.32);
+		pad_ratio->SetLeftMargin(0.13);
+		pad_ratio->SetRightMargin(0.08);
+		pad_top->Draw();
+		pad_ratio->Draw();
+		pad_top->cd();
+	}
+	else{
+		c->SetTopMargin(0.13);
+		c->SetBottomMargin(0.15);
+		c->SetLeftMargin(0.13);
+		c->SetRightMargin(0.08);
+		c->cd();
+	}
 	gPad->SetGridx();
 	gPad->SetGridy();
 	gPad->SetLogx();
 	//====x
 	if(var.has_xmin || var.has_xmax){
-		double xdrawmin = var.has_xmin ? var.xmin : ENERGY_BINS[0];
-		double xdrawmax = var.has_xmax ? var.xmax : ENERGY_BINS[NENEBIN];
 		xaxis->SetRangeUser(xdrawmin, xdrawmax);
 	}
 	xaxis->SetNameTitle("Energy [GeV]", "Energy [GeV]");
@@ -432,6 +574,10 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	xaxis->SetTitleSize(0.05);
 	xaxis->SetTitleOffset(1.2);
 	xaxis->SetLabelOffset(0.012);
+	if(var.has_mc){
+		xaxis->SetTitleSize(0.0);
+		xaxis->SetLabelSize(0.0);
+	}
 	//====y
 	yaxis->SetNameTitle("hene", var.ytitle);
 	yaxis->CenterTitle();
@@ -475,6 +621,60 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	if(var.has_mc) leg->AddEntry(hmc, "MC", "ep");
 	leg->Draw();
 
+	if(var.has_mc){
+		pad_ratio->cd();
+		gPad->SetGridx();
+		gPad->SetGridy();
+		gPad->SetLogx();
+
+		TAxis *xaxis_ratio = hratio->GetXaxis();
+		TAxis *yaxis_ratio = hratio->GetYaxis();
+		if(var.has_xmin || var.has_xmax) xaxis_ratio->SetRangeUser(xdrawmin, xdrawmax);
+		xaxis_ratio->SetNameTitle("Energy [GeV]", "Energy [GeV]");
+		xaxis_ratio->CenterTitle();
+		xaxis_ratio->SetTitleFont(62);
+		xaxis_ratio->SetTitleSize(0.11);
+		xaxis_ratio->SetTitleOffset(1.1);
+		xaxis_ratio->SetLabelSize(0.10);
+		xaxis_ratio->SetLabelOffset(0.015);
+
+		yaxis_ratio->SetNameTitle("hratio", "ISS / MC");
+		yaxis_ratio->CenterTitle();
+		yaxis_ratio->SetTitleFont(62);
+		yaxis_ratio->SetTitleSize(0.10);
+		yaxis_ratio->SetTitleOffset(0.55);
+		yaxis_ratio->SetLabelSize(0.085);
+		yaxis_ratio->SetLabelOffset(0.012);
+		yaxis_ratio->SetNdivisions(505);
+
+		hratio->SetMinimum(ratio_ymin);
+		hratio->SetMaximum(ratio_ymax);
+		hratio->SetMarkerStyle(20);
+		hratio->SetMarkerSize(0.8);
+		hratio->SetMarkerColor(kBlack);
+		hratio->SetLineColor(kBlack);
+		hratio->SetLineWidth(2);
+
+		line_ratio->SetLineColor(kGray + 2);
+		line_ratio->SetLineStyle(2);
+		line_ratio->SetLineWidth(2);
+
+		gratio->SetMarkerStyle(20);
+		gratio->SetMarkerSize(0.8);
+		gratio->SetMarkerColor(kBlack);
+		gratio->SetLineColor(kBlack);
+		gratio->SetLineWidth(2);
+
+		gratio_smooth->SetLineColor(kGreen + 2);
+		gratio_smooth->SetLineWidth(3);
+
+		hratio->Draw("E1X0P");
+		line_ratio->Draw("same");
+		gratio_smooth->Draw("L same");
+		gratio->Draw("P same");
+		c->cd();
+	}
+
 	c->cd(0);
 	TLatex latex;
 	latex.SetNDC();
@@ -486,9 +686,19 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	//====write
 	c->SaveAs(var.foutname_pdf);
 	fout->cd();
+	if(var.has_mc){
+		hratio->Write("hratio");
+		gratio->Write("gratio");
+		gratio_smooth->Write("gratio_smooth");
+		line_ratio->Write("line_ratio_unity");
+	}
 	c->Write();
 	leg->Write("leg");
 	delete leg;
+	delete line_ratio;
+	delete gratio_smooth;
+	delete gratio;
+	delete hratio;
 	delete c;
 	fout->Write();
 	fout->Close();
