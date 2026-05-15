@@ -220,7 +220,11 @@ RUN_ONE(){
     local foutname_esc=""
 
     fpathname_use="$(NORMALIZE_FPATHNAME "${fpathname_now}")"
-    fpathname_mc_use="$(NORMALIZE_FPATHNAME "${fpathname_mc_now}")"
+    if [[ -n "${fpathname_mc_now}" ]]; then
+        fpathname_mc_use="$(NORMALIZE_FPATHNAME "${fpathname_mc_now}")"
+    else
+        fpathname_mc_use=""
+    fi
     yname_esc="$(ESC_CSTR "${YNAME}")"
     yerrname_esc="$(ESC_CSTR "${YERRNAME}")"
     ytitle_esc="$(ESC_CSTR "${YTITLE}")"
@@ -294,17 +298,13 @@ else
 fi
 
 f_mc_pattern="$(MATCH_MC_FPATHNAME "${f_iss_pattern}" || true)"
-if [[ -z "${f_mc_pattern}" ]]; then
-    echo "ERR RUN_ROOT ===== matched mc pattern not found: ${f_iss_pattern}"
-    exit 6
-fi
 if ! HAS_MATCHED_ROOT "${f_iss_pattern}"; then
     echo "ERR RUN_ROOT ===== no iss root files matched: ${f_iss_pattern}"
     exit 7
 fi
-if ! HAS_MATCHED_ROOT "${f_mc_pattern}"; then
-    echo "ERR RUN_ROOT ===== no mc root files matched: ${f_mc_pattern}"
-    exit 8
+if [[ -n "${f_mc_pattern}" ]] && ! HAS_MATCHED_ROOT "${f_mc_pattern}"; then
+    echo "WARN RUN_ROOT ===== no mc root files matched, switch to ISS-only mode: ${f_mc_pattern}"
+    f_mc_pattern=""
 fi
 
 echo "IN RUN_ROOT ===== iss_pattern=${f_iss_pattern}"

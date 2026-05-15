@@ -4,9 +4,9 @@ using namespace std;
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <filesystem>
 #include <glob.h>
-#include <set>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <string>
 #include <vector>
 
@@ -64,6 +64,7 @@ struct VarConf{
 	int nt;
 	int tmin;
 	int tmax;
+	bool has_mc;
 };
 
 struct VarDataEntry{
@@ -89,12 +90,12 @@ TString NORMALIZE_PATTERN(const TString &pattern){
 	if(pattern.Length() == 0) return pattern;
 	if(IS_WILDCARD_PATTERN(pattern)) return pattern;
 
-	std::filesystem::path path(pattern.Data());
-	if(std::filesystem::is_directory(path)){
+	struct stat stbuf;
+	if(stat(pattern.Data(), &stbuf) == 0 && S_ISDIR(stbuf.st_mode)){
 		return Form("%s/*.root", pattern.Strip(TString::kTrailing, '/').Data());
 	}
 	if(pattern.EndsWith(".root")) return pattern;
-	if(std::filesystem::exists(std::filesystem::path((pattern + ".root").Data()))){
+	if(access((pattern + ".root").Data(), F_OK) == 0){
 		return pattern + ".root";
 	}
 	return pattern + "*.root";
@@ -196,6 +197,7 @@ void INIT(int argc, char *argv[], VarConf &var){
 	var.nt = 6000;
 	var.tmin = 1305417600;
 	var.tmax = 1823817600;
+	var.has_mc = false;
 	//====get
 	if(argc > 1) var.fpath = argv[1];
 	if(argc > 2) var.fname = argv[2];
@@ -229,7 +231,10 @@ void INIT(int argc, char *argv[], VarConf &var){
 	//====process
 	if(var.fpathname.Length() == 0) var.fpathname = var.fpath + var.fname;
 	var.fpathname = NORMALIZE_PATTERN(var.fpathname);
-	if(var.fpathname_mc.Length() > 0) var.fpathname_mc = NORMALIZE_PATTERN(var.fpathname_mc);
+	if(var.fpathname_mc.Length() > 0){
+		var.fpathname_mc = NORMALIZE_PATTERN(var.fpathname_mc);
+		var.has_mc = true;
+	}
 	var.foutname_root = var.foutname + ".root";
 	var.foutname_pdf = var.foutname + ".pdf";
 	//====print
@@ -246,6 +251,7 @@ void INIT(int argc, char *argv[], VarConf &var){
 		<<" ymin="<<(var.has_ymin ? Form("%g", var.ymin) : TString("N/A"))
 		<<" ymax="<<(var.has_ymax ? Form("%g", var.ymax) : TString("N/A"))
 		<<" fpathname_mc="<<var.fpathname_mc
+		<<" has_mc="<<var.has_mc
 		<<" outbase="<<var.foutname
 		<<" nt="<<var.nt
 		<<" tmin="<<var.tmin
@@ -329,10 +335,12 @@ bool BUILD_SERIES(const VarConf &var, VarDataSeries &iss, VarDataSeries &mc, TH1
 		VarDataEntry entry_mc{};
 		int i_enebin = -1;
 
-		if(!MATCH_MC_FPATHNAME(fpathname_iss, fpathname_mc)) return false;
 		if(!READ_TFIT(var, fpathname_iss, entry_iss)) return false;
-		if(!READ_TFIT(var, fpathname_mc, entry_mc)) return false;
-		if(!CHECK_EMATCH(entry_iss, entry_mc)) return false;
+		if(var.has_mc){
+			if(!MATCH_MC_FPATHNAME(fpathname_iss, fpathname_mc)) return false;
+			if(!READ_TFIT(var, fpathname_mc, entry_mc)) return false;
+			if(!CHECK_EMATCH(entry_iss, entry_mc)) return false;
+		}
 
 		i_enebin = FIND_ENEBIN_INDEX(entry_iss.elow, entry_iss.eup);
 		if(i_enebin < 0){
@@ -343,7 +351,7 @@ bool BUILD_SERIES(const VarConf &var, VarDataSeries &iss, VarDataSeries &mc, TH1
 				<<endl;
 			return false;
 		}
-		if(is_filled_iss.at(i_enebin) || is_filled_mc.at(i_enebin)){
+		if(is_filled_iss.at(i_enebin) || (var.has_mc && is_filled_mc.at(i_enebin))){
 			cerr<<"ERR BUILD_SERIES ===== duplicate energy bin fill"
 				<<" i_enebin="<<i_enebin
 				<<" elow="<<entry_iss.elow
@@ -355,16 +363,18 @@ bool BUILD_SERIES(const VarConf &var, VarDataSeries &iss, VarDataSeries &mc, TH1
 
 		hiss->SetBinContent(i_enebin + 1, entry_iss.y);
 		hiss->SetBinError(i_enebin + 1, entry_iss.yerr);
-		hmc->SetBinContent(i_enebin + 1, entry_mc.y);
-		hmc->SetBinError(i_enebin + 1, entry_mc.yerr);
 		is_filled_iss.at(i_enebin) = true;
-		is_filled_mc.at(i_enebin) = true;
 		iss.vdata.push_back(entry_iss);
-		mc.vdata.push_back(entry_mc);
+		if(var.has_mc){
+			hmc->SetBinContent(i_enebin + 1, entry_mc.y);
+			hmc->SetBinError(i_enebin + 1, entry_mc.yerr);
+			is_filled_mc.at(i_enebin) = true;
+			mc.vdata.push_back(entry_mc);
+		}
 	}
 
 	for(int i_enebin=0; i_enebin<NENEBIN; i_enebin++){
-		if(!is_filled_iss.at(i_enebin) || !is_filled_mc.at(i_enebin)){
+		if(!is_filled_iss.at(i_enebin) || (var.has_mc && !is_filled_mc.at(i_enebin))){
 			cerr<<"ERR BUILD_SERIES ===== missing energy bin"
 				<<" i_enebin="<<i_enebin
 				<<" elow="<<ENERGY_BINS[i_enebin]
@@ -378,6 +388,7 @@ bool BUILD_SERIES(const VarConf &var, VarDataSeries &iss, VarDataSeries &mc, TH1
 	mc.n_entry = mc.vdata.size();
 	cout<<"IN BUILD_SERIES ===== n_entry_iss="<<iss.n_entry
 		<<" n_entry_mc="<<mc.n_entry
+		<<" has_mc="<<var.has_mc
 		<<endl;
 	return true;
 }
@@ -392,14 +403,14 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 		return false;
 	}
 	hiss->Write();
-	hmc->Write();
+	if(var.has_mc) hmc->Write();
 	//====init--canvas
-	TCanvas *c = new TCanvas("c","c",1000,500);
+	TCanvas *c = new TCanvas("c","c",1000,400);
 	TAxis *xaxis = hiss->GetXaxis();
 	TAxis *yaxis = hiss->GetYaxis();
 	//====canvas
 	hiss->SetStats(0);
-	hmc->SetStats(0);
+	if(var.has_mc) hmc->SetStats(0);
 	hiss->SetNameTitle("", "");
 	c->SetTopMargin(0.13);
 	c->SetBottomMargin(0.15);
@@ -408,6 +419,7 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	c->cd();
 	gPad->SetGridx();
 	gPad->SetGridy();
+	gPad->SetLogx();
 	//====x
 	if(var.has_xmin || var.has_xmax){
 		double xdrawmin = var.has_xmin ? var.xmin : ENERGY_BINS[0];
@@ -434,13 +446,16 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	hiss->SetLineColor(kBlue);
 	hiss->SetLineWidth(2);
 
-	hmc->SetMarkerStyle(24);
-	hmc->SetMarkerSize(0.9);
-	hmc->SetMarkerColor(kRed);
-	hmc->SetLineColor(kRed);
-	hmc->SetLineWidth(2);
+	if(var.has_mc){
+		hmc->SetMarkerStyle(24);
+		hmc->SetMarkerSize(0.9);
+		hmc->SetMarkerColor(kRed);
+		hmc->SetLineColor(kRed);
+		hmc->SetLineWidth(2);
+	}
 
-	double hmax = std::max(GET_HMAX(hiss), GET_HMAX(hmc));
+	double hmax = GET_HMAX(hiss);
+	if(var.has_mc) hmax = std::max(hmax, GET_HMAX(hmc));
 	if(var.has_ymin) hiss->SetMinimum(var.ymin);
 	else hiss->SetMinimum(0.0);
 	if(var.has_ymax) hiss->SetMaximum(var.ymax);
@@ -449,15 +464,15 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	//====draw
 	gStyle->SetEndErrorSize(0);
 	TGaxis::SetMaxDigits(3);
-	hiss->Draw("E1P");
-	hmc->Draw("E1P same");
+	hiss->Draw("E1X0P");
+	if(var.has_mc) hmc->Draw("E1X0P same");
 
 	TLegend *leg = new TLegend(0.18, 0.20, 0.30, 0.34);
 	leg->SetBorderSize(0);
 	leg->SetFillStyle(0);
 	leg->SetTextFont(62);
 	leg->AddEntry(hiss, "ISS", "ep");
-	leg->AddEntry(hmc, "MC", "ep");
+	if(var.has_mc) leg->AddEntry(hmc, "MC", "ep");
 	leg->Draw();
 
 	c->cd(0);
@@ -466,7 +481,7 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	latex.SetTextFont(62);
 	latex.SetTextSize(0.033);
 	latex.SetTextAlign(22);
-	latex.DrawLatex(0.5, 0.95, Form("Energy Dependence, nbin=%d", iss.n_entry));
+	// latex.DrawLatex(0.5, 0.95, Form("Energy Dependence, nbin=%d", iss.n_entry));
 
 	//====write
 	c->SaveAs(var.foutname_pdf);
@@ -483,6 +498,7 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	cout<<"IN DRAW ===== output pdf : "<<var.foutname_pdf<<endl;
 	cout<<"IN DRAW ===== n_entry_iss="<<iss.n_entry
 		<<" n_entry_mc="<<mc.n_entry
+		<<" has_mc="<<var.has_mc
 		<<endl;
 	return true;
 }
