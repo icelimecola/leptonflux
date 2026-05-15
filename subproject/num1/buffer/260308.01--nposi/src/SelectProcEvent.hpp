@@ -87,9 +87,9 @@ bool SelectProcEvent::PROCESS_SELECT_Preselect(){
     // bool cut_bdt=1;
     bool cut_bdt=
         // bdt_chargepid > 0;
-        // bdt_chargepid >= 0;
+        bdt_chargepid >= 0;
         // bdt_chargepid >= 0 && EmBDT>-0.995;
-        bdt_chargepid >= 0 && ccbdt>0.0;
+        // bdt_chargepid >= 0 && ccbdt>0.0;
         // bdt_chargepid >= 0 && ccbdt>0.0 && EmBDT>-0.995;
     //==================================== TOTAL
     bool totalcut= cut_trd && cut_ecal && cut_tof && cut_trk && cut_bdt;
