@@ -93,11 +93,11 @@ void SelectRun::SECLECT_RUN(){
         //----stormer
         // if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.2*ins_select.cf[0]) continue;
         //----igrf
-        // if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.0*ins_select.cfi[0]) continue;
+        if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.0*ins_select.cfi[0]) continue;
         // if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.1*ins_select.cfi[0]) continue;
         // if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.2*ins_select.cfi[0]) continue;
         //====cut--rig
-        if(ins_select.rig>=0) continue;     //----260516
+        // if(ins_select.rig>=0) continue;     //----260516
         //==== reset
         ins_select.PROCESS_ResetVar();
         //====process
