@@ -1,3 +1,9 @@
+//----gcx
+#include <iostream>
+using namespace std;
+//----gcx
+
+
 ///--Author Q.Yan qyan@cern.ch
 #ifndef _QSpline_
 #define _QSpline_
