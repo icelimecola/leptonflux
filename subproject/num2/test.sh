@@ -49,7 +49,7 @@ NFPJ=576
 
 
 # ==============================================
-for ENEBIN in $(seq 12 12); do
+for ENEBIN in $(seq 50 50); do
     echo "===== TEST START ====="
     echo "Transferring ENEBIN=$ENEBIN ..."
     echo "----------------------"
