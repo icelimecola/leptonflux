@@ -26,12 +26,15 @@ make -f ./scripts/Makefile
 # LISTDIR=/afs/cern.ch/user/c/chguan/public/250614.01-DAILYFLUX/00-LIST/02.3
 # LISTDIR=/afs/cern.ch/work/c/chguan/public/01--251112/00.1-LIST/02.3
 # LISTDIR=/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/00.1-LIST/02.3
-LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-LIST/02.3
+# LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-LIST/02.3
+LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-list/num3
 # ==========
+# ----nele
 # LISTNAME=tbin.txt
-# LISTNAME=tbinMC.txt
-# LISTNAME=tbin-num_posi.txt
-LISTNAME=tbinMC-num_posi.txt 
+# LISTNAME=tbinmc-nele.txt
+# ----npos
+# LISTNAME=tbin-npos.txt
+LISTNAME=tbinmc-npos.txt
 # ==========
 LIST=$LISTDIR/$LISTNAME
 # ==============================================

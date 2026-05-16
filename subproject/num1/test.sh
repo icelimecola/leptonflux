@@ -26,10 +26,11 @@ make -f ./scripts/Makefile
 # LISTDIR=/afs/cern.ch/user/c/chguan/public/250614.01-DAILYFLUX/00-LIST/02.1
 # LISTDIR=/afs/cern.ch/work/c/chguan/public/01--251112/00.1-LIST/02.1
 # LISTDIR=/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/00.1-LIST/02.1
-LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-LIST/02.1
+# LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-LIST/02.1
+LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-list/num1
 # ==========
 LISTNAME=tmini.txt
-# LISTNAME=tminiMC.txt
+# LISTNAME=tminimc.txt
 # ==========
 LIST=$LISTDIR/$LISTNAME
 # ==========
