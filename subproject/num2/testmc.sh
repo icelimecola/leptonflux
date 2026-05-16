@@ -34,7 +34,10 @@ LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-list/num2
 # LISTNAME=tbuffermc.txt
 # ----npos
 # LISTNAME=tbuffer-npos.txt
-LISTNAME=tbuffermc.txt
+# LISTNAME=tbuffermc.txt
+# ----seleff
+# LISTNAME=tbuffer-seleff.txt
+LISTNAME=tbuffermc-seleff.txt
 # ==========
 LIST=$LISTDIR/$LISTNAME
 # ==========
