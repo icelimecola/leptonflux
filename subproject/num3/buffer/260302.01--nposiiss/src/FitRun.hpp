@@ -105,7 +105,7 @@ void FitRun::FIT_RUN_iene(int i_enebin,vector<int>bin_division,int printlv){
         //====stormer
         // if(ins_fit.energy_bins[i_enebin]<1.2*ins_fit.cf[0]) continue;
         //====igrf
-        if(ins_fit.energy_bins[i_enebin]<1.1*ins_fit.cfi[0]) continue;
+        // if(ins_fit.energy_bins[i_enebin]<1.1*ins_fit.cfi[0]) continue;
         // if(ins_fit.energy_bins[i_enebin]<1.2*ins_fit.cfi[0]) continue;
         //======== cut--badrun
         if(ins_fit.isbadrun_daq || ins_fit.isbadrun_fov || ins_fit.isbadrun_ecal || ins_fit.isbadrun_trk) continue;

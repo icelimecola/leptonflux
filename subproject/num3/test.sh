@@ -33,8 +33,10 @@ LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-list/num3
 # LISTNAME=tbin.txt
 # LISTNAME=tbinmc-nele.txt
 # ----npos
-LISTNAME=tbin-npos.txt
+# LISTNAME=tbin-npos.txt
 # LISTNAME=tbinmc-npos.txt
+# ----seleff
+LISTNAME=tbin-seleff.txt
 # ==========
 LIST=$LISTDIR/$LISTNAME
 # ==============================================
