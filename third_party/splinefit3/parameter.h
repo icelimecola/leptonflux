@@ -1,5 +1,11 @@
 #ifndef PARAMETER_H
 #define PARAMETER_H
+
+//----gcx
+#include <iostream>
+using namespace std;
+//----gcx
+
 //------track
 const int NTKL=9;
 const float tk_pz[NTKL]={159.04,53.05,29.22,25.24,1.706,-2.292,-25.26,-29.25,-136.03};

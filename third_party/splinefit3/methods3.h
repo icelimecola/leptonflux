@@ -1,5 +1,20 @@
 #ifndef METHODS3_H
 #define METHODS3_H
+
+//----gcx
+#include <iostream>
+using namespace std;
+#include <TH1F.h>
+#include <TH2F.h>
+#include <TCanvas.h>
+#include <TLegend.h>
+#include <TGraphErrors.h>
+#include <TDirectory.h>
+//----
+#include "bins.h"
+#include "parameter.h"
+//----gcx
+
 //----------
 //updated from: methods2.h
 //updated date: 2017.10.06

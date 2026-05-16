@@ -1,3 +1,7 @@
+#include<iostream>
+using namespace std;
+#include <TF1.h>
+
 //----------
 //created date: 2019.01.15
 //functions to solve problems related to zero point searching using bisection method

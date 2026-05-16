@@ -1,5 +1,11 @@
 #ifndef BINS_H
 #define BINS_H
+
+//----gcx
+#include <iostream>
+using namespace std;
+//----gcx
+
 //-----------------
 //2017.11.06
 //	1) define a functions to retrieve what binning to use according to charge

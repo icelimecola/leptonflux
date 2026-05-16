@@ -1,3 +1,11 @@
+//----gcx
+#include <iostream>
+using namespace std;
+#include <TLine.h>
+#include <TArrow.h>
+#include <TF1.h>
+//----gcx
+
 //-----------------
 //updated from: /home/tim/Dampe/psd/includes_lib/drawline.h
 //update date: 2017.11.16
@@ -11,6 +19,9 @@
 //	1) change the opt nsigma for drawband, drawbandXY and drawArrow from int to float
 //-----------------
 //////////////////////////////
+
+
+
 //------new method - use TLine defined outside these draw functions, input the address as parameter
 //----TLine
 void setLineStyle(TLine &line, int style, int color, int width=1);
