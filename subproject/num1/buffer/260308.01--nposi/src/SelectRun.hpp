@@ -96,6 +96,8 @@ void SelectRun::SECLECT_RUN(){
         // if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.0*ins_select.cfi[0]) continue;
         // if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.1*ins_select.cfi[0]) continue;
         // if(ins_select.energy_bins[ins_select.PROCESS_GetEnebinIndex()]<1.2*ins_select.cfi[0]) continue;
+        //====cut--rig
+        if(ins_select.rig>=0) continue;     //----260516
         //==== reset
         ins_select.PROCESS_ResetVar();
         //====process
