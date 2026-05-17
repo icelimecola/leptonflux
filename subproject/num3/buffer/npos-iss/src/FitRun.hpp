@@ -111,9 +111,9 @@ void FitRun::FIT_RUN_iene(int i_enebin,vector<int>bin_division,int printlv){
         if(ins_fit.isbadrun_daq || ins_fit.isbadrun_fov || ins_fit.isbadrun_ecal || ins_fit.isbadrun_trk) continue;
         if(ins_fit.utime>=1305417600 && ins_fit.utime<=1307750400 && ins_fit.isbadrun_general) continue;
         //======== it
-        // int it = (ins_fit.utime-ins_fit.tmin)/ins_fit.wt;
-        // if(it<0 || it>=nt) continue;
-        int it = 0;
+        int it = (ins_fit.utime-ins_fit.tmin)/ins_fit.wt;
+        if(it<0 || it>=nt) continue;
+        // int it = 0;
         //======== imlat
         // int imlat = -1;
         // double wlat = ins_fit.wlat;

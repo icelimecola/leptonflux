@@ -69,16 +69,16 @@ class VarFittree: public VarBuffertree,public VarEneBin{
     void NoLatBin(int nolatbin = 0){nolat=nolatbin;}
     //============ tbin ============
     //==== noper
-    const double wt = 60*60*24*6000;
-    static const int nt=1;
-    const double tmin = 1305417600;
-    const double tmax = tmin+nt*wt;
+    // const double wt = 60*60*24*6000;
+    // static const int nt=1;
+    // const double tmin = 1305417600;
+    // const double tmax = tmin+nt*wt;
     //==== 1day
     //----prl130posi--260419
-    // const double wt = 60*60*24;  //---- 86400[s]
-    // static const int nt=6000;
-    // const double tmin = 1305417600;
-    // const double tmax = tmin+nt*wt;	    //----1823817600
+    const double wt = 60*60*24;  //---- 86400[s]
+    static const int nt=6000;
+    const double tmin = 1305417600;
+    const double tmax = tmin+nt*wt;	    //----1823817600
     //==== 27days
     //----prl130posi--260421
     // const double wt = 60*60*24*27;
