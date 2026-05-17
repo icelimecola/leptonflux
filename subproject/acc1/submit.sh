@@ -26,7 +26,8 @@ make -f ./scripts/Makefile
 # ==========
 # LISTDIR=/afs/cern.ch/user/c/chguan/public/250614.01-DAILYFLUX/00-LIST/02.3
 # LISTDIR=/afs/cern.ch/work/c/chguan/public/01--251112/00.1-LIST/04.1
-LISTDIR=/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/00.1-LIST/04.1
+# LISTDIR=/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/00.1-LIST/04.1
+LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-list/acc1
 # ==========
 LISTNAME=tskimMC.txt
 # ==========
@@ -42,7 +43,8 @@ NFPJ=10
 # ============================================== CONDOR
 # ==========
 ncpu=1
-# ========== JobFlavour--1h/2h/8h/1d/3d
+# ========== JobFlavour--20m/1h/2h/8h/1d/3d
+# jf="espresso"
 jf="microcentury"
 # jf="longlunch"
 # jf="workday"
