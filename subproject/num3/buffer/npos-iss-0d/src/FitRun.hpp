@@ -185,6 +185,27 @@ void FitRun::FIT_RUN_iene(int i_enebin,vector<int>bin_division,int printlv){
             ins_fit.fitR.trkeff = ins_fit.fitR.nTrkpass/ins_fit.fitR.nTrktotal;
             ins_fit.fitR.trkeff_err = TMath::Sqrt(ins_fit.fitR.trkeff*(1-ins_fit.fitR.trkeff)/ins_fit.fitR.nTrktotal);
         }
+        //----260517 trkeff
+        if(ins_fit.fitR.nPATtotal>0){
+            ins_fit.fitR.pateff = ins_fit.fitR.nPATpass/ins_fit.fitR.nPATtotal;
+            ins_fit.fitR.pateff_err = TMath::Sqrt(ins_fit.fitR.pateff*(1-ins_fit.fitR.pateff)/ins_fit.fitR.nPATtotal);
+        }
+        if(ins_fit.fitR.nMATCHtotal>0){
+            ins_fit.fitR.matcheff = ins_fit.fitR.nMATCHpass/ins_fit.fitR.nMATCHtotal;
+            ins_fit.fitR.matcheff_err = TMath::Sqrt(ins_fit.fitR.matcheff*(1-ins_fit.fitR.matcheff)/ins_fit.fitR.nMATCHtotal);
+        }
+        if(ins_fit.fitR.nCHI2total>0){
+            ins_fit.fitR.chi2eff = ins_fit.fitR.nCHI2pass/ins_fit.fitR.nCHI2total;
+            ins_fit.fitR.chi2eff_err = TMath::Sqrt(ins_fit.fitR.chi2eff*(1-ins_fit.fitR.chi2eff)/ins_fit.fitR.nCHI2total);
+        }
+        if(ins_fit.fitR.nQINtotal>0){
+            ins_fit.fitR.qineff = ins_fit.fitR.nQINpass/ins_fit.fitR.nQINtotal;
+            ins_fit.fitR.qineff_err = TMath::Sqrt(ins_fit.fitR.qineff*(1-ins_fit.fitR.qineff)/ins_fit.fitR.nQINtotal);
+        }
+        if(ins_fit.fitR.nNTRKtotal>0){
+            ins_fit.fitR.ntrkeff = ins_fit.fitR.nNTRKpass/ins_fit.fitR.nNTRKtotal;
+            ins_fit.fitR.ntrkeff_err = TMath::Sqrt(ins_fit.fitR.ntrkeff*(1-ins_fit.fitR.ntrkeff)/ins_fit.fitR.nNTRKtotal);
+        }
         //============ fit
         // cout<<"========fit--index======== ilat "<<ilat<<" ; it "<<it<<endl;
         //====loop skip
