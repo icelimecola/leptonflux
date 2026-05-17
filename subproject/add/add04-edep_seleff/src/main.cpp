@@ -15,7 +15,6 @@ using namespace std;
 #include "TFile.h"
 #include "TGraph.h"
 #include "TGraphErrors.h"
-#include "TGraphSmooth.h"
 #include "TTree.h"
 #include "TChain.h"
 #include "TH1D.h"
@@ -26,6 +25,8 @@ using namespace std;
 #include "TGaxis.h"
 #include "TLatex.h"
 #include "TLegend.h"
+
+#include "../../../../third_party/splinefit3/splineFit3.h"
 
 //====================================================
 const int NENEBIN = 54;
@@ -488,7 +489,9 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	if(var.has_mc) hmc->Write();
 	TH1D *hratio = nullptr;
 	TGraphErrors *gratio = nullptr;
-	TGraph *gratio_smooth = nullptr;
+	SplineFit *spfit_ratio = nullptr;
+	TGraph *gratio_conf_band = nullptr;
+	TGraphErrors *gratio_conf = nullptr;
 	TLine *line_ratio = nullptr;
 	vector<double> vx_ratio;
 	vector<double> vy_ratio;
@@ -523,11 +526,21 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 		}
 		gratio = new TGraphErrors(vx_ratio.size(), &vx_ratio[0], &vy_ratio[0], &vex_ratio[0], &ve_ratio[0]);
 		gratio->SetName("gratio");
-		TGraphSmooth *smoother = new TGraphSmooth("ratio_smoother");
-		TGraph *gratio_smooth_tmp = smoother->SmoothLowess(gratio, "", 0.30);
-		if(gratio_smooth_tmp == nullptr){
-			cerr<<"ERR DRAW ===== failed to build ratio smooth graph"<<endl;
-			delete smoother;
+		spfit_ratio = new SplineFit(6, "b2e1",
+				SplineFit::LogX | SplineFit::ExtrapolateLB | SplineFit::ExtrapolateLE);
+		spfit_ratio->SetRange(xdrawmin, xdrawmax);
+		spfit_ratio->BuildTF1("spfit_ratio");
+		spfit_ratio->SetGraph(gratio);
+		double xnode_ratio[6] = {1.10, 3.32, 4.87, 12.08, 16.71, 39.14};
+		spfit_ratio->SetNodesByX(xnode_ratio);
+		spfit_ratio->SetXnodeLimits(0);
+		spfit_ratio->doFit(xdrawmin, xdrawmax, "FQ");
+		gratio_conf = spfit_ratio->CalConfInt(0.68);
+		// gratio_conf = spfit_ratio->CalConfInt(0.98);
+		gratio_conf_band = spfit_ratio->GetConfIntBand(3001, kGreen + 1);
+		if(gratio_conf == nullptr || gratio_conf_band == nullptr){
+			cerr<<"ERR DRAW ===== failed to build ratio spline confidence interval"<<endl;
+			delete spfit_ratio;
 			delete gratio;
 			delete hratio;
 			delete c;
@@ -535,9 +548,6 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 			delete fout;
 			return false;
 		}
-		gratio_smooth = static_cast<TGraph *>(gratio_smooth_tmp->Clone("gratio_smooth"));
-		delete smoother;
-		gratio_smooth->SetName("gratio_smooth");
 		line_ratio = new TLine(xdrawmin, 1.0, xdrawmax, 1.0);
 
 		pad_top = new TPad("pad_top", "pad_top", 0.0, 0.32, 1.0, 1.0);
@@ -665,13 +675,21 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 		gratio->SetLineColor(kBlack);
 		gratio->SetLineWidth(2);
 
-		gratio_smooth->SetLineColor(kGreen + 2);
-		gratio_smooth->SetLineWidth(3);
+		gratio_conf_band->SetName("gratio_conf_band");
+		gratio_conf_band->SetFillColor(kRed - 4);
+		gratio_conf_band->SetFillStyle(3002);
+		gratio_conf_band->SetLineColor(kRed + 1);
+		gratio_conf_band->SetLineWidth(2);
+		// spfit_ratio->f1SplineFit->SetLineColor(kBlue + 1);
+		spfit_ratio->f1SplineFit->SetLineColor(kRed + 1);
+		spfit_ratio->f1SplineFit->SetLineWidth(2);
+		spfit_ratio->f1SplineFit->SetLineStyle(1);
 
 		hratio->Draw("E1X0P");
 		line_ratio->Draw("same");
-		gratio_smooth->Draw("L same");
-		gratio->Draw("P same");
+		gratio_conf_band->Draw("F same");
+		spfit_ratio->f1SplineFit->Draw("L same");
+		// gratio->Draw("P same");
 		c->cd();
 	}
 
@@ -686,17 +704,19 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	//====write
 	c->SaveAs(var.foutname_pdf);
 	fout->cd();
-	if(var.has_mc){
-		hratio->Write("hratio");
-		gratio->Write("gratio");
-		gratio_smooth->Write("gratio_smooth");
-		line_ratio->Write("line_ratio_unity");
-	}
+		if(var.has_mc){
+			hratio->Write("hratio");
+			gratio->Write("gratio");
+			gratio_conf->Write("gratio_conf");
+			gratio_conf_band->Write("gratio_conf_band");
+			spfit_ratio->f1SplineFit->Write("spfit_ratio");
+			line_ratio->Write("line_ratio_unity");
+		}
 	c->Write();
 	leg->Write("leg");
 	delete leg;
 	delete line_ratio;
-	delete gratio_smooth;
+	delete spfit_ratio;
 	delete gratio;
 	delete hratio;
 	delete c;
