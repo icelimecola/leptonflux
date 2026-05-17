@@ -82,7 +82,7 @@
 #include "parameter.h"
 #include "methods3.h"
 #include "drawline.h"
-#include "QSplineFit.C"
+#include "QSplineFit.cpp"
 
 //using namespace RooFit;
 
