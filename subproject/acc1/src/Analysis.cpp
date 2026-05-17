@@ -3,6 +3,7 @@
 #include <TH2.h>
 #include <TStyle.h>
 #include <TGraph.h>
+#include "TDatime.h"
 
 /*
 void Analysis::BuildMCWeight(){
@@ -212,7 +213,13 @@ void Analysis::LoopChain(){
 	TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("hfluxpos") );
 	//====loop
 	for(long entry=0; entry<nentries; entry++){
-		if( (entry+1)%nprint == 0 ) cout << Form("processed %ld / %ld ... ", entry, nentries) << endl;
+		TDatime t;
+		if(entry%nprint==0 || entry==nentries-1){
+			double progress = 100.0*(entry+1)/nentries;
+			cout<<Form("%02d:%02d:%02d", t.GetHour(), t.GetMinute(), t.GetSecond())
+				<<" Processing entry "<<entry<<" / "<<nentries
+				<<" ("<<Form("%.2f", progress)<<"%)"<<endl;
+		}
 		fChain->GetEntry( entry );
 		//====init
 		ecal_enc *= 0.975;
@@ -364,26 +371,26 @@ void Analysis::LoopChain(){
 		// cut[15] = rigidity<0;
 		// cut[16] = rigidity>0;
 		//----mine 260324.01--ccratio(wangyu+)--newcut4.1&4.2
-		// cut[0] = tof_betah > 0.8;
-		cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
-		cut[1] = (inecal&3)==3;
-		cut[2] = (trkecalmatch&12)==12;
-		cut[3] = tof_qup >0. && tof_qup < 3.0;	//*
-		cut[4] = tof_qlow>0. && tof_qlow< 5.0;
-		cut[5] = trk_qin > 0.7 && trk_qin < 1.5; 
-		cut[6] = EmBDT>-0.995;
-		cut[7] = (trk_pat&259) && (lvl1_PhysBPatt&62);	//----260318发现并修正
-		cut[8] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
-		cut[9] = TMath::Abs(Ene/rigidity)>0.65&&TMath::Abs(Ene/rigidity)<5.00&&bdt_chargepid>=0;
-		cut[10] = trk_ntrk<=2 && trd_nhits[2]>=12;	//*
-		// cut[11] = rigidity * mcinfo_q > 0 && trd_klkhd[2][0]<1.5 ;
-		cut[11] = trd_klkhd[2][0]<1.5 ;
-		cut[12] = trd_klkhd[2][1]<0.8;
-		cut[13] = trd_new<0.6;
-		// cut[13] = trd_new<0.7;	//* 4.1
-		cut[14] = bdtx_combined>0.0; // eff = 0.96
-		cut[15] = rigidity<0;
-		cut[16] = rigidity>0;
+		// // cut[0] = tof_betah > 0.8;
+		// cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
+		// cut[1] = (inecal&3)==3;
+		// cut[2] = (trkecalmatch&12)==12;
+		// cut[3] = tof_qup >0. && tof_qup < 3.0;	//*
+		// cut[4] = tof_qlow>0. && tof_qlow< 5.0;
+		// cut[5] = trk_qin > 0.7 && trk_qin < 1.5; 
+		// cut[6] = EmBDT>-0.995;
+		// cut[7] = (trk_pat&259) && (lvl1_PhysBPatt&62);	//----260318发现并修正
+		// cut[8] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
+		// cut[9] = TMath::Abs(Ene/rigidity)>0.65&&TMath::Abs(Ene/rigidity)<5.00&&bdt_chargepid>=0;
+		// cut[10] = trk_ntrk<=2 && trd_nhits[2]>=12;	//*
+		// // cut[11] = rigidity * mcinfo_q > 0 && trd_klkhd[2][0]<1.5 ;
+		// cut[11] = trd_klkhd[2][0]<1.5 ;
+		// cut[12] = trd_klkhd[2][1]<0.8;
+		// cut[13] = trd_new<0.6;
+		// // cut[13] = trd_new<0.7;	//* 4.1
+		// cut[14] = bdtx_combined>0.0; // eff = 0.96
+		// cut[15] = rigidity<0;
+		// cut[16] = rigidity>0;
 		//----mine 260330.01--ccratio(wangyu+)--newcut5--ntrk1
 		// // cut[0] = tof_betah > 0.8;
 		// cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
@@ -406,6 +413,29 @@ void Analysis::LoopChain(){
 		// cut[14] = bdtx_combined>0.0; // eff = 0.96
 		// cut[15] = rigidity<0;
 		// cut[16] = rigidity>0;
+		//----260517
+		// cut[0] = tof_betah > 0.8;
+		cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
+		cut[1] = (inecal&3)==3;
+		cut[2] = (trkecalmatch&12)==12;
+		cut[3] = tof_qup >0. && tof_qup < 3.0;	//*
+		cut[4] = tof_qlow>0. && tof_qlow< 5.0;
+		cut[5] = trk_qin > 0.7 && trk_qin < 1.5; 
+		cut[6] = EmBDT>-0.995;
+		cut[7] = (trk_pat&259) && (lvl1_PhysBPatt&62);	//----260318发现并修正
+		cut[8] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
+		// cut[9] = TMath::Abs(Ene/rigidity)>0.65&&TMath::Abs(Ene/rigidity)<5.00&&bdt_chargepid>=0;
+		cut[9] = bdt_chargepid>=0;
+		cut[10] = trk_ntrk<=2 && trd_nhits[2]>=12;	//*
+		// cut[11] = rigidity * mcinfo_q > 0 && trd_klkhd[2][0]<1.5 ;
+		cut[11] = trd_klkhd[2][0]<1.5 ;
+		cut[12] = trd_klkhd[2][1]<0.8;
+		cut[13] = trd_new<0.6;
+		// cut[13] = trd_new<0.7;	//* 4.1
+		// cut[14] = bdtx_combined>0.0; // eff = 0.96
+		cut[14] = trd_new<0.6; // eff = 0.96
+		cut[15] = rigidity<0;
+		cut[16] = rigidity>0;
 		//========fill hist
 		//----original
 		// bool passed = 1;
