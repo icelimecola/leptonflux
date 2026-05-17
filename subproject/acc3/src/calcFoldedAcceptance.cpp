@@ -685,17 +685,17 @@ int main(){
 		cc_ene->SetBinError(i+1, cc_err);
 	}
 	//====save cc
-	fout->cd();
-		hgen_ele->Write();
-		hgen_elecc->Write();
-		hrec_ele->Write();
-		hrec_elecc->Write();
-		cc_ene->Write();
-	//============ save ============
 	// fout->cd();
-	// for(int i=0; i<nCut; i++){
-	// 	if( hacc[i] ) hacc[i]->Write();
-	// }
+		// hgen_ele->Write();
+		// hgen_elecc->Write();
+		// hrec_ele->Write();
+		// hrec_elecc->Write();
+		// cc_ene->Write();
+	//============ save ============
+	fout->cd();
+	for(int i=0; i<nCut; i++){
+		if( hacc[i] ) hacc[i]->Write();
+	}
 	fout->Close();
 	//============ return ============
 	return 0;
