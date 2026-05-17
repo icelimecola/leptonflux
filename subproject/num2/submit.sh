@@ -57,8 +57,8 @@ ncpu=1
 # memory=1000M
 # ========== JobFlavour--1h/2h/8h/1d/3d
 # jf="microcentury"
-jf="longlunch"
-# jf="workday"
+# jf="longlunch"
+jf="workday"
 # jf="tomorrow"
 # jf="testmatch"
 
