@@ -58,12 +58,24 @@ class FitHist:virtual public VarFittree{
         TH1D* hECALtotal[nlat][nt];
         TH1D* hTrkpass[nlat][nt];
         TH1D* hTrktotal[nlat][nt];
+        //----260517
+        TH1D* hTrkpass_pat[nlat][nt];
+        TH1D* hTrktotal_pat[nlat][nt];
+        TH1D* hTrkpass_match[nlat][nt];
+        TH1D* hTrktotal_match[nlat][nt];
+        TH1D* hTrkpass_chi2[nlat][nt];
+        TH1D* hTrktotal_chi2[nlat][nt];
+        TH1D* hTrkpass_qin[nlat][nt];
+        TH1D* hTrktotal_qin[nlat][nt];
+        TH1D* hTrkpass_ntrk[nlat][nt];
+        TH1D* hTrktotal_ntrk[nlat][nt];
 };
 
 
 bool FitHist::FITHIST_cut_PreSelect(int SelEffType = 0, int passcut = 0){
     //---- SelEffType
     //* 0-all 1-TOF 2-TRD 3-trk 4-ecal
+    //* 31-pat 32-match 33-chi2 34-qin 35-ntrk
     //---- passcut
     //* 0-totalcut; 1-passcut; both--num&trig 
     //==================== TOF
@@ -81,7 +93,7 @@ bool FitHist::FITHIST_cut_PreSelect(int SelEffType = 0, int passcut = 0){
         else cut_tof=1;
     }
     //====tof--eff_trd&trk&ecal
-    if(SelEffType == 2 || SelEffType == 3 || SelEffType == 4){
+    if(SelEffType == 2 || SelEffType == 3 || SelEffType == 4 || SelEffType/10 == 3){
         cut_tof = 
             beta > 0.8 
             && tofqup  > 0.7 && tofqup < 1.7
@@ -106,7 +118,7 @@ bool FitHist::FITHIST_cut_PreSelect(int SelEffType = 0, int passcut = 0){
         else cut_trd=1;
     }
     //====trd--eff_tof&trk&ecal
-    if(SelEffType == 1 || SelEffType == 3 || SelEffType == 4){
+    if(SelEffType == 1 || SelEffType == 3 || SelEffType == 4 || SelEffType/10 == 3){
         cut_trd =
             trdnhits2 >= 12 
             && trdlkhde2 < 1.5
@@ -124,6 +136,15 @@ bool FitHist::FITHIST_cut_PreSelect(int SelEffType = 0, int passcut = 0){
             // && ntrk < 2;
             // && ntrk == 1;
             && ntrk <= 2;
+    //====trk--eff_tof&trd&ecal
+    if(SelEffType == 1 || SelEffType == 2 || SelEffType == 4){
+        cut_trk= 
+            (pat&259) 
+            && (trkecalmatch&12)==12
+            && chi2x < 20 && chi2y < 20
+            && qin > 0.7 && qin < 1.5
+            && ntrk == 1;
+    }
     //====trk--eff_trk
     if(SelEffType == 3){
         if(passcut) cut_trk= 
@@ -134,14 +155,75 @@ bool FitHist::FITHIST_cut_PreSelect(int SelEffType = 0, int passcut = 0){
             && ntrk <= 2;
         else cut_trk=1;
     }
-    //====trk--eff_tof&trd&ecal
-    if(SelEffType == 1 || SelEffType == 2 || SelEffType == 4){
-        cut_trk= 
+    //====trk--eff_trk----pat
+    if(SelEffType == 31){
+        if(passcut) cut_trk= 
             (pat&259) 
             && (trkecalmatch&12)==12
             && chi2x < 20 && chi2y < 20
             && qin > 0.7 && qin < 1.5
-            && ntrk == 1;
+            && ntrk <= 2;
+        else cut_trk= 
+            (trkecalmatch&12)==12
+            && chi2x < 20 && chi2y < 20
+            && qin > 0.7 && qin < 1.5
+            && ntrk <= 2;
+    }
+    //====trk--eff_trk----match
+    if(SelEffType == 32){
+        if(passcut) cut_trk= 
+            (pat&259) 
+            && (trkecalmatch&12)==12
+            && chi2x < 20 && chi2y < 20
+            && qin > 0.7 && qin < 1.5
+            && ntrk <= 2;
+        else cut_trk=
+            (pat&259)
+            && chi2x < 20 && chi2y < 20
+            && qin > 0.7 && qin < 1.5
+            && ntrk <= 2;
+    }
+    //====trk--eff_trk----chi2
+    if(SelEffType == 33){
+        if(passcut) cut_trk=
+            (pat&259) 
+            && (trkecalmatch&12)==12
+            && chi2x < 20 && chi2y < 20
+            && qin > 0.7 && qin < 1.5
+            && ntrk <= 2;
+        else cut_trk=
+            (pat&259)
+            && (trkecalmatch&12)==12
+            && qin > 0.7 && qin < 1.5
+            && ntrk <= 2;
+    }
+    //====trk--eff_trk----qin
+    if(SelEffType == 34){
+        if(passcut) cut_trk=
+            (pat&259) 
+            && (trkecalmatch&12)==12
+            && chi2x < 20 && chi2y < 20
+            && qin > 0.7 && qin < 1.5
+            && ntrk <= 2;
+        else cut_trk=
+            (pat&259)
+            && (trkecalmatch&12)==12
+            && chi2x < 20 && chi2y < 20
+            && ntrk <= 2;
+    }
+    //====trk--eff_trk----ntrk
+    if(SelEffType == 35){
+        if(passcut) cut_trk=
+            (pat&259) 
+            && (trkecalmatch&12)==12
+            && chi2x < 20 && chi2y < 20
+            && qin > 0.7 && qin < 1.5
+            && ntrk <= 2;
+        else cut_trk=
+            (pat&259)
+            && (trkecalmatch&12)==12
+            && chi2x < 20 && chi2y < 20
+            && qin > 0.7 && qin < 1.5;
     }
     
     //==================== ECAL
@@ -154,7 +236,7 @@ bool FitHist::FITHIST_cut_PreSelect(int SelEffType = 0, int passcut = 0){
             hadflag==0;
     }
     //====ecal--eff_tof&trd&trk
-    if(SelEffType == 1 || SelEffType == 2 || SelEffType == 3){
+    if(SelEffType == 1 || SelEffType == 2 || SelEffType == 3 || SelEffType/10 == 3){
         cut_ecal = 
             hadflag==0 
             && Lkhd0<2.8;
@@ -227,6 +309,7 @@ void FitHist::FITHIST_InitH(){
     //----260407 seleffhist
     for(int ilat = 0; ilat < nlat; ilat++){
     for(int it = 0; it < nt; it++){
+        //----seleff
         hTOFpass[ilat][it]=new TH1D(Form("TOFpass_ilat%d_it%d",ilat,it),"TOF Sample Pass",1,0,2);
         hTOFtotal[ilat][it]=new TH1D(Form("TOFtotal_ilat%d_it%d",ilat,it),"TOF Sample Total",1,0,2);
         hTRDpass[ilat][it]=new TH1D(Form("TRDpass_ilat%d_it%d",ilat,it),"TRD Sample Pass",1,0,2);
@@ -235,6 +318,17 @@ void FitHist::FITHIST_InitH(){
         hECALtotal[ilat][it]=new TH1D(Form("ECALtotal_ilat%d_it%d",ilat,it),"ECAL Sample Total",1,0,2);
         hTrkpass[ilat][it]=new TH1D(Form("Trkpass_ilat%d_it%d",ilat,it),"Tracker Sample Pass",1,0,2);
         hTrktotal[ilat][it]=new TH1D(Form("Trktotal_ilat%d_it%d",ilat,it),"Tracker Sample Total",1,0,2);
+        //----trkeff
+        hTrkpass_pat[ilat][it]=new TH1D(Form("Trkpass_pat_ilat%d_it%d",ilat,it),"Tracker Sample Pass with pat",1,0,2);
+        hTrktotal_pat[ilat][it]=new TH1D(Form("Trktotal_pat_ilat%d_it%d",ilat,it),"Tracker Sample Total with pat",1,0,2);
+        hTrkpass_match[ilat][it]=new TH1D(Form("Trkpass_match_ilat%d_it%d",ilat,it),"Tracker Sample Pass with match",1,0,2);
+        hTrktotal_match[ilat][it]=new TH1D(Form("Trktotal_match_ilat%d_it%d",ilat,it),"Tracker Sample Total with match",1,0,2);
+        hTrkpass_chi2[ilat][it]=new TH1D(Form("Trkpass_chi2_ilat%d_it%d",ilat,it),"Tracker Sample Pass with chi2",1,0,2);
+        hTrktotal_chi2[ilat][it]=new TH1D(Form("Trktotal_chi2_ilat%d_it%d",ilat,it),"Tracker Sample Total with chi2",1,0,2);
+        hTrkpass_qin[ilat][it]=new TH1D(Form("Trkpass_qin_ilat%d_it%d",ilat,it),"Tracker Sample Pass with qin",1,0,2);
+        hTrktotal_qin[ilat][it]=new TH1D(Form("Trktotal_qin_ilat%d_it%d",ilat,it),"Tracker Sample Total with qin",1,0,2);
+        hTrkpass_ntrk[ilat][it]=new TH1D(Form("Trkpass_ntrk_ilat%d_it%d",ilat,it),"Tracker Sample Pass with ntrk",1,0,2);
+        hTrktotal_ntrk[ilat][it]=new TH1D(Form("Trktotal_ntrk_ilat%d_it%d",ilat,it),"Tracker Sample Total with ntrk",1,0,2);
     }
     }
 }
@@ -326,6 +420,21 @@ void FitHist::FITHIST_FillH(int iene,int ilat,int it,int entry){
     if(FITHIST_cut_PreSelect(3,0) && samplecut){
         if(rig<0) hTrktotal[ilat][it]->Fill(1,1);
     }
+    //========trk--pat
+    if(FITHIST_cut_PreSelect(31,1) && samplecut && rig<0) hTrkpass_pat[ilat][it]->Fill(1,1);
+    if(FITHIST_cut_PreSelect(31,0) && samplecut && rig<0) hTrktotal_pat[ilat][it]->Fill(1,1);
+    //========trk--match
+    if(FITHIST_cut_PreSelect(32,1) && samplecut && rig<0) hTrkpass_match[ilat][it]->Fill(1,1);
+    if(FITHIST_cut_PreSelect(32,0) && samplecut && rig<0) hTrktotal_match[ilat][it]->Fill(1,1);
+    //========trk--chi2
+    if(FITHIST_cut_PreSelect(33,1) && samplecut && rig<0) hTrkpass_chi2[ilat][it]->Fill(1,1);
+    if(FITHIST_cut_PreSelect(33,0) && samplecut && rig<0) hTrktotal_chi2[ilat][it]->Fill(1,1);
+    //========trk--qin
+    if(FITHIST_cut_PreSelect(34,1) && samplecut && rig<0) hTrkpass_qin[ilat][it]->Fill(1,1);
+    if(FITHIST_cut_PreSelect(34,0) && samplecut && rig<0) hTrktotal_qin[ilat][it]->Fill(1,1);
+    //========trk--ntrk
+    if(FITHIST_cut_PreSelect(35,1) && samplecut && rig<0) hTrkpass_ntrk[ilat][it]->Fill(1,1);
+    if(FITHIST_cut_PreSelect(35,0) && samplecut && rig<0) hTrktotal_ntrk[ilat][it]->Fill(1,1);
     //====ecal
     samplecut=
         // lvl1_PhysBPatt&62 && trdlkhdnew<0.6 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00;
@@ -366,6 +475,17 @@ void FitHist::FITHIST_SaveH(){
         hECALtotal[ilat][it]->Write();
         hTrkpass[ilat][it]->Write();
         hTrktotal[ilat][it]->Write();
+        //============ trkeff
+        hTrkpass_pat[ilat][it]->Write();
+        hTrktotal_pat[ilat][it]->Write();
+        hTrkpass_match[ilat][it]->Write();
+        hTrktotal_match[ilat][it]->Write();
+        hTrkpass_chi2[ilat][it]->Write();
+        hTrktotal_chi2[ilat][it]->Write();
+        hTrkpass_qin[ilat][it]->Write();
+        hTrktotal_qin[ilat][it]->Write();
+        hTrkpass_ntrk[ilat][it]->Write();
+        hTrktotal_ntrk[ilat][it]->Write();
     }
     }
     h1_EoP->Write();
@@ -396,6 +516,17 @@ void FitHist::FITHIST_SaveH(int ilat,int it){
     hECALtotal[ilat][it]->Write();
     hTrkpass[ilat][it]->Write();
     hTrktotal[ilat][it]->Write();
+    //============ trkeff
+    hTrkpass_pat[ilat][it]->Write();
+    hTrktotal_pat[ilat][it]->Write();
+    hTrkpass_match[ilat][it]->Write();
+    hTrktotal_match[ilat][it]->Write();
+    hTrkpass_chi2[ilat][it]->Write();
+    hTrktotal_chi2[ilat][it]->Write();
+    hTrkpass_qin[ilat][it]->Write();
+    hTrktotal_qin[ilat][it]->Write();
+    hTrkpass_ntrk[ilat][it]->Write();
+    hTrktotal_ntrk[ilat][it]->Write();
 }
 
 
@@ -451,6 +582,27 @@ void FitHist::FITHIST_FillFitR(int ilat,int it){
     fitR.nTrkpass_err=hTrkpass[ilat][it]->GetBinError(1);
     fitR.nTrktotal=hTrktotal[ilat][it]->GetBinContent(1);
     fitR.nTrktotal_err=hTrktotal[ilat][it]->GetBinError(1);
+    //==== trkeff SampleEntries 260517
+    fitR.nPATpass=hTrkpass_pat[ilat][it]->GetBinContent(1);
+    fitR.nPATpass_err=hTrkpass_pat[ilat][it]->GetBinError(1);
+    fitR.nPATtotal=hTrktotal_pat[ilat][it]->GetBinContent(1);
+    fitR.nPATtotal_err=hTrktotal_pat[ilat][it]->GetBinError(1);
+    fitR.nMATCHpass=hTrkpass_match[ilat][it]->GetBinContent(1);
+    fitR.nMATCHpass_err=hTrkpass_match[ilat][it]->GetBinError(1);
+    fitR.nMATCHtotal=hTrktotal_match[ilat][it]->GetBinContent(1);
+    fitR.nMATCHtotal_err=hTrktotal_match[ilat][it]->GetBinError(1);
+    fitR.nCHI2pass=hTrkpass_chi2[ilat][it]->GetBinContent(1);
+    fitR.nCHI2pass_err=hTrkpass_chi2[ilat][it]->GetBinError(1);
+    fitR.nCHI2total=hTrktotal_chi2[ilat][it]->GetBinContent(1);
+    fitR.nCHI2total_err=hTrktotal_chi2[ilat][it]->GetBinError(1);
+    fitR.nQINpass=hTrkpass_qin[ilat][it]->GetBinContent(1);
+    fitR.nQINpass_err=hTrkpass_qin[ilat][it]->GetBinError(1);
+    fitR.nQINtotal=hTrktotal_qin[ilat][it]->GetBinContent(1);
+    fitR.nQINtotal_err=hTrktotal_qin[ilat][it]->GetBinError(1);
+    fitR.nNTRKpass=hTrkpass_ntrk[ilat][it]->GetBinContent(1);
+    fitR.nNTRKpass_err=hTrkpass_ntrk[ilat][it]->GetBinError(1);
+    fitR.nNTRKtotal=hTrktotal_ntrk[ilat][it]->GetBinContent(1);
+    fitR.nNTRKtotal_err=hTrktotal_ntrk[ilat][it]->GetBinError(1);
 }
 
 

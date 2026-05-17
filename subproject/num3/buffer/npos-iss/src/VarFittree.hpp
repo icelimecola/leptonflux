@@ -53,6 +53,24 @@ class VarFittree: public VarBuffertree,public VarEneBin{
         double trdeff,trdeff_err;
         double ecaleff,ecaleff_err;
         double trkeff,trkeff_err;
+        //----260517 trkeff
+        //--------N
+        double nPATpass, nPATpass_err;
+        double nPATtotal, nPATtotal_err;
+        double nMATCHpass, nMATCHpass_err;
+        double nMATCHtotal, nMATCHtotal_err;
+        double nCHI2pass, nCHI2pass_err;
+        double nCHI2total, nCHI2total_err;
+        double nQINpass, nQINpass_err;
+        double nQINtotal, nQINtotal_err;
+        double nNTRKpass, nNTRKpass_err;
+        double nNTRKtotal, nNTRKtotal_err;
+        //--------EFF
+        double pateff,pateff_err;
+        double matcheff,matcheff_err;
+        double chi2eff,chi2eff_err;
+        double qineff,qineff_err;
+        double ntrkeff,ntrkeff_err;
     }fitR{};
     //============ latbin ============
     //==== nlat

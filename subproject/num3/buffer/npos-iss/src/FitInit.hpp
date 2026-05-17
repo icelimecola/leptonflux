@@ -215,4 +215,39 @@ void FitInit::INIT_TREEARRAY_BuildBrand(const vector<int>& index, int i,TTree**&
 	ins_treearray[i]->Branch("nTrktotal_err", &(fitR.nTrktotal_err), "nTrktotal_err/D");
 	ins_treearray[i]->Branch("trkeff", &(fitR.trkeff), "trkeff/D");
 	ins_treearray[i]->Branch("trkeff_err", &(fitR.trkeff_err), "trkeff_err/D");
+	//----pat
+	ins_treearray[i]->Branch("nPATpass", &(fitR.nPATpass), "nPATpass/D");
+	ins_treearray[i]->Branch("nPATpass_err", &(fitR.nPATpass_err), "nPATpass_err/D");
+	ins_treearray[i]->Branch("nPATtotal", &(fitR.nPATtotal), "nPATtotal/D");
+	ins_treearray[i]->Branch("nPATtotal_err", &(fitR.nPATtotal_err), "nPATtotal_err/D");
+	ins_treearray[i]->Branch("pateff", &(fitR.pateff), "pateff/D");
+	ins_treearray[i]->Branch("pateff_err", &(fitR.pateff_err), "pateff_err/D");
+	//----match
+	ins_treearray[i]->Branch("nMATCHpass", &(fitR.nMATCHpass), "nMATCHpass/D");
+	ins_treearray[i]->Branch("nMATCHpass_err", &(fitR.nMATCHpass_err), "nMATCHpass_err/D");
+	ins_treearray[i]->Branch("nMATCHtotal", &(fitR.nMATCHtotal), "nMATCHtotal/D");
+	ins_treearray[i]->Branch("nMATCHtotal_err", &(fitR.nMATCHtotal_err), "nMATCHtotal_err/D");
+	ins_treearray[i]->Branch("matcheff", &(fitR.matcheff), "matcheff/D");
+	ins_treearray[i]->Branch("matcheff_err", &(fitR.matcheff_err), "matcheff_err/D");
+	//----chi2
+	ins_treearray[i]->Branch("nCHI2pass", &(fitR.nCHI2pass), "nCHI2pass/D");
+	ins_treearray[i]->Branch("nCHI2pass_err", &(fitR.nCHI2pass_err), "nCHI2pass_err/D");
+	ins_treearray[i]->Branch("nCHI2total", &(fitR.nCHI2total), "nCHI2total/D");
+	ins_treearray[i]->Branch("nCHI2total_err", &(fitR.nCHI2total_err), "nCHI2total_err/D");
+	ins_treearray[i]->Branch("chi2eff", &(fitR.chi2eff), "chi2eff/D");
+	ins_treearray[i]->Branch("chi2eff_err", &(fitR.chi2eff_err), "chi2eff_err/D");
+	//----qin
+	ins_treearray[i]->Branch("nQINpass", &(fitR.nQINpass), "nQINpass/D");
+	ins_treearray[i]->Branch("nQINpass_err", &(fitR.nQINpass_err), "nQINpass_err/D");
+	ins_treearray[i]->Branch("nQINtotal", &(fitR.nQINtotal), "nQINtotal/D");
+	ins_treearray[i]->Branch("nQINtotal_err", &(fitR.nQINtotal_err), "nQINtotal_err/D");
+	ins_treearray[i]->Branch("qineff", &(fitR.qineff), "qineff/D");
+	ins_treearray[i]->Branch("qineff_err", &(fitR.qineff_err), "qineff_err/D");
+	//----ntrk
+	ins_treearray[i]->Branch("nNTRKpass", &(fitR.nNTRKpass), "nNTRKpass/D");
+	ins_treearray[i]->Branch("nNTRKpass_err", &(fitR.nNTRKpass_err), "nNTRKpass_err/D");
+	ins_treearray[i]->Branch("nNTRKtotal", &(fitR.nNTRKtotal), "nNTRKtotal/D");
+	ins_treearray[i]->Branch("nNTRKtotal_err", &(fitR.nNTRKtotal_err), "nNTRKtotal_err/D");
+	ins_treearray[i]->Branch("ntrkeff", &(fitR.ntrkeff), "ntrkeff/D");
+	ins_treearray[i]->Branch("ntrkeff_err", &(fitR.ntrkeff_err), "ntrkeff_err/D");
 }
