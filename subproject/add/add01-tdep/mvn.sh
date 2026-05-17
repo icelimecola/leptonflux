@@ -1,10 +1,10 @@
 # ============================================================ rm
 rm -r dataiss 
 # ============================================================ mkdir
-mkdir -p ./dataiss/nele/pdf
-mkdir -p ./dataiss/npos/pdf
+mkdir -p ./dataiss/nele/root
+mkdir -p ./dataiss/npos/root
 # ============================================================ mv
-mv ./*nele.pdf ./dataiss/nele/pdf/
-mv ./*nele.root ./dataiss/nele/
-mv ./*npos.pdf ./dataiss/npos/pdf/
-mv ./*npos.root ./dataiss/npos/
+mv ./*nele.pdf ./dataiss/nele/
+mv ./*nele.root ./dataiss/nele/root/
+mv ./*npos.pdf ./dataiss/npos/
+mv ./*npos.root ./dataiss/npos/root/
