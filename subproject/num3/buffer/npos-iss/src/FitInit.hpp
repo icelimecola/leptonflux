@@ -250,4 +250,7 @@ void FitInit::INIT_TREEARRAY_BuildBrand(const vector<int>& index, int i,TTree**&
 	ins_treearray[i]->Branch("nNTRKtotal_err", &(fitR.nNTRKtotal_err), "nNTRKtotal_err/D");
 	ins_treearray[i]->Branch("ntrkeff", &(fitR.ntrkeff), "ntrkeff/D");
 	ins_treearray[i]->Branch("ntrkeff_err", &(fitR.ntrkeff_err), "ntrkeff_err/D");
+	//----total 260518
+	ins_treearray[i]->Branch("totaleff", &(fitR.totaleff), "totaleff/D");
+	ins_treearray[i]->Branch("totaleff_err", &(fitR.totaleff_err), "totaleff_err/D");
 }
