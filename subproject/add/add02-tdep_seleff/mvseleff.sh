@@ -5,6 +5,11 @@ mkdir -p ./dataiss/tofeff/root
 mkdir -p ./dataiss/trdeff/root
 mkdir -p ./dataiss/ecaleff/root
 mkdir -p ./dataiss/trkeff/root
+mkdir -p ./dataiss/pateff/root
+mkdir -p ./dataiss/matcheff/root
+mkdir -p ./dataiss/chi2eff/root
+mkdir -p ./dataiss/qineff/root
+mkdir -p ./dataiss/ntrkeff/root
 # ============================================================ mv
 mv ./*tofeff.pdf ./dataiss/tofeff/
 mv ./*tofeff.root ./dataiss/tofeff/root/
@@ -12,5 +17,17 @@ mv ./*trdeff.pdf ./dataiss/trdeff/
 mv ./*trdeff.root ./dataiss/trdeff/root/
 mv ./*ecaleff.pdf ./dataiss/ecaleff/
 mv ./*ecaleff.root ./dataiss/ecaleff/root/
+
+mv ./*pateff.pdf ./dataiss/pateff/
+mv ./*pateff.root ./dataiss/pateff/root/
+mv ./*matcheff.pdf ./dataiss/matcheff/
+mv ./*matcheff.root ./dataiss/matcheff/root/
+mv ./*chi2eff.pdf ./dataiss/chi2eff/
+mv ./*chi2eff.root ./dataiss/chi2eff/root/
+mv ./*qineff.pdf ./dataiss/qineff/
+mv ./*qineff.root ./dataiss/qineff/root/
+mv ./*ntrkeff.pdf ./dataiss/ntrkeff/
+mv ./*ntrkeff.root ./dataiss/ntrkeff/root/
+
 mv ./*trkeff.pdf ./dataiss/trkeff/
 mv ./*trkeff.root ./dataiss/trkeff/root/

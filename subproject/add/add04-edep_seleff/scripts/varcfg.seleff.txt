@@ -1,6 +1,12 @@
 # yname|yerrname|ytitle|ymin|ymax
 #---- one line = one output group
 tofeff|tofeff_err|TOF Efficiency|0.99|1.0025
-trdeff|trdeff_err|TRD Efficiency|0.6|1.1
+trdeff|trdeff_err|TRD Efficiency|0.75|1.0625
 ecaleff|ecaleff_err|ECAL Efficiency|0.99|1.0025
 trkeff|trkeff_err|Tracker Efficiency|0.6|1.1
+#---- trkeff
+pateff|pateff_err|TrkPattern Efficiency|0.8|1.05
+matcheff|matcheff_err|TrkECALMatch Efficiency|0.8|1.05
+chi2eff|chi2eff_err|TrkChi2 Efficiency|0.8|1.05
+qineff|qineff_err|InnerQ Efficiency|0.8|1.05
+ntrkeff|ntrkeff_err|nTrk Efficiency|0.8|1.05
