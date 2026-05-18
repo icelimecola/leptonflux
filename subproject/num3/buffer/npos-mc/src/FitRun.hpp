@@ -206,6 +206,27 @@ void FitRun::FIT_RUN_iene(int i_enebin,vector<int>bin_division,int printlv){
             ins_fit.fitR.ntrkeff = ins_fit.fitR.nNTRKpass/ins_fit.fitR.nNTRKtotal;
             ins_fit.fitR.ntrkeff_err = TMath::Sqrt(ins_fit.fitR.ntrkeff*(1-ins_fit.fitR.ntrkeff)/ins_fit.fitR.nNTRKtotal);
         }
+        //----260518 totaleff
+        // double totaleff = ins_fit.fitR.tofeff * ins_fit.fitR.trdeff * ins_fit.fitR.ecaleff * ins_fit.fitR.trkeff;
+        // double totaleff_err = totaleff * TMath::Sqrt(
+        //     TMath::Power(ins_fit.fitR.tofeff_err/ins_fit.fitR.tofeff,2) +
+        //     TMath::Power(ins_fit.fitR.trdeff_err/ins_fit.fitR.trdeff,2) +
+        //     TMath::Power(ins_fit.fitR.ecaleff_err/ins_fit.fitR.ecaleff,2) +
+        //     TMath::Power(ins_fit.fitR.trkeff_err/ins_fit.fitR.trkeff,2)
+        // );
+        double totaleff = ins_fit.fitR.tofeff * ins_fit.fitR.trdeff * ins_fit.fitR.ecaleff * ins_fit.fitR.pateff * ins_fit.fitR.matcheff * ins_fit.fitR.chi2eff * ins_fit.fitR.qineff * ins_fit.fitR.ntrkeff;
+        double totaleff_err = totaleff * TMath::Sqrt(
+            TMath::Power(ins_fit.fitR.tofeff_err/ins_fit.fitR.tofeff,2) +
+            TMath::Power(ins_fit.fitR.trdeff_err/ins_fit.fitR.trdeff,2) +
+            TMath::Power(ins_fit.fitR.ecaleff_err/ins_fit.fitR.ecaleff,2) +
+            TMath::Power(ins_fit.fitR.pateff_err/ins_fit.fitR.pateff,2) +
+            TMath::Power(ins_fit.fitR.matcheff_err/ins_fit.fitR.matcheff,2) +
+            TMath::Power(ins_fit.fitR.chi2eff_err/ins_fit.fitR.chi2eff,2) +
+            TMath::Power(ins_fit.fitR.qineff_err/ins_fit.fitR.qineff,2) +
+            TMath::Power(ins_fit.fitR.ntrkeff_err/ins_fit.fitR.ntrkeff,2)
+        );
+        ins_fit.fitR.totaleff = totaleff;
+        ins_fit.fitR.totaleff_err = totaleff_err;
         //============ fit
         // cout<<"========fit--index======== ilat "<<ilat<<" ; it "<<it<<endl;
         //====loop skip

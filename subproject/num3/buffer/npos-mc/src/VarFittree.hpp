@@ -71,6 +71,8 @@ class VarFittree: public VarBuffertree,public VarEneBin{
         double chi2eff,chi2eff_err;
         double qineff,qineff_err;
         double ntrkeff,ntrkeff_err;
+        //----260518
+        double totaleff,totaleff_err;
     }fitR{};
     //============ latbin ============
     //==== nlat
