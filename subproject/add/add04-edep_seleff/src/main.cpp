@@ -26,7 +26,8 @@ using namespace std;
 #include "TLatex.h"
 #include "TLegend.h"
 
-#include "../../../../third_party/splinefit3/splineFit3.h"
+// #include "../../../../third_party/splinefit3/splineFit3.h"
+#include "../third_party/splinefit3/splineFit3.h"
 
 //====================================================
 const int NENEBIN = 54;
