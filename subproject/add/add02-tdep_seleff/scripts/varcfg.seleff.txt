@@ -10,3 +10,5 @@ matcheff|matcheff_err|TrkECALMatch Efficiency|0.8|1.05
 chi2eff|chi2eff_err|TrkChi2 Efficiency|0.8|1.05
 qineff|qineff_err|InnerQ Efficiency|0.8|1.05
 ntrkeff|ntrkeff_err|nTrk Efficiency|0.8|1.05
+#---- total
+totaleff|totaleff_err|Total Efficiency|0.6|1.1

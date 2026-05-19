@@ -10,6 +10,7 @@ mkdir -p ./dataiss/matcheff/root
 mkdir -p ./dataiss/chi2eff/root
 mkdir -p ./dataiss/qineff/root
 mkdir -p ./dataiss/ntrkeff/root
+mkdir -p ./dataiss/totaleff/root
 # ============================================================ mv
 mv ./*tofeff.pdf ./dataiss/tofeff/
 mv ./*tofeff.root ./dataiss/tofeff/root/
@@ -31,3 +32,6 @@ mv ./*ntrkeff.root ./dataiss/ntrkeff/root/
 
 mv ./*trkeff.pdf ./dataiss/trkeff/
 mv ./*trkeff.root ./dataiss/trkeff/root/
+
+mv ./*totaleff.pdf ./dataiss/totaleff/
+mv ./*totaleff.root ./dataiss/totaleff/root/
