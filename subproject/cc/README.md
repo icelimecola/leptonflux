@@ -13,34 +13,43 @@ cc 这一部分的目的就在于矫正这一部分对于正电子数量测量�
 # cc ratio & real number
 
 对于正电子而言，最后测量的正电子数量中，能被误判为正电子的粒子只能是能通过与其相同的筛选条件，但是发生了电荷误判的电子；同样的，对于电子而言，其发生电荷误判的粒子来源也只能是正电子。
+
 $$
 \begin{aligned}
 n_{e^+}^{measure} &= n_{e^+}^{nocc}+n_{e^-}^{cc} \\
 n_{e^-}^{measure} &= n_{e^-}^{nocc}+n_{e^+}^{cc}
 \end{aligned}
 $$
+
 那么通过筛选条件的正电子和电子的真实数量可以表示为：
+
 $$
 \begin{aligned}
 n_{e^+}^{real} &= n_{e^+}^{nocc}+n_{e^+}^{cc} \\
 n_{e^-}^{real} &= n_{e^-}^{nocc}+n_{e^-}^{cc}
 \end{aligned}
 $$
+
 由于正电子被误判为电子，和电子被误判为正电子本质上是同一过程，所以我们假设正负电子发生电荷误判概率是 相同的，由频率估计概率，我们定义电荷误判率（cc Ratio，cc）：
+
 $$
 \begin{aligned}
 cc &= \frac{n_{e^+}^{cc}}{n_{e^+}^{nocc}+n_{e^+}^{cc}}=\frac{n_{e^+}^{cc}}{n_{e^+}^{real}} \\
    &= \frac{n_{e^-}^{cc}}{n_{e^-}^{nocc}+n_{e^-}^{cc}}=\frac{n_{e^-}^{cc}}{n_{e^-}^{real}}
 \end{aligned}
 $$
+
 那么，公式 1 里面的四个未知量可以表示为：
+
 $$
 \begin{aligned}
 n_{e^+}^{measure} &= n_{e^+}^{real}\cdot (1-cc)+n_{e^-}^{real}\cdot cc \\
 n_{e^-}^{measure} &= n_{e^-}^{real}\cdot (1-cc)+n_{e^+}^{real}\cdot cc 
 \end{aligned}
 $$
+
 整理可得：
+
 $$
 \begin{aligned}
 n_{e^+}^{real} &= \frac{(1-cc)\cdot n_{e^+}^{measure}-cc\cdot n_{e^-}^{measure}}{1-2cc} \\
