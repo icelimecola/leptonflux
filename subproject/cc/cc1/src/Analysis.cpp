@@ -211,7 +211,7 @@ void Analysis::LoopChain(){
 	// TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("h_fluxfit") );
 	//----260413.01----rightfluxprl122
 	// TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/04.101--ACC1/datain/fluxprl122.root", "read" );
-	TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/cc/datain/fluxprl122.root", "read" );
+	TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/cc1/datain/fluxprl122.root", "read" );
 	TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("hfluxpos") );
 	//====loop
 	for(long entry=0; entry<nentries; entry++){
