@@ -459,55 +459,55 @@ void Analysis::LoopChain(){
 		// 	}
 		// }
 		//----260311--bfre
-		// bool passed = 1;
-		// bool passed_temp = 1;
-		// for(int i=0; i<nCut; i++){
-		// 	passed = passed && cut[i]; 
-		// 	if(i==14) passed_temp = passed;
-		// 	if(i==15) passed = passed_temp && cut[15];
-		// 	else if(i==16) passed = passed_temp && cut[16];
-		// 	if( passed ){
-		// 		h1Ene3D[i]->Fill( Ene, weight );
-		// 		// h1EneC[i]->Fill( ecal_enc, weight );
-		// 		// h1Ene17[i]->Fill( ecal_ene17, weight );
-		// 		h1MCEne[i]->Fill( mcinfo_p, weight );
-		// 		h2Ene3D_MCEne[i]->Fill( mcinfo_p, Ene, weight );
-		// 		// h2EneC_MCEne[i]->Fill( mcinfo_p, ecal_enc, weight );
-		// 		// h2Ene17_MCEne[i]->Fill( mcinfo_p, ecal_ene17, weight );
-		// 		// h2Ene3DMCEneRatio_MCEne[i]->Fill( mcinfo_p, Ene/mcinfo_p, weight );
-		// 		// h2EneCMCEneRatio_MCEne[i]->Fill( mcinfo_p, ecal_enc/mcinfo_p, weight );
-		// 		// h2Ene17MCEneRatio_MCEne[i]->Fill( mcinfo_p, ecal_ene17/mcinfo_p, weight );
-		// 		// h2EneCEne3DRatio_MCEne[i]->Fill( mcinfo_p, ecal_enc/Ene, weight );
-		// 		// h2Ene17Ene3DRatio_MCEne[i]->Fill( mcinfo_p, ecal_ene17/Ene, weight );
-		// 		// h2EneCEne3DRatio_Ene3D[i]->Fill( Ene, ecal_enc/Ene, weight );
-		// 		// h2Ene17Ene3DRatio_Ene3D[i]->Fill( Ene, ecal_ene17/Ene, weight );
-		// 	}
-		// }
-		// ----260315--reweight
-		//----flux
-		double flux = hfluxmodel->GetBinContent( hfluxmodel->FindBin(mcinfo_p) );
-		//----binwidth
-		int mcpbin = GetBinIndex(mcinfo_p);
-		double mcpbinlow = energy_bins[mcpbin];
-		double mcpbinup = energy_bins[mcpbin+1]; 
-		//----reweight
-		double reweight = 1.0;
-		reweight = weight * mcinfo_p * flux;
-		// reweight = weight * mcinfo_p * flux * (mcpbinup - mcpbinlow);
-		//----fill
 		bool passed = 1;
 		bool passed_temp = 1;
 		for(int i=0; i<nCut; i++){
 			passed = passed && cut[i]; 
 			if(i==14) passed_temp = passed;
-			if(i==15) passed = passed_temp && cut[i];
-			if(i==16) passed = passed_temp && cut[i];
+			if(i==15) passed = passed_temp && cut[15];
+			else if(i==16) passed = passed_temp && cut[16];
 			if( passed ){
-				h1MCEne[i]->Fill( mcinfo_p, reweight );
-				h1Ene3D[i]->Fill( Ene, reweight );
-				h2Ene3D_MCEne[i]->Fill( mcinfo_p, Ene, reweight );
+				h1Ene3D[i]->Fill( Ene, weight );
+				// h1EneC[i]->Fill( ecal_enc, weight );
+				// h1Ene17[i]->Fill( ecal_ene17, weight );
+				h1MCEne[i]->Fill( mcinfo_p, weight );
+				h2Ene3D_MCEne[i]->Fill( mcinfo_p, Ene, weight );
+				// h2EneC_MCEne[i]->Fill( mcinfo_p, ecal_enc, weight );
+				// h2Ene17_MCEne[i]->Fill( mcinfo_p, ecal_ene17, weight );
+				// h2Ene3DMCEneRatio_MCEne[i]->Fill( mcinfo_p, Ene/mcinfo_p, weight );
+				// h2EneCMCEneRatio_MCEne[i]->Fill( mcinfo_p, ecal_enc/mcinfo_p, weight );
+				// h2Ene17MCEneRatio_MCEne[i]->Fill( mcinfo_p, ecal_ene17/mcinfo_p, weight );
+				// h2EneCEne3DRatio_MCEne[i]->Fill( mcinfo_p, ecal_enc/Ene, weight );
+				// h2Ene17Ene3DRatio_MCEne[i]->Fill( mcinfo_p, ecal_ene17/Ene, weight );
+				// h2EneCEne3DRatio_Ene3D[i]->Fill( Ene, ecal_enc/Ene, weight );
+				// h2Ene17Ene3DRatio_Ene3D[i]->Fill( Ene, ecal_ene17/Ene, weight );
 			}
 		}
+		// ----260315--reweight
+		// //----flux
+		// double flux = hfluxmodel->GetBinContent( hfluxmodel->FindBin(mcinfo_p) );
+		// //----binwidth
+		// int mcpbin = GetBinIndex(mcinfo_p);
+		// double mcpbinlow = energy_bins[mcpbin];
+		// double mcpbinup = energy_bins[mcpbin+1]; 
+		// //----reweight
+		// double reweight = 1.0;
+		// reweight = weight * mcinfo_p * flux;
+		// // reweight = weight * mcinfo_p * flux * (mcpbinup - mcpbinlow);
+		// //----fill
+		// bool passed = 1;
+		// bool passed_temp = 1;
+		// for(int i=0; i<nCut; i++){
+		// 	passed = passed && cut[i]; 
+		// 	if(i==14) passed_temp = passed;
+		// 	if(i==15) passed = passed_temp && cut[i];
+		// 	if(i==16) passed = passed_temp && cut[i];
+		// 	if( passed ){
+		// 		h1MCEne[i]->Fill( mcinfo_p, reweight );
+		// 		h1Ene3D[i]->Fill( Ene, reweight );
+		// 		h2Ene3D_MCEne[i]->Fill( mcinfo_p, Ene, reweight );
+		// 	}
+		// }
 	}
 	// TH1D *cc_ene = new TH1D("cc_ene", "cc_ene", nbin, energy_bins);
 	// double nele,nelecc,cc,cc_err;
