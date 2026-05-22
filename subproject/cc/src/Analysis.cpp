@@ -1,5 +1,6 @@
 #define Analysis_cxx
 #include "Analysis.h"
+#include <TH1D.h>
 #include <TH2.h>
 #include <TStyle.h>
 #include <TGraph.h>
@@ -209,7 +210,8 @@ void Analysis::LoopChain(){
 	// TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/04.101--ACC1/datain/fluxmodel_prl122.root", "read" );
 	// TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("h_fluxfit") );
 	//----260413.01----rightfluxprl122
-	TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/04.101--ACC1/datain/fluxprl122.root", "read" );
+	// TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/04.101--ACC1/datain/fluxprl122.root", "read" );
+	TFile *file_fluxmodel = new TFile( "./datain/fluxprl122.root", "read" );
 	TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("hfluxpos") );
 	//====loop
 	for(long entry=0; entry<nentries; entry++){
@@ -509,20 +511,29 @@ void Analysis::LoopChain(){
 			}
 		}
 	}
-	// TH1D *cc_ene = new TH1D("cc_ene", "cc_ene", nbin, energy_bins);
-	// double nele,nelecc,cc,cc_err;
-	// for(int i=0; i<nbin; i++){
-	// 	nele = h1Ene3D[15]->GetBinContent(i+1);
-	// 	nelecc = h1Ene3D[16]->GetBinContent(i+1);
-	// 	cc = nelecc / (nelecc + nele);
-	// 	cc_err = sqrt( cc*(1-cc)/nelecc + cc*cc*nele/(nelecc*nele) );
-	// 	cc_ene->SetBinContent(i+1, cc);
-	// 	cc_ene->SetBinError(i+1, cc_err);
-	// }
+	TH1D *cc_ene = (TH1D*)h1Ene3D[15]->Clone("cc_ene");
+	double nele, nele_err, nelecc, nelecc_err, cc, cc_err;
+	for(int i=0; i<h1Ene3D[15]->GetNbinsX(); i++){
+		cc_ene->SetBinContent(i+1, 0);
+		cc_ene->SetBinError(i+1, 0);
+		// nele = h1MCEne[15]->GetBinContent(i+1);
+		// nele_err = h1MCEne[15]->GetBinError(i+1);
+		// nelecc = h1MCEne[16]->GetBinContent(i+1);
+		// nelecc_err = h1MCEne[16]->GetBinError(i+1);
+		nele = h1Ene3D[15]->GetBinContent(i+1);
+		nele_err = h1Ene3D[15]->GetBinError(i+1);
+		nelecc = h1Ene3D[16]->GetBinContent(i+1);
+		nelecc_err = h1Ene3D[16]->GetBinError(i+1);
+		if( nelecc + nele == 0 ) continue;
+		cc = nelecc / (nelecc + nele);
+		cc_err = sqrt( pow(nele, 2)*pow(nelecc_err, 2) + pow(nelecc, 2)*pow(nele_err, 2) )/pow(nelecc + nele, 2);
+		cc_ene->SetBinContent(i+1, cc);
+		cc_ene->SetBinError(i+1, cc_err);
+	}
 	//====save
 	fout->cd();
+	cc_ene->Write();
 	fout->Write();
-	// cc_ene->Write();
 	fout->Close();
 }
 
@@ -566,7 +577,8 @@ void Analysis::BookHistograms(){
 	// 	}
 	// }
 	//----260311
-	fout = new TFile( Form("mchselect_run%i.root", info_run), "recreate");
+	// fout = new TFile( Form("mchselect_run%i.root", info_run), "recreate");
+	fout = new TFile( Form("cc_run%i.root", info_run), "recreate");
 	for(int i=0; i<nCut; i++){
 		if( IsFineBinning ){
 			h1MCEne[i] = new TH1F( Form("h1MCEne_cut%02d", i), "h1MCEne;MC Energy [GeV];#Events", nbin_fine, energy_bins_fine);
@@ -670,4 +682,3 @@ int main(int argc, char *argv[]){
 	//====mainprocess
 	T.LoopChain();
 }
-
