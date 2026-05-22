@@ -107,9 +107,9 @@ $$
 \begin{aligned}
 \sigma_{cc}^2
 &= (\frac{\partial cc}{\partial n1})^2 \sigma_{n1}^2
-+ (\frac{\partial cc}{\partial n2})^2 \sigma_{n2}^2 \\
+  + (\frac{\partial cc}{\partial n2})^2 \sigma_{n2}^2 \\
 &= (-\frac{n2}{(n1+n2)^2})^2 \sigma_{n1}^2
-+ (\frac{n1}{(n1+n2)^2})^2 \sigma_{n2}^2 \\
+  + (\frac{n1}{(n1+n2)^2})^2 \sigma_{n2}^2 \\
 &= \frac{n2^2 \sigma_{n1}^2 + n1^2 \sigma_{n2}^2}{(n1+n2)^4}
 \end{aligned}
 $$
