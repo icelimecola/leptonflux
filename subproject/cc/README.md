@@ -68,3 +68,59 @@ $$
 接下来，对 MC 的事例施加相同的事例筛选（由于 MC 并没有时间信息，所以所有利用 RTI 信息的筛选条件都不添加到 MC 事例上），得到 MC 的正负电子样本。
 
 暂略
+
+
+
+# error
+## cc error
+
+对于
+
+$$
+cc = \frac{n_{e^-}^{cc}}{n_{e^-}^{nocc}+n_{e^-}^{cc}}
+$$
+
+$n_{e-}^{cc}$ 和 $n_{e-}^{nocc}$ 的误差来自于统计误差 $\sigma_{e-}^{cc}$ 和 $\sigma_{e-}^{nocc}$，这两者显然相互独立，那么根据误差传递公式可以计算 cc 的误差。
+
+为了简化推导，cc 表示为：
+
+$$
+cc = \frac{n2}{n1+n2}
+$$
+
+则有
+
+$$
+\begin{aligned}
+\frac{\partial cc}{\partial n1}
+&= -\frac{n2}{(n1+n2)^2} \\
+\frac{\partial cc}{\partial n2}
+&= \frac{1}{n1+n2}-\frac{n2}{(n1+n2)^2} \\
+&= \frac{(n1+n2)-n2}{(n1+n2)^2} \\
+&= \frac{n1}{(n1+n2)^2}
+\end{aligned}
+$$
+
+代入误差传递公式
+
+$$
+\begin{aligned}
+\sigma_{cc}^2
+&= \left(\frac{\partial cc}{\partial n1}\right)^2 \sigma_{n1}^2
++ \left(\frac{\partial cc}{\partial n2}\right)^2 \sigma_{n2}^2 \\
+&= \left(-\frac{n2}{(n1+n2)^2}\right)^2 \sigma_{n1}^2
++ \left(\frac{n1}{(n1+n2)^2}\right)^2 \sigma_{n2}^2 \\
+&= \frac{n2^2 \sigma_{n1}^2 + n1^2 \sigma_{n2}^2}{(n1+n2)^4}
+\end{aligned}
+$$
+
+故有
+
+$$
+\begin{aligned}
+\sigma_{cc}
+&= \frac{\sqrt{n2^2 \sigma_{n1}^2 + n1^2 \sigma_{n2}^2}}{(n1+n2)^2}
+\end{aligned}
+$$
+
+## corrected n error
