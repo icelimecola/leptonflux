@@ -1,17 +1,21 @@
 #include <algorithm>
 #include <cmath>
-#include <dirent.h>
 #include <iomanip>
 #include <iostream>
-#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "TFile.h"
+#include "TString.h"
+#include "TSystem.h"
 #include "TTree.h"
 
 using namespace std;
+
+bool CMP_FILE_INDEX(const pair<int, string> &left, const pair<int, string> &right){
+    return left.first < right.first;
+}
 
 struct VarFitR{
     int Eid;
@@ -69,8 +73,8 @@ int merge_tfit(int argc, char **argv){
         return 1;
     }
 
-    int begin_index = stoi(argv[1]);
-    int end_index = stoi(argv[2]);
+    int begin_index = atoi(argv[1]);
+    int end_index = atoi(argv[2]);
     if(begin_index > end_index){
         cout<<"Error: begin_index > end_index"<<endl;
         return 1;
@@ -90,31 +94,23 @@ int merge_tfit(int argc, char **argv){
     if(argc >= 5) output_file = argv[4];
 
     vector<pair<int, string>> selected_files;
-    regex file_pattern(R"(fitresult_enebin([0-9]+)_.*\.root)");
-    DIR *input_dir_ptr = opendir(input_dir.c_str());
-    if(input_dir_ptr == nullptr){
+    void *input_dir_ptr = gSystem->OpenDirectory(input_dir.c_str());
+    if(input_dir_ptr == 0){
         cout<<"Error: failed to open input directory "<<input_dir<<endl;
         return 1;
     }
 
-    for(dirent *entry = readdir(input_dir_ptr); entry != nullptr; entry = readdir(input_dir_ptr)){
-        if(entry->d_name[0] == '.') continue;
-        smatch match_result;
-        string file_name = entry->d_name;
-        if(!regex_match(file_name, match_result, file_pattern)) continue;
-        int file_index = stoi(match_result[1].str());
+    const char *entry_name = 0;
+    while((entry_name = gSystem->GetDirEntry(input_dir_ptr)) != 0){
+        TString file_name = entry_name;
+        if(file_name.BeginsWith(".")) continue;
+        int file_index = -1;
+        if(sscanf(file_name.Data(), "fitresult_enebin%d_", &file_index) != 1) continue;
         if(file_index < begin_index || file_index > end_index) continue;
-        selected_files.push_back(make_pair(file_index, input_dir + "/" + file_name));
+        selected_files.push_back(make_pair(file_index, input_dir + "/" + string(file_name.Data())));
     }
-    closedir(input_dir_ptr);
 
-    sort(
-        selected_files.begin(),
-        selected_files.end(),
-        [](const pair<int, string> &left, const pair<int, string> &right){
-            return left.first < right.first;
-        }
-    );
+    sort(selected_files.begin(), selected_files.end(), CMP_FILE_INDEX);
 
     if(selected_files.empty()){
         cout<<"Error: no input ROOT files found in "<<input_dir<<" for enebin "<<begin_index<<" to "<<end_index<<endl;

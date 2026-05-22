@@ -25,7 +25,16 @@ for arg in "$@"; do
 done
 
 root_cmd="src/merge_tfit.cpp(${argc},(char*[]){${argv_items}})"
+root_ver="$(root-config --version 2>/dev/null || echo "")"
+if [[ "${root_ver}" == 5.* ]]; then
+    mkdir -p bin
+    echo "IN RUN_ROOT ===== ROOT5 detected, use compiled binary"
+    g++ -std=c++17 src/merge_tfit.cpp $(root-config --cflags --libs) -o bin/merge_tfit.exe
+    ./bin/merge_tfit.exe "$@"
+    exit $?
+fi
 
 echo "IN RUN_ROOT ===== root -l -b -q"
+echo "IN RUN_ROOT ===== root_ver=${root_ver}"
 echo "IN RUN_ROOT ===== cmd=${root_cmd}"
 root -l -b -q "${root_cmd}"
