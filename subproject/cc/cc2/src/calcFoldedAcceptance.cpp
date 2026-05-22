@@ -686,6 +686,52 @@ int main(){
 		cc_ene->SetBinContent(i+1, cc);
 		cc_ene->SetBinError(i+1, cc_err);
 	}
+	//====draw cc
+	TCanvas *c_cc = new TCanvas("c_cc", "c_cc", 1000, 400);
+	TAxis *xaxis_cc = cc_ene->GetXaxis();
+	TAxis *yaxis_cc = cc_ene->GetYaxis();
+	cc_ene->SetStats(0);
+	cc_ene->SetNameTitle("", "");
+	c_cc->SetTopMargin(0.13);
+	c_cc->SetBottomMargin(0.15);
+	c_cc->SetLeftMargin(0.13);
+	c_cc->SetRightMargin(0.08);
+	c_cc->cd();
+	gPad->SetGridx();
+	gPad->SetGridy();
+	gPad->SetLogx();
+	gPad->SetLogy();
+	xaxis_cc->SetNameTitle("Energy [GeV]", "Energy [GeV]");
+	xaxis_cc->CenterTitle();
+	xaxis_cc->SetTitleFont(62);
+	xaxis_cc->SetTitleSize(0.05);
+	xaxis_cc->SetTitleOffset(1.2);
+	xaxis_cc->SetLabelOffset(0.012);
+	xaxis_cc->SetRangeUser(0.8,108);
+	yaxis_cc->SetNameTitle("cc ratio", "cc Ratio");
+	yaxis_cc->CenterTitle();
+	yaxis_cc->SetTitleFont(62);
+	yaxis_cc->SetTitleSize(0.05);
+	yaxis_cc->SetTitleOffset(0.9);
+	yaxis_cc->SetLabelOffset(0.012);
+	cc_ene->SetMarkerStyle(20);
+	cc_ene->SetMarkerSize(0.9);
+	cc_ene->SetMarkerColor(kBlue);
+	cc_ene->SetLineColor(kBlue);
+	cc_ene->SetLineWidth(2);
+	// double cc_max = 0;
+	// for(int i=1; i<=cc_ene->GetNbinsX(); i++){
+	// 	double cc_bin = cc_ene->GetBinContent(i);
+	// 	double cc_err_bin = cc_ene->GetBinError(i);
+	// 	if( cc_bin + cc_err_bin > cc_max ) cc_max = cc_bin + cc_err_bin;
+	// }
+	// cc_ene->SetMaximum(cc_max > 0 ? cc_max * 1.25 : 1.0);
+	cc_ene->SetMaximum(1);
+	cc_ene->SetMinimum(1e-4);
+	gStyle->SetEndErrorSize(0);
+	TGaxis::SetMaxDigits(3);
+	cc_ene->Draw("E1X0P");
+	c_cc->SaveAs("cc_ene.pdf");
 	//====save cc
 	fout->cd();
 		hgen_ele->Write();
@@ -693,12 +739,14 @@ int main(){
 		hrec_ele->Write();
 		hrec_elecc->Write();
 		cc_ene->Write();
+		c_cc->Write();
 	//============ save ============
 	// fout->cd();
 	// for(int i=0; i<nCut; i++){
 	// 	if( hacc[i] ) hacc[i]->Write();
 	// }
 	fout->Close();
+	delete c_cc;
 	//============ return ============
 	return 0;
 }
