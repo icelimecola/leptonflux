@@ -117,10 +117,7 @@ $$
 故有
 
 $$
-\begin{aligned}
-\sigma_{cc}
-&= \frac{\sqrt{n2^2 \sigma_{n1}^2 + n1^2 \sigma_{n2}^2}}{(n1+n2)^2}
-\end{aligned}
+\sigma_{cc} = \frac{\sqrt{n2^2 \sigma_{n1}^2 + n1^2 \sigma_{n2}^2}}{(n1+n2)^2}
 $$
 
 ## corrected n error
