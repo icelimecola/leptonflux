@@ -72,6 +72,7 @@ $$
 
 
 # error
+
 ## cc error
 
 对于
@@ -119,3 +120,62 @@ $$
 $$
 
 ## corrected n error
+
+对于 cc 修正的事例数：
+$$
+\begin{aligned}
+n_{e^+}^{real} &= \frac{(1-cc)\cdot n_{e^+}^{measure}-cc\cdot n_{e^-}^{measure}}{1-2cc} \\
+n_{e^-}^{real} &= \frac{(1-cc)\cdot n_{e^-}^{measure}-cc\cdot n_{e^+}^{measure}}{1-2cc}
+\end{aligned}
+$$
+采用如下简化：
+
+$$
+\begin{aligned}
+npos &= \frac{(1-cc)\cdot npos^{\prime}-cc\cdot nele^{\prime}}{1-2cc} \\
+nele &= \frac{(1-cc)\cdot nele^{\prime}-cc\cdot npos^{\prime}}{1-2cc}
+\end{aligned}
+$$
+
+以正电子为例，cc, npos'和 nele'相互独立，$\sigma_{cc}$ 在上一步求得，$\sigma_{npos^{\prime}}$ 和 $\sigma_{nele^{\prime}}$ 来自模板拟合。
+先计算中间量：
+
+$$
+\begin{aligned}
+\frac{\partial npos}{\partial npos^{\prime}}
+&= \frac{1-cc}{1-2cc} \\
+\frac{\partial npos}{\partial nele^{\prime}}
+&= -\frac{cc}{1-2cc} \\
+\frac{\partial npos}{\partial cc}
+&= \frac{-(npos^{\prime}+nele^{\prime})(1-2cc)+2[(1-cc)\cdot npos^{\prime}-cc\cdot nele^{\prime}]}{(1-2cc)^2} \\
+&= \frac{npos^{\prime}-nele^{\prime}}{(1-2cc)^2}
+\end{aligned}
+$$
+
+代入误差传递公式
+
+$$
+\begin{aligned}
+\sigma_{npos}^2
+&= \left(\frac{\partial npos}{\partial cc}\right)^2 \sigma_{cc}^2
++ \left(\frac{\partial npos}{\partial npos^{\prime}}\right)^2 \sigma_{npos^{\prime}}^2
++ \left(\frac{\partial npos}{\partial nele^{\prime}}\right)^2 \sigma_{nele^{\prime}}^2 \\
+&= \left(\frac{npos^{\prime}-nele^{\prime}}{(1-2cc)^2}\right)^2 \sigma_{cc}^2
++ \left(\frac{1-cc}{1-2cc}\right)^2 \sigma_{npos^{\prime}}^2
++ \left(-\frac{cc}{1-2cc}\right)^2 \sigma_{nele^{\prime}}^2 \\
+&= \frac{(npos^{\prime}-nele^{\prime})^2}{(1-2cc)^4}\sigma_{cc}^2
++ \frac{(1-cc)^2}{(1-2cc)^2}\sigma_{npos^{\prime}}^2
++ \frac{cc^2}{(1-2cc)^2}\sigma_{nele^{\prime}}^2
+\end{aligned}
+$$
+
+故有
+
+$$
+\sigma_{npos}
+= \sqrt{
+\frac{(npos^{\prime}-nele^{\prime})^2}{(1-2cc)^4}\sigma_{cc}^2
++ \frac{(1-cc)^2}{(1-2cc)^2}\sigma_{npos^{\prime}}^2
++ \frac{cc^2}{(1-2cc)^2}\sigma_{nele^{\prime}}^2
+}
+$$
