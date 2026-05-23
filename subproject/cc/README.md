@@ -139,7 +139,7 @@ nele &= \frac{(1-cc)\cdot nele^{\prime}-cc\cdot npos^{\prime}}{1-2cc}
 \end{aligned}
 $$
 
-以正电子为例，cc, npos'和 nele'相互独立，$\sigma_{cc}$ 在上一步求得，$\sigma_{npos^{\prime}}$ 和 $\sigma_{nele^{\prime}}$ 来自模板拟合。
+以正电子为例，cc, npos'和 nele'相互独立， $\sigma_{cc}$ 在上一步求得， $\sigma_{npos^{\prime}}$ 和 $\sigma_{nele^{\prime}}$ 来自模板拟合。
 先计算中间量：
 
 $$
