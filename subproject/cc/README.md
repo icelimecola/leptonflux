@@ -122,12 +122,14 @@ $$
 ## corrected n error
 
 对于 cc 修正的事例数：
+
 $$
 \begin{aligned}
 n_{e^+}^{real} &= \frac{(1-cc)\cdot n_{e^+}^{measure}-cc\cdot n_{e^-}^{measure}}{1-2cc} \\
 n_{e^-}^{real} &= \frac{(1-cc)\cdot n_{e^-}^{measure}-cc\cdot n_{e^+}^{measure}}{1-2cc}
 \end{aligned}
 $$
+
 采用如下简化：
 
 $$
@@ -157,15 +159,9 @@ $$
 $$
 \begin{aligned}
 \sigma_{npos}^2
-&= \left(\frac{\partial npos}{\partial cc}\right)^2 \sigma_{cc}^2
-+ \left(\frac{\partial npos}{\partial npos^{\prime}}\right)^2 \sigma_{npos^{\prime}}^2
-+ \left(\frac{\partial npos}{\partial nele^{\prime}}\right)^2 \sigma_{nele^{\prime}}^2 \\
-&= \left(\frac{npos^{\prime}-nele^{\prime}}{(1-2cc)^2}\right)^2 \sigma_{cc}^2
-+ \left(\frac{1-cc}{1-2cc}\right)^2 \sigma_{npos^{\prime}}^2
-+ \left(-\frac{cc}{1-2cc}\right)^2 \sigma_{nele^{\prime}}^2 \\
-&= \frac{(npos^{\prime}-nele^{\prime})^2}{(1-2cc)^4}\sigma_{cc}^2
-+ \frac{(1-cc)^2}{(1-2cc)^2}\sigma_{npos^{\prime}}^2
-+ \frac{cc^2}{(1-2cc)^2}\sigma_{nele^{\prime}}^2
+&= \left(\frac{\partial npos}{\partial cc}\right)^2 \sigma_{cc}^2+ \left(\frac{\partial npos}{\partial npos^{\prime}}\right)^2 \sigma_{npos^{\prime}}^2+ \left(\frac{\partial npos}{\partial nele^{\prime}}\right)^2 \sigma_{nele^{\prime}}^2 \\
+&= \left(\frac{npos^{\prime}-nele^{\prime}}{(1-2cc)^2}\right)^2 \sigma_{cc}^2+ \left(\frac{1-cc}{1-2cc}\right)^2 \sigma_{npos^{\prime}}^2+ \left(-\frac{cc}{1-2cc}\right)^2 \sigma_{nele^{\prime}}^2 \\
+&= \frac{(npos^{\prime}-nele^{\prime})^2}{(1-2cc)^4}\sigma_{cc}^2+ \frac{(1-cc)^2}{(1-2cc)^2}\sigma_{npos^{\prime}}^2+ \frac{cc^2}{(1-2cc)^2}\sigma_{nele^{\prime}}^2
 \end{aligned}
 $$
 
@@ -174,8 +170,6 @@ $$
 $$
 \sigma_{npos}
 = \sqrt{
-\frac{(npos^{\prime}-nele^{\prime})^2}{(1-2cc)^4}\sigma_{cc}^2
-+ \frac{(1-cc)^2}{(1-2cc)^2}\sigma_{npos^{\prime}}^2
-+ \frac{cc^2}{(1-2cc)^2}\sigma_{nele^{\prime}}^2
+\frac{(npos^{\prime}-nele^{\prime})^2}{(1-2cc)^4}\sigma_{cc}^2+ \frac{(1-cc)^2}{(1-2cc)^2}\sigma_{npos^{\prime}}^2+ \frac{cc^2}{(1-2cc)^2}\sigma_{nele^{\prime}}^2
 }
 $$
