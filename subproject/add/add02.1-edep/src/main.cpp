@@ -473,7 +473,7 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	leg->SetTextFont(62);
 	leg->AddEntry(hiss, "ISS", "ep");
 	if(var.has_mc) leg->AddEntry(hmc, "MC", "ep");
-	leg->Draw();
+	// leg->Draw();
 
 	c->cd(0);
 	TLatex latex;
