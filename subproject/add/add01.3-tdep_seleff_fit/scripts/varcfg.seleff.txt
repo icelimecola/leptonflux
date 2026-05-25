@@ -1,3 +1,3 @@
 # yname|yerrname|ytitle|ymin|ymax
 #---- one line = one output group
-trdeff|trdeff_err|TRD Efficiency|0.75|1.0625
+trdeff|trdeff_err|TRD Efficiency|0.88|0.97
