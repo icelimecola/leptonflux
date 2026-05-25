@@ -21,6 +21,7 @@ using namespace std;
 #include "TLatex.h"
 #include "TLegend.h"
 #include "TLine.h"
+#include "TPaveText.h"
 
 #include "../third_party/splinefit3/splineFit3.h"
 
@@ -258,6 +259,64 @@ bool GET_NEAREST_ISS_YNODE(const VarDataSeries &iss, const double *xnode, double
 	return true;
 }
 
+bool BUILD_RATIO_HIST(const SplineFit *spfit_iss, const TGraphErrors *giss_conf,
+		const VarDataSeries &mc, const double xdrawmin, const double xdrawmax,
+		TH1D *hratio){
+	if(spfit_iss == nullptr || spfit_iss->f1SplineFit == nullptr){
+		cerr<<"ERR BUILD_RATIO_HIST ===== ISS spline fit is null"<<endl;
+		return false;
+	}
+	if(giss_conf == nullptr){
+		cerr<<"ERR BUILD_RATIO_HIST ===== ISS confidence graph is null"<<endl;
+		return false;
+	}
+	if(mc.n_entry <= 0){
+		cerr<<"ERR BUILD_RATIO_HIST ===== MC entry is empty"<<endl;
+		return false;
+	}
+	double mc_y = mc.vdata.at(0).y;
+	double mc_err = mc.vdata.at(0).yerr;
+	if(mc_y == 0.0){
+		cerr<<"ERR BUILD_RATIO_HIST ===== MC value is zero"<<endl;
+		return false;
+	}
+	hratio->Reset("ICES");
+	hratio->SetNameTitle("hratio", "hratio");
+	hratio->SetStats(0);
+	for(int ibin=1; ibin<=hratio->GetNbinsX(); ibin++){
+		double xcenter = hratio->GetBinCenter(ibin);
+		double xlow = hratio->GetBinLowEdge(ibin);
+		double xup = hratio->GetBinLowEdge(ibin + 1);
+		if(xcenter < xdrawmin || xcenter > xdrawmax) continue;
+		if(xup <= xlow) continue;
+
+		double iss_y = spfit_iss->f1SplineFit->Integral(xlow, xup) / (xup - xlow);
+		if(!std::isfinite(iss_y) || iss_y == 0.0) continue;
+		double iss_err = 0.0;
+		double dx_min = 0.0;
+		bool is_first = true;
+		for(int ip=0; ip<giss_conf->GetN(); ip++){
+			double gx = 0.0;
+			double gy = 0.0;
+			giss_conf->GetPoint(ip, gx, gy);
+			double dx = fabs(gx - xcenter);
+			if(is_first || dx < dx_min){
+				dx_min = dx;
+				iss_err = giss_conf->GetErrorY(ip);
+				is_first = false;
+			}
+		}
+		double ratio = iss_y / mc_y;
+		double ratio_err = fabs(ratio) * sqrt(pow(iss_err / iss_y, 2) + pow(mc_err / mc_y, 2));
+		hratio->SetBinContent(ibin, ratio);
+		hratio->SetBinError(ibin, ratio_err);
+	}
+	cout<<"IN BUILD_RATIO_HIST ===== hratio built with mc_y="<<mc_y
+		<<" mc_err="<<mc_err
+		<<endl;
+	return true;
+}
+
 //==================================================== FITDRAW_
 bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc, TH1D *h){
 	//====init--output
@@ -276,6 +335,8 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	SplineFit *spfit_iss = nullptr;
 	TGraphErrors *giss_conf = nullptr;
 	TGraph *giss_conf_band = nullptr;
+	TH1D *hratio27 = nullptr;
+	TH1D *hratio1 = nullptr;
 	//====init--canvas
 	TCanvas *c = new TCanvas("c","c",1000,400);
 	TAxis *xaxis = h->GetXaxis();
@@ -355,10 +416,56 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	int ipar_valley = 1 + 5 + inode_valley;
 	// spfit_iss->f1SplineFit->SetParLimits(ipar_valley, ynode_iss[inode_valley], ynode_iss[inode_valley]);
 	spfit_iss->doFit(xdrawmin, xdrawmax, "FQ");
-	giss_conf = spfit_iss->CalConfInt(0.68);
+	//====ratio histograms
+	hratio27 = (TH1D*)h->Clone("hratio27");
+	hratio27->SetDirectory(nullptr);
+	//---- 1day
+	//----prl130posi--260419
+	const double wt = 60*60*24;  //---- 86400[s]
+	static const int nt_ratio1 = 6000;
+	const double tmin_ratio1 = 1305417600;
+	const double tmax_ratio1 = tmin_ratio1 + nt_ratio1 * wt;  //----1823817600
+	hratio1 = new TH1D("hratio1", "hratio1", nt_ratio1, tmin_ratio1, tmax_ratio1);
+	hratio1->SetDirectory(nullptr);
+	vector<double> vx_conf;
+	for(int ibin=1; ibin<=h->GetNbinsX(); ibin++){
+		double xcenter = h->GetBinCenter(ibin);
+		if(xcenter <= xdrawmin || xcenter >= xdrawmax) continue;
+		vx_conf.push_back(xcenter);
+	}
+	for(int ibin=1; ibin<=hratio1->GetNbinsX(); ibin++){
+		double xcenter = hratio1->GetBinCenter(ibin);
+		if(xcenter <= xdrawmin || xcenter >= xdrawmax) continue;
+		vx_conf.push_back(xcenter);
+	}
+	sort(vx_conf.begin(), vx_conf.end());
+	vx_conf.erase(unique(vx_conf.begin(), vx_conf.end()), vx_conf.end());
+	giss_conf = spfit_iss->CalConfIntVD(0.68, vx_conf);
 	giss_conf_band = spfit_iss->GetConfIntBand(3001, kBlue - 9);
 	if(giss_conf == nullptr || giss_conf_band == nullptr){
 		cerr<<"ERR DRAW ===== failed to build ISS spline confidence interval"<<endl;
+		delete hratio1;
+		delete hratio27;
+		delete spfit_iss;
+		delete giss;
+		delete c;
+		fout->Close();
+		delete fout;
+		return false;
+	}
+	if(!BUILD_RATIO_HIST(spfit_iss, giss_conf, mc, xdrawmin, xdrawmax, hratio27)){
+		delete hratio1;
+		delete hratio27;
+		delete spfit_iss;
+		delete giss;
+		delete c;
+		fout->Close();
+		delete fout;
+		return false;
+	}
+	if(!BUILD_RATIO_HIST(spfit_iss, giss_conf, mc, xdrawmin, xdrawmax, hratio1)){
+		delete hratio1;
+		delete hratio27;
 		delete spfit_iss;
 		delete giss;
 		delete c;
@@ -387,8 +494,52 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	h->SetMarkerSize(0.9);
 	h->SetMarkerColor(kBlue);
 	h->SetLineColor(kBlue);
-	if(var.has_ymin) h->SetMinimum(var.ymin);
-	if(var.has_ymax) h->SetMaximum(var.ymax);
+	// if(var.has_ymin) h->SetMinimum(var.ymin);
+	// if(var.has_ymax) h->SetMaximum(var.ymax);
+	//---- auto y-range: use ISS points in draw range and MC reference
+	bool has_yrange = false;
+	double y_min_auto = 0.0;
+	double y_max_auto = 0.0;
+	for(int ix=0; ix<iss.n_entry; ix++){
+		const VarDataEntry &entry = iss.vdata.at(ix);
+		if(entry.x < xdrawmin || entry.x > xdrawmax) continue;
+		if(!std::isfinite(entry.y)) continue;
+		if(entry.y <= 0.0) continue;
+		if(!has_yrange){
+			y_min_auto = entry.y;
+			y_max_auto = entry.y;
+			has_yrange = true;
+		}
+		else{
+			y_min_auto = min(y_min_auto, entry.y);
+			y_max_auto = max(y_max_auto, entry.y);
+		}
+	}
+	for(int ix=0; ix<mc.n_entry; ix++){
+		const VarDataEntry &entry = mc.vdata.at(ix);
+		if(!std::isfinite(entry.y)) continue;
+		if(entry.y <= 0.0) continue;
+		if(!has_yrange){
+			y_min_auto = entry.y;
+			y_max_auto = entry.y;
+			has_yrange = true;
+		}
+		else{
+			y_min_auto = min(y_min_auto, entry.y);
+			y_max_auto = max(y_max_auto, entry.y);
+		}
+	}
+	if(has_yrange){
+		double y_width_auto = y_max_auto - y_min_auto;
+		if(y_width_auto <= 0.0) y_width_auto = max(fabs(y_max_auto) * 0.05, 1.0e-6);
+		h->SetMinimum(y_min_auto - 0.40 * y_width_auto);
+		h->SetMaximum(y_max_auto + 0.20 * y_width_auto);
+		cout<<"IN DRAW ===== auto y-range ymin="<<y_min_auto - 0.40 * y_width_auto
+			<<" ymax="<<y_max_auto + 0.20 * y_width_auto
+			<<" data_min="<<y_min_auto
+			<<" data_max="<<y_max_auto
+			<<endl;
+	}
 	//====draw
 	gStyle->SetEndErrorSize(0);
 	TGaxis::SetMaxDigits(3);
@@ -403,6 +554,22 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	spfit_iss->f1SplineFit->SetLineStyle(1);
 	spfit_iss->f1SplineFit->Draw("L same");
 	h->Draw("E1X0P same");
+	//---- stat box position in NDC, same coordinate convention as TLegend
+	double stat_x1 = 0.62;
+	double stat_y1 = 0.68;
+	double stat_x2 = 0.88;
+	double stat_y2 = 0.86;
+	TPaveText *st_iss = new TPaveText(stat_x1, stat_y1, stat_x2, stat_y2, "NDC");
+	st_iss->SetName("st_iss");
+	st_iss->SetFillColor(0);
+	st_iss->SetLineColor(kBlue + 1);
+	st_iss->SetTextColor(kBlue + 1);
+	st_iss->SetTextAlign(12);
+	st_iss->SetTextFont(42);
+	st_iss->AddText(Form("#chi^{2} / ndf = %.1f / %d",
+				spfit_iss->f1SplineFit->GetChisquare(),
+				spfit_iss->f1SplineFit->GetNDF()));
+	// st_iss->Draw("same");
 	TLine *line_mc = new TLine(xdrawmin, mc.vdata.at(0).y, xdrawmax, mc.vdata.at(0).y);
 	line_mc->SetLineColor(kRed);
 	line_mc->SetLineWidth(2);
@@ -413,7 +580,7 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	leg->SetFillStyle(0);
 	leg->SetTextFont(62);
 	leg->AddEntry(h, "ISS", "ep");
-	leg->AddEntry(spfit_iss->f1SplineFit, "ISS spline", "l");
+	leg->AddEntry(spfit_iss->f1SplineFit, "ISS fit", "l");
 	leg->AddEntry(line_mc, "MC", "l");
 	leg->Draw();
 	//====draw title
@@ -428,15 +595,21 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	//====write
 	c->SaveAs(var.foutname_pdf);
 	fout->cd();
+	hratio27->Write("hratio27");
+	hratio1->Write("hratio1");
 	giss->Write("giss");
 	giss_conf->Write("giss_conf");
 	giss_conf_band->Write("giss_conf_band");
 	spfit_iss->f1SplineFit->Write("spfit_iss");
 	line_mc->Write("line_mc");
+	st_iss->Write("st_iss");
 	c->Write();
 	leg->Write("leg");
 	delete leg;
+	delete st_iss;
 	delete line_mc;
+	delete hratio1;
+	delete hratio27;
 	delete spfit_iss;
 	delete giss;
 	delete c;
