@@ -54,6 +54,14 @@ struct EneValue{
     double error;
 };
 
+struct SeleffItem{
+    TString key;
+    TString filename;
+    TString histname;
+    TString outname;
+    bool use_in_total;
+};
+
 
 //==================================================== TOOL_
 TString TOOL_FormatE(double x){
@@ -79,6 +87,15 @@ TString TOOL_GetNFileName(const TString &datadir, const TString &species, int i_
         i_enebin,
         TOOL_FormatE(ENERGY_BINS[i_enebin]).Data(),
         species.Data()
+    );
+}
+
+TString TOOL_GetTRDEffTimeFileName(const TString &datadir, int i_enebin){
+    return Form(
+        "%s/trdeff/htime_ene%02d_%sGeV_trdeff.root",
+        datadir.Data(),
+        i_enebin,
+        TOOL_FormatE(ENERGY_BINS[i_enebin]).Data()
     );
 }
 
@@ -143,6 +160,20 @@ TString TOOL_GetOutBase(const TString &foutname){
     TString outbase = foutname;
     if(outbase.EndsWith(".root")) outbase.Resize(outbase.Length() - 5);
     return outbase;
+}
+
+vector<SeleffItem> TOOL_BuildSeleffItems(){
+    vector<SeleffItem> items;
+    items.push_back({"tof",   "seleff/hene_tofeff.root",   "hratio", "hseleff_tof_ene",          true });
+    items.push_back({"trd",   "seleff/hene_trdeff.root",   "hratio", "hseleff_trd_ene",          false});
+    items.push_back({"trk",   "seleff/hene_trkeff.root",   "hratio", "hseleff_trk_ene",          true });
+    items.push_back({"ecal",  "seleff/hene_ecaleff.root",  "hratio", "hseleff_ecal_ene",         true });
+    items.push_back({"pat",   "seleff/hene_pateff.root",   "hratio", "hseleff_pat_ene",          true });
+    items.push_back({"match", "seleff/hene_matcheff.root", "hratio", "hseleff_match_ene",        true });
+    items.push_back({"chi2",  "seleff/hene_chi2eff.root",  "hratio", "hseleff_chi2_ene",         true });
+    items.push_back({"qin",   "seleff/hene_qineff.root",   "hratio", "hseleff_qin_ene",          true });
+    items.push_back({"ntrk",  "seleff/hene_ntrkeff.root",  "hratio", "hseleff_ntrk_ene",         true });
+    return items;
 }
 
 
@@ -354,14 +385,30 @@ int CALC_Flux(const FluxConf &conf){
     unique_ptr<TFile> f_acc;
     unique_ptr<TFile> f_cc;
     unique_ptr<TFile> f_trig;
-    unique_ptr<TFile> f_eff;
     unique_ptr<TFile> f_exps;
+    unique_ptr<TFile> f_eff_total_input;
+    vector<SeleffItem> seleff_items = TOOL_BuildSeleffItems();
+    vector<unique_ptr<TFile>> vfile_eff;
+    vector<TH1D*> vh_eff_hist;
 
     if(!READ_OpenFile(conf.datadir + "/mcacc.root", f_acc)) return 1;
     if(!READ_OpenFile(conf.datadir + "/cc.root", f_cc)) return 1;
     if(!READ_OpenFile(conf.datadir + "/hene_trigeff.root", f_trig)) return 1;
-    if(!READ_OpenFile(conf.datadir + "/hene_totaleff.root", f_eff)) return 1;
     if(!READ_OpenFile(conf.datadir + "/hexps.root", f_exps)) return 1;
+    if(!READ_OpenFile(conf.datadir + "/seleff/hene_totaleff.root", f_eff_total_input)) return 1;
+
+    vfile_eff.resize(seleff_items.size());
+    vh_eff_hist.resize(seleff_items.size(), nullptr);
+    for(size_t ieff=0; ieff<seleff_items.size(); ieff++){
+        if(!READ_OpenFile(conf.datadir + "/" + seleff_items[ieff].filename, vfile_eff[ieff])) return 1;
+        TH1 *htmp = READ_GetHist(vfile_eff[ieff].get(), seleff_items[ieff].histname);
+        if(htmp == nullptr) return 1;
+        vh_eff_hist[ieff] = dynamic_cast<TH1D*>(htmp);
+        if(vh_eff_hist[ieff] == nullptr){
+            cerr<<"ERR CALC_Flux ===== seleff hist is not TH1D key="<<seleff_items[ieff].key<<endl;
+            return 1;
+        }
+    }
 
     unique_ptr<TFile> f_out(TFile::Open(conf.foutname, "RECREATE"));
     if(f_out.get() == nullptr || f_out->IsZombie()){
@@ -371,6 +418,19 @@ int CALC_Flux(const FluxConf &conf){
 
     if(READ_GetHist(f_acc.get(), "hacc_cut15") == nullptr) return 1;
     if(READ_GetHist(f_cc.get(), "cc_ene") == nullptr) return 1;
+    if(READ_GetHist(f_eff_total_input.get(), "hratio") == nullptr) return 1;
+
+    TH1D *hseleff_total_input = dynamic_cast<TH1D*>(READ_GetHist(f_eff_total_input.get(), "hratio")->Clone("hseleff_total_input_ene"));
+    TH1D *hseleff_total_manual = new TH1D("hseleff_total_manual_ene", "hseleff_total_manual_ene", NENEBIN, ENERGY_BINS);
+    vector<TH1D*> vhseleff_out(seleff_items.size(), nullptr);
+    for(size_t ieff=0; ieff<seleff_items.size(); ieff++){
+        vhseleff_out[ieff] = new TH1D(seleff_items[ieff].outname, seleff_items[ieff].outname, NENEBIN, ENERGY_BINS);
+    }
+    hseleff_total_input->SetDirectory(nullptr);
+    hseleff_total_manual->SetDirectory(nullptr);
+    for(size_t ieff=0; ieff<vhseleff_out.size(); ieff++){
+        vhseleff_out[ieff]->SetDirectory(nullptr);
+    }
 
     for(int i_enebin=0; i_enebin<NENEBIN; i_enebin++){
         TString fpath_num = TOOL_GetNFileName(conf, i_enebin);
@@ -383,25 +443,50 @@ int CALC_Flux(const FluxConf &conf){
         EneValue acc{};
         EneValue cc{};
         EneValue trig{};
-        EneValue eff{};
+        EneValue eff_total_input{};
+        EneValue eff_total_manual{};
         unique_ptr<TFile> f_num_pos;
         unique_ptr<TFile> f_num_ele;
+        unique_ptr<TFile> f_trdeff_time;
+        EneValue trdeff_time_ene{};
 
         if(!READ_OpenFile(fpath_num_pos, f_num_pos)) return 1;
         if(!READ_OpenFile(fpath_num_ele, f_num_ele)) return 1;
+        if(!READ_OpenFile(TOOL_GetTRDEffTimeFileName(conf.datadir, i_enebin), f_trdeff_time)) return 1;
 
         TH1 *hnum_pos_in = READ_GetHist(f_num_pos.get(), hname_num);
         TH1 *hnum_ele_in = READ_GetHist(f_num_ele.get(), hname_num);
         TH1 *hexps_in = READ_GetHist(f_exps.get(), hname_exps);
-        if(hnum_pos_in == nullptr || hnum_ele_in == nullptr || hexps_in == nullptr) return 1;
+        TH1 *htrdeff_time_in = READ_GetHist(f_trdeff_time.get(), "hratio1");
+        if(hnum_pos_in == nullptr || hnum_ele_in == nullptr || hexps_in == nullptr || htrdeff_time_in == nullptr) return 1;
         if(!READ_CheckTimeShape(hnum_pos_in, hexps_in, i_enebin)) return 1;
         if(!READ_CheckTimeShape(hnum_ele_in, hexps_in, i_enebin)) return 1;
         if(!READ_CheckTimeShape(hnum_pos_in, hnum_ele_in, i_enebin)) return 1;
+        if(!READ_CheckTimeShape(htrdeff_time_in, hexps_in, i_enebin)) return 1;
 
         if(!READ_GetEneValue(f_acc.get(), "hacc_cut15", emid, acc)) return 1;
         if(!READ_GetEneValue(f_cc.get(), "cc_ene", emid, cc)) return 1;
         if(!READ_GetEneValue(f_trig.get(), "hene_iss", emid, trig)) return 1;
-        if(!READ_GetEneValue(f_eff.get(), "hratio", emid, eff)) return 1;
+        if(!READ_GetEneValue(f_eff_total_input.get(), "hratio", emid, eff_total_input)) return 1;
+
+        eff_total_manual.value = 1.0;
+        double relerr2_total = 0.0;
+        for(size_t ieff=0; ieff<seleff_items.size(); ieff++){
+            EneValue eff_now{};
+            if(!READ_GetEneValue(vfile_eff[ieff].get(), seleff_items[ieff].histname, emid, eff_now)) return 1;
+            vhseleff_out[ieff]->SetBinContent(i_enebin + 1, eff_now.value);
+            vhseleff_out[ieff]->SetBinError(i_enebin + 1, eff_now.error);
+            if(seleff_items[ieff].use_in_total){
+                eff_total_manual.value *= eff_now.value;
+                if(eff_now.value > 0.0) relerr2_total += TOOL_CalcRelErr2(eff_now.value, eff_now.error);
+            }
+        }
+        eff_total_manual.error = 0.0;
+        if(eff_total_manual.value > 0.0) eff_total_manual.error = eff_total_manual.value * sqrt(relerr2_total);
+        hseleff_total_input->SetBinContent(i_enebin + 1, eff_total_input.value);
+        hseleff_total_input->SetBinError(i_enebin + 1, eff_total_input.error);
+        hseleff_total_manual->SetBinContent(i_enebin + 1, eff_total_manual.value);
+        hseleff_total_manual->SetBinError(i_enebin + 1, eff_total_manual.error);
 
         acc.value /= 1.0e4;
         acc.error /= 1.0e4;
@@ -411,8 +496,9 @@ int CALC_Flux(const FluxConf &conf){
         TH1D *hnumcorr = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hnumcorr_t_ene%02d", i_enebin)));
         TH1D *hnum = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hnum_t_ene%02d", i_enebin)));
         TH1D *hexps = dynamic_cast<TH1D*>(hexps_in->Clone(Form("hexps_t_ene%02d", i_enebin)));
+        TH1D *htrdeff_time = dynamic_cast<TH1D*>(htrdeff_time_in->Clone(Form("htrdeff_t_ene%02d", i_enebin)));
         TH1D *hflux = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hflux_t_ene%02d", i_enebin)));
-        if(hnum_pos_measure == nullptr || hnum_ele_measure == nullptr || hnumcorr == nullptr || hnum == nullptr || hexps == nullptr || hflux == nullptr){
+        if(hnum_pos_measure == nullptr || hnum_ele_measure == nullptr || hnumcorr == nullptr || hnum == nullptr || hexps == nullptr || htrdeff_time == nullptr || hflux == nullptr){
             cerr<<"ERR CALC_Flux ===== failed to clone hist i_enebin="<<i_enebin<<endl;
             return 1;
         }
@@ -422,6 +508,7 @@ int CALC_Flux(const FluxConf &conf){
         hnumcorr->SetDirectory(nullptr);
         hnum->SetDirectory(nullptr);
         hexps->SetDirectory(nullptr);
+        htrdeff_time->SetDirectory(nullptr);
         hflux->SetDirectory(nullptr);
 
         hnum_pos_measure->SetTitle(Form("npos measure time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
@@ -429,6 +516,7 @@ int CALC_Flux(const FluxConf &conf){
         hnumcorr->SetTitle(Form("ncorr time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
         hnum->SetTitle(Form("num corr time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
         hexps->SetTitle(Form("exps time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        htrdeff_time->SetTitle(Form("trdeff time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
         hflux->SetTitle(Form("flux time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
         int n_bad_bin = 0;
         int n_zero_num = 0;
@@ -441,7 +529,8 @@ int CALC_Flux(const FluxConf &conf){
             <<" acc="<<acc.value<<" +/- "<<acc.error
             <<" cc="<<cc.value<<" +/- "<<cc.error
             <<" trig="<<trig.value<<" +/- "<<trig.error
-            <<" eff="<<eff.value<<" +/- "<<eff.error
+            <<" eff_total_input="<<eff_total_input.value<<" +/- "<<eff_total_input.error
+            <<" eff_total_manual="<<eff_total_manual.value<<" +/- "<<eff_total_manual.error
             <<" delta_ene="<<delta_ene
             <<endl;
 
@@ -452,6 +541,8 @@ int CALC_Flux(const FluxConf &conf){
             double nele_measure_err = hnum_ele_measure->GetBinError(ibin);
             double exps = hexps->GetBinContent(ibin);
             double exps_err = hexps->GetBinError(ibin);
+            double trdeff_time = htrdeff_time->GetBinContent(ibin);
+            double trdeff_time_err = htrdeff_time->GetBinError(ibin);
             double num = 0.0;
             double num_err = 0.0;
             double flux = 0.0;
@@ -476,15 +567,17 @@ int CALC_Flux(const FluxConf &conf){
             && TOOL_IsPositive(exps)
             && TOOL_IsPositive(acc.value)
             && TOOL_IsPositive(trig.value)
-            && TOOL_IsPositive(eff.value)
+            && TOOL_IsPositive(eff_total_manual.value)
+            && TOOL_IsPositive(trdeff_time)
             && TOOL_IsPositive(delta_ene)){
-                flux = num / exps / acc.value / trig.value / eff.value / delta_ene;
+                flux = num / exps / acc.value / trig.value / eff_total_manual.value / trdeff_time / delta_ene;
                 flux_err = flux * sqrt(
                     TOOL_CalcRelErr2(num, num_err)
                     + TOOL_CalcRelErr2(exps, exps_err)
                     + TOOL_CalcRelErr2(acc.value, acc.error)
                     + TOOL_CalcRelErr2(trig.value, trig.error)
-                    + TOOL_CalcRelErr2(eff.value, eff.error)
+                    + TOOL_CalcRelErr2(eff_total_manual.value, eff_total_manual.error)
+                    + TOOL_CalcRelErr2(trdeff_time, trdeff_time_err)
                 );
             }
             else{
@@ -515,6 +608,7 @@ int CALC_Flux(const FluxConf &conf){
         hnumcorr->Write();
         hnum->Write();
         hexps->Write();
+        htrdeff_time->Write();
         hflux->Write();
 
         if(!DRAW_FluxTime(conf, i_enebin, hflux, f_out.get())){
@@ -523,6 +617,7 @@ int CALC_Flux(const FluxConf &conf){
             delete hnumcorr;
             delete hnum;
             delete hexps;
+            delete htrdeff_time;
             delete hflux;
             return 1;
         }
@@ -532,6 +627,7 @@ int CALC_Flux(const FluxConf &conf){
         delete hnumcorr;
         delete hnum;
         delete hexps;
+        delete htrdeff_time;
         delete hflux;
     }
 
@@ -539,9 +635,19 @@ int CALC_Flux(const FluxConf &conf){
     dynamic_cast<TH1*>(READ_GetHist(f_acc.get(), "hacc_cut15"))->Write("hacc_cut15");
     dynamic_cast<TH1*>(READ_GetHist(f_cc.get(), "cc_ene"))->Write("hcc_ene");
     dynamic_cast<TH1*>(READ_GetHist(f_trig.get(), "hene_iss"))->Write("htrig_ene");
-    dynamic_cast<TH1*>(READ_GetHist(f_eff.get(), "hratio"))->Write("hseleff_ene");
+    hseleff_total_input->Write();
+    hseleff_total_manual->Write();
+    for(size_t ieff=0; ieff<vhseleff_out.size(); ieff++){
+        vhseleff_out[ieff]->Write();
+    }
     f_out->Write();
     f_out->Close();
+
+    delete hseleff_total_input;
+    delete hseleff_total_manual;
+    for(size_t ieff=0; ieff<vhseleff_out.size(); ieff++){
+        delete vhseleff_out[ieff];
+    }
 
     cout<<"IN CALC_Flux ===== output "<<conf.foutname<<endl;
     return 0;
