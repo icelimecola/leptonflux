@@ -137,6 +137,33 @@ double *energy_bins = new double[nbin+1]{
 //     80.50, 86.50, 93, 100, 108
 // };
 
+//---- 260527 for positron23.1--positron
+// int nbin = 59;
+// double *energy_bins = new double[nbin+1]{
+// 	1.00, 1.16, 1.33, 1.51, 1.71,
+// 	1.92, 2.15, 2.40, 2.67, 2.97,
+// 	3.29, 3.64, 4.02, 4.43, 4.88,
+// 	5.37, 5.90, 6.47, 7.09, 7.76,
+// 	8.48, 9.26, 10.10, 11.0, 13.0,
+// 	16.6, 22.8, 41.9,
+// 	45.10, 48.50, 52.20, 56.10, 60.30,
+// 	64.80, 69.70, 74.90, 80.50, 86.50,
+// 	93, 100, 108, 116, 125,
+// 	135, 147, 160, 175, 192,
+// 	211, 233, 259, 291, 330,
+// 	379, 441, 525, 660, 880,
+// 	1300, 3300
+// };
+//---- 260527 for positron23.2--positron
+// int nbin = 27;
+// double *energy_bins = new double[nbin+1]{
+// 	1.00, 1.16, 1.33, 1.51, 1.71,
+// 	1.92, 2.15, 2.40, 2.67, 2.97,
+// 	3.29, 3.64, 4.02, 4.43, 4.88,
+// 	5.37, 5.90, 6.47, 7.09, 7.76,
+// 	8.48, 9.26, 10.10, 11.0, 13.0,
+// 	16.6, 22.8, 41.9
+// };
 
 //========enefinebin
 const int nbin_fine = 29;
@@ -179,6 +206,7 @@ int GetBinIndex(double x){
 	for(int i=0; i<nbin; i++){
 		if( x >= energy_bins[i] && x < energy_bins[i+1] ) return i;
 	}
+	return 0;
 }
 
 int GetBinIndex_Fine(double x){
@@ -186,6 +214,7 @@ int GetBinIndex_Fine(double x){
 	for(int i=0; i<nbin_fine; i++){
 		if( x >= energy_bins_fine[i] && x < energy_bins_fine[i+1] ) return i;
 	}
+	return 0;
 }
 
 void FindBinRange(double rigmin, double rigmax, int &firstbin, int &lastbin){
