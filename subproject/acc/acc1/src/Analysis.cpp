@@ -3,7 +3,7 @@
 #include <TH2.h>
 #include <TStyle.h>
 #include <TGraph.h>
-#include "TDatime.h"
+#include "../include/general/ConsoleDisplay.h"
 
 /*
 void Analysis::BuildMCWeight(){
@@ -205,6 +205,7 @@ void Analysis::LoopChain(){
 	long nentries = fChain->GetEntries();
 	long nprint = nentries/100;
 	if( nprint<1 ) nprint=1;
+	ConsoleDisplay mydisplay(nentries, nprint);
 	//====260315 read flux
 	// TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/04.101--ACC1/datain/fluxmodel_prl122.root", "read" );
 	// TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("h_fluxfit") );
@@ -213,13 +214,14 @@ void Analysis::LoopChain(){
 	TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("hfluxpos") );
 	//====loop
 	for(long entry=0; entry<nentries; entry++){
-		TDatime t;
-		if(entry%nprint==0 || entry==nentries-1){
-			double progress = 100.0*(entry+1)/nentries;
-			cout<<Form("%02d:%02d:%02d", t.GetHour(), t.GetMinute(), t.GetSecond())
-				<<" Processing entry "<<entry<<" / "<<nentries
-				<<" ("<<Form("%.2f", progress)<<"%)"<<endl;
-		}
+		// TDatime t;
+		// if(entry%nprint==0 || entry==nentries-1){
+		// 	double progress = 100.0*(entry+1)/nentries;
+		// 	cout<<Form("%02d:%02d:%02d", t.GetHour(), t.GetMinute(), t.GetSecond())
+		// 		<<" Processing entry "<<entry<<" / "<<nentries
+		// 		<<" ("<<Form("%.2f", progress)<<"%)"<<endl;
+		// }
+		mydisplay.Update(entry);
 		fChain->GetEntry( entry );
 		//====init
 		ecal_enc *= 0.975;
@@ -520,6 +522,7 @@ void Analysis::LoopChain(){
 	// 	cc_ene->SetBinError(i+1, cc_err);
 	// }
 	//====save
+	mydisplay.Finish();
 	fout->cd();
 	fout->Write();
 	// cc_ene->Write();
@@ -670,4 +673,3 @@ int main(int argc, char *argv[]){
 	//====mainprocess
 	T.LoopChain();
 }
-
