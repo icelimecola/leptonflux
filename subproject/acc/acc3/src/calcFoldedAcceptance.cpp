@@ -230,24 +230,25 @@ TF1* FitFluxModel(TH1D *hfluxmodel, double xmin=0.5, double xmax=1000.0){
 // }
 
 TH1D *_calcFoldedAcceptance(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile* fout,double nplane=1.0){
-	//======== geoacc
+	//============ init ============
+	//==== geoacc
 	double A0 = nplane*3.9*3.9*TMath::Pi()*1e4; // acceptance of generation plane [cm^2 sr]
-	//======== hsel
-	TFile *file_sel = new TFile(fnm_sel,"read");
-	TH2F *hmatrix = dynamic_cast<TH2F*>(file_sel->Get( Form("h2Ene3D_MCEne_cut%02d", icut)));
-	hmatrix->SetName("hmatrix");
-	//======== hgen
+	//==== hgen
 	TFile *file_gen = new TFile(fnm_gen,"read");
 	TH1F *hgen;
 	if( IsFineBinning ) hgen = dynamic_cast<TH1F*>( file_gen->Get("hgen_finebin") );
 	else hgen = dynamic_cast<TH1F*>( file_gen->Get("hgen") );
-	//======== hmatrix_temp
-	TH2F *hmatrix_temp = (TH2F*)hmatrix->Clone("h2d_temp");
-	//======== hrec0
-	TH1D *hrec0 = dynamic_cast<TH1D*>( hmatrix_temp->ProjectionY( "hrec0", 1,  hmatrix_temp->GetNbinsX() ) );
-	TH1D *hrec = (TH1D*)hrec0->Clone("hrec");
-	TH1D *hacc = (TH1D*)hrec0->Clone("hacc");
-  	//======== flux--tsu
+	//==== hmatrix
+	TFile *file_sel = new TFile(fnm_sel,"read");
+	TH2F *hmatrix = dynamic_cast<TH2F*>(file_sel->Get( Form("h2Ene3D_MCEne_cut%02d", icut)));
+	hmatrix->SetName("hmatrix");
+	TH2F *hmatrix_re = (TH2F*)hmatrix->Clone("h2d_temp");
+	//==== hrec
+	TH1D *hrec_bfre = dynamic_cast<TH1D*>( hmatrix_re->ProjectionY( "hrec0", 1,  hmatrix_re->GetNbinsX() ) );
+	TH1D *hrec_afre = (TH1D*)hrec_bfre->Clone("hrec");
+	TH1D *hacc = (TH1D*)hrec_bfre->Clone("hacc");
+  	//==== hflux
+	//---- tsu
 	// TFile *file_fluxmodel;
   	// // if( IsFineBinning )  file_fluxmodel = new TFile("/afs/cern.ch/work/w/wxu/work/ams/analysis/positron/Positron2017/WXU/Acceptance/fluxmodel_tsu.root");
 	// if( IsFineBinning )  file_fluxmodel = new TFile("./fluxmodel_tsu_finebin.root");
@@ -255,169 +256,63 @@ TH1D *_calcFoldedAcceptance(TString fnm_sel, TString fnm_gen, int icut, double e
 	// TH1D *hflux;
 	// if( IsPositron ) hflux = dynamic_cast<TH1D*>(file_fluxmodel->Get("hposflux_model"));
 	// else             hflux = dynamic_cast<TH1D*>(file_fluxmodel->Get("heleflux_model"));
-  	//======== flux--gcx 260412
-	TFile *file_fluxmodel = new TFile( "./datain/hrawflux.root", "read" );
-	TH1D *hrawflux = dynamic_cast<TH1D*>( file_fluxmodel->Get("h_rawflux") );
-	TH1D *hrawflux_noacc = dynamic_cast<TH1D*>( file_fluxmodel->Get("rawflux_noacc") );
-	//======== hflux_temp
-	TH1D *hflux_temp = (TH1D*)hrawflux->Clone("hflux_temp");
-	TH1D *hflux_temp02 = (TH1D*)hrawflux->Clone("hflux_temp02");
-	TF1 *hflux_fit = 0;
-	TH1D *hfluxmodel_expand = (TH1D*)hrec0->Clone("hfluxmodel_expand");
-	hfluxmodel_expand->Reset();
-	// //======== flux--gcx
-	// //----file_sel
-	// TFile *file_rawflux;
-	// // file_rawflux = new TFile("rawflux_ene.root");
-	// file_rawflux = new TFile("./datain/rawflux_ene.root");
-	// //----rawflux
-	// // TH1D *hflux;
-	// // hflux = dynamic_cast<TH1D*>(file_rawflux->Get("h_rawflux"));
-	// // hflux->SetDirectory(0);
-	// // hflux->SetName("hflux");
-	// //----flux0
-	// TH1D *hflux0;
-	// hflux0 = dynamic_cast<TH1D*>(file_rawflux->Get("h_rawflux0"));
-	// hflux0->SetDirectory(0);
-	// hflux0->SetName("hflux0");
-	// //----flux1
-	// TH1D *hflux1;
-	// hflux1 = dynamic_cast<TH1D*>(file_rawflux->Get("h_rawflux1"));
-	// hflux1->SetDirectory(0);
-	// hflux1->SetName("hflux1");
-	// //----flux_diff
-	// TH1D *hflux_diff;
-	// hflux_diff = dynamic_cast<TH1D*>(file_rawflux->Get("h_rawflux_diff"));
-	// hflux_diff->SetDirectory(0);
-	// hflux_diff->SetName("hflux_diff");
-	// //----rawflux2
-	// TFile *file_rawflux2;
-	// // file_rawflux2 = new TFile("unfoldedflux_ic0.root");
-	// file_rawflux2 = new TFile("./datain/unfoldedflux_ic0.root");
-	// TH1D *hflux;
-	// hflux = dynamic_cast<TH1D*>(file_rawflux2->Get("hflux1_add"));
-	// hflux->SetDirectory(0);
-	// hflux->SetName("hflux");
-	// //======== fluxfit--gcx
-	// //----file_sel
-	// TFile *file_fluxmodel;
-	// // file_fluxmodel = new TFile("./fluxmodel_GCX01.root");
-	// // file_fluxmodel = new TFile("./fluxmodel_GCX02--0.98.root");
-	// // file_fluxmodel = new TFile("./fluxmodel_GCX03--0.97.root");
-	// // file_fluxmodel = new TFile("./fluxmodel_GCX04--0.95.root");
-	// // file_fluxmodel = new TFile("./fluxmodel_GCX05--gcx.root");
-	// // file_fluxmodel = new TFile("./fluxmodel_GCX06--gcx.root");
-	// // file_fluxmodel = new TFile("./fluxmodel_GCX07--gcx.root");
-	// // file_fluxmodel = new TFile("fluxmodel_GCX08--gcx.root");
-	// file_fluxmodel = new TFile("./datain/fluxmodel_GCX08--gcx.root");
-	// //----hflux_fit
-	// TH1D *hflux_fit;
-	// hflux_fit = dynamic_cast<TH1D*>(file_fluxmodel->Get("h_fluxfit"));
-	// hflux_fit->SetDirectory(0);
-	// hflux_fit->SetName("hflux_fit");
-	// //======== flux--add
-	// //----hflux_add
-	// TH1D *hflux_add = (TH1D*)hflux_fit->Clone();
-	// for(int ibin=1; ibin<=hflux->GetNbinsX(); ibin++){
-	// 	double elow = hflux->GetBinLowEdge(ibin);
-	// 	double eup = hflux->GetBinLowEdge(ibin+1);
-	// 	int bin_fit = hflux_add->FindBin(0.5*(elow+eup));
-	// 	hflux_add->SetBinContent(bin_fit, hflux->GetBinContent(ibin));
-	// 	hflux_add->SetBinError(bin_fit, hflux->GetBinError(ibin));
-	// }
-	// hflux_add->SetDirectory(0);
-	// hflux_add->SetName("hflux_add");
-	// //----hflux0_add
-	// TH1D *hflux0_add = (TH1D*)hflux_fit->Clone();
-	// for(int ibin=1; ibin<=hflux0->GetNbinsX(); ibin++){
-	// 	double elow = hflux0->GetBinLowEdge(ibin);
-	// 	double eup = hflux0->GetBinLowEdge(ibin+1);
-	// 	int bin_fit = hflux0_add->FindBin(0.5*(elow+eup));
-	// 	hflux0_add->SetBinContent(bin_fit, hflux0->GetBinContent(ibin));
-	// 	hflux0_add->SetBinError(bin_fit, hflux0->GetBinError(ibin));
-	// }
-	// hflux0_add->SetDirectory(0);
-	// hflux0_add->SetName("hflux0_add");
-	// //----hflux1_add
-	// TH1D *hflux1_add = (TH1D*)hflux_fit->Clone();
-	// for(int ibin=1; ibin<=hflux1->GetNbinsX(); ibin++){
-	// 	double elow = hflux1->GetBinLowEdge(ibin);
-	// 	double eup = hflux1->GetBinLowEdge(ibin+1);
-	// 	int bin_fit = hflux1_add->FindBin(0.5*(elow+eup));
-	// 	hflux1_add->SetBinContent(bin_fit, hflux1->GetBinContent(ibin));
-	// 	hflux1_add->SetBinError(bin_fit, hflux1->GetBinError(ibin));
-	// }
-	// hflux1_add->SetDirectory(0);
-	// hflux1_add->SetName("hflux1_add");
-	// //----hflux_diff_add
-	// TH1D *hflux_diff_add = (TH1D*)hflux_fit->Clone();
-	// for(int ibin=1; ibin<=hflux_diff->GetNbinsX(); ibin++){
-	// 	double elow = hflux_diff->GetBinLowEdge(ibin);
-	// 	double eup = hflux_diff->GetBinLowEdge(ibin+1);
-	// 	int bin_fit = hflux_diff_add->FindBin(0.5*(elow+eup));
-	// 	hflux_diff_add->SetBinContent(bin_fit, hflux_diff->GetBinContent(ibin));
-	// 	hflux_diff_add->SetBinError(bin_fit, hflux_diff->GetBinError(ibin));
-	// }
-	// hflux_diff_add->SetDirectory(0);
-	// hflux_diff_add->SetName("hflux_diff_add");
-	
-	// //======== fluxtemp
-	// TH1D* hflux_temp = (TH1D*)hflux_add->Clone();
-	// hflux_temp->SetDirectory(0);
-	// hflux_temp->SetName("hflux_temp");
-	//======== loopcontrol
+	//----gcx 260412
+	TFile *file_flux = new TFile( "./datain/hrawflux.root", "read" );
+	TH1D *hrawflux = dynamic_cast<TH1D*>( file_flux->Get("h_rawflux") );
+	TH1D *hrawflux_noacc = dynamic_cast<TH1D*>( file_flux->Get("rawflux_noacc") );
+	TH1D *hflux_raw = (TH1D*)hrawflux->Clone("hflux_temp");
+	TH1D *hflux_unfold = (TH1D*)hrawflux->Clone("hflux_temp02");
+  	//==== hfluxfit
+	TF1 *fflux_fit = 0;
+	TH1D *hflux_fit = (TH1D*)hrec_bfre->Clone("hfluxmodel_expand");
+	hflux_fit->Reset();
+	//============ traversal ============
+	//==== init1
 	// int ic_max = 1;
 	int ic_max = 10;
 	int ic_save = 0;
-	//======== calc acc
+	//==== init2
 	double elow,eup,nrec,nrec_err,ngen,flux,weight,acc,acc_err,flux0,flux1,flux_diff;
-	double fit_xmin = hrec0->GetBinLowEdge(1);
-	double fit_xmax = hrec0->GetBinLowEdge(hrec0->GetNbinsX()+1);
+	double fit_xmin = hrec_bfre->GetBinLowEdge(1);
+	double fit_xmax = hrec_bfre->GetBinLowEdge(hrec_bfre->GetNbinsX()+1);
 	int iter_converged = 0;
 	for(int ic=0;ic<ic_max;ic++){
-		//======== cut--index
+		//==== cut--index
 		// if(icut!=15 || icut!=16) continue;
 		if(icut<15 ) continue;
-		//======== fit before reweight
-		cout<<"01"<<endl;
-		hflux_fit = FitFluxModel(hflux_temp, fit_xmin, fit_xmax);
-		cout<<"02"<<endl;
-		if( hflux_fit ) hflux_fit->SetName(Form("hflux_fit_iter%02d", ic));
-		cout<<"03"<<endl;
-		hfluxmodel_expand->Reset();
-		cout<<"04"<<endl;
-		for(int ibin=1; ibin<=hfluxmodel_expand->GetNbinsX(); ibin++){
-			double elow_bin = hfluxmodel_expand->GetBinLowEdge(ibin);
-			double eup_bin = hfluxmodel_expand->GetBinLowEdge(ibin+1);
+		//============ fit ============
+		fflux_fit = FitFluxModel(hflux_raw, fit_xmin, fit_xmax);
+		if( fflux_fit ) fflux_fit->SetName(Form("hflux_fit_iter%02d", ic));
+		hflux_fit->Reset();
+		for(int ibin=1; ibin<=hflux_fit->GetNbinsX(); ibin++){
+			double elow_bin = hflux_fit->GetBinLowEdge(ibin);
+			double eup_bin = hflux_fit->GetBinLowEdge(ibin+1);
 			double flux_int = 0;
-			if( hflux_fit ) flux_int = hflux_fit->Integral(elow_bin, eup_bin);
-			hfluxmodel_expand->SetBinContent(ibin, flux_int);
-			hfluxmodel_expand->SetBinError(ibin, 0);
+			if( fflux_fit ) flux_int = fflux_fit->Integral(elow_bin, eup_bin);
+			hflux_fit->SetBinContent(ibin, flux_int);
+			hflux_fit->SetBinError(ibin, 0);
 		}
-		cout<<"05"<<endl;
-		//======== reset matrix for each iteration
-		delete hmatrix_temp;
-		hmatrix_temp = (TH2F*)hmatrix->Clone("h2d_temp");
-		//======== reweight
-		cout<<"ReweightMCMatrix"<<endl;
+		//============ reweight ============
+		//======== reset hmatrix_re
+		delete hmatrix_re;
+		hmatrix_re = (TH2F*)hmatrix->Clone("h2d_temp");
 		// ReweightMCMatrix( h2d, hflux );
-		ReweightMCMatrix( hmatrix_temp, hfluxmodel_expand, hgen, emin, emax ,icut);
-		cout<<"ReweightMCMatrix02"<<endl;
-		//======== calc acc
-		hrec = dynamic_cast<TH1D*>( hmatrix_temp->ProjectionY( "hrec", 1,  hmatrix_temp->GetNbinsX() ) );
-		hacc = (TH1D*)(hrec->Clone("hacc"));
-		for(int ix=0; ix<hrec->GetNbinsX(); ix++){
+		ReweightMCMatrix( hmatrix_re, hflux_fit, hgen, emin, emax ,icut);
+		//============ acc calc ============
+		hrec_afre = dynamic_cast<TH1D*>( hmatrix_re->ProjectionY( "hrec", 1,  hmatrix_re->GetNbinsX() ) );
+		hacc = (TH1D*)(hrec_afre->Clone("hacc"));
+		for(int ix=0; ix<hrec_afre->GetNbinsX(); ix++){
 			//====ene
-			elow = hrec->GetBinLowEdge(ix+1);
-			eup  = hrec->GetBinLowEdge(ix+2);
+			elow = hrec_afre->GetBinLowEdge(ix+1);
+			eup  = hrec_afre->GetBinLowEdge(ix+2);
 			// if( elow < emin || eup > emax ) continue;
 			//====nrec
-			nrec = hrec->GetBinContent(ix+1);
+			nrec = hrec_afre->GetBinContent(ix+1);
 			if( nrec==0 ) continue;
-			nrec_err = hrec->GetBinError(ix+1)/nrec;
+			nrec_err = hrec_afre->GetBinError(ix+1)/nrec;
 			//====flux
 			// flux = hflux_temp->GetBinContent( hflux_temp->FindBin( 0.5*(elow+eup) ) )*(eup - elow);
-			flux = hfluxmodel_expand->GetBinContent( hfluxmodel_expand->FindBin( 0.5*(elow+eup) ) )*(eup - elow);
+			flux = hflux_fit->GetBinContent( hflux_fit->FindBin( 0.5*(elow+eup) ) )*(eup - elow);
 			//====calc acc
 			hacc->SetBinContent(ix+1, 0 );
 			hacc->SetBinError(ix+1, 0);
@@ -427,100 +322,68 @@ TH1D *_calcFoldedAcceptance(TString fnm_sel, TString fnm_gen, int icut, double e
 				hacc->SetBinContent(ix+1, acc );
 				hacc->SetBinError(ix+1, acc_err);
 			}
-			// //----hflux1
-			// int bin_hflux = hflux->FindBin(0.5*(elow+eup));
-			// if(hflux->GetBinContent(bin_hflux) > 0 && acc > 0){
-			// 	flux0 = hflux0_add->GetBinContent(hflux0_add->FindBin(0.5*(elow+eup)));
-			// 	if(flux0 > 0){
-			// 		flux1 = flux0/(acc/1e4);
-			// 		int bin_fit = hflux1_add->FindBin(0.5*(elow+eup));
-			// 		hflux1_add->SetBinContent(bin_fit, flux1);
-			// 		hflux1_add->SetBinError(bin_fit, 0);
-			// 	}
-			// }
-			// //----hflux_diff
-			// double rawflux = hflux_temp->GetBinContent(hflux_temp->FindBin(0.5*(elow+eup)));
-			// double unfoldedflux = hflux1_add->GetBinContent(hflux1_add->FindBin(0.5*(elow+eup)));
-			// if(unfoldedflux > 0){
-			// 	flux_diff = fabs(unfoldedflux-rawflux)/unfoldedflux;
-			// 	hflux_diff_add->SetBinContent(hflux_diff_add->FindBin(0.5*(elow+eup)), flux_diff);
-			// 	hflux_diff_add->SetBinError(hflux_diff_add->FindBin(0.5*(elow+eup)), 0);
-			// }
-			// 	// if(icut==15 && ix>60 && ix<70) cout<<"nacc "<<nacc<<" ngen "<<ngen<<" flux "<<flux<<" weight "<<weight<<" acc "<<acc<<endl;
-			// 	if(ix>60 && ix<70) cout<<"nacc "<<nrec<<" ngen "<<ngen<<" flux "<<flux<<" weight "<<weight<<" acc "<<acc<<endl;
 		}
+		//============ unflux&fluxdiff ============
 		//======== update fluxtemp with rawflux_noacc / (acc/1e4)
-		double max_rel_dev = 0;
-		for(int ibin=1; ibin<=hflux_temp->GetNbinsX(); ibin++){
-			hflux_temp02->SetBinContent(ibin, hflux_temp->GetBinContent(ibin));
-			hflux_temp02->SetBinError(ibin, hflux_temp->GetBinError(ibin));
-			double elow_bin = hflux_temp->GetBinLowEdge(ibin);
-			double eup_bin = hflux_temp->GetBinLowEdge(ibin+1);
-			double ecenter = 0.5*(elow_bin+eup_bin);
-			double acc_bin = hacc->GetBinContent( hacc->FindBin(ecenter) );
-			double raw_noacc_bin = hrawflux_noacc->GetBinContent( hrawflux_noacc->FindBin(ecenter) );
-			if( acc_bin>0 ){
-				double new_flux = raw_noacc_bin/(acc_bin/1e4);
-				hflux_temp02->SetBinContent(ibin, new_flux);
-				double old_flux = hflux_temp->GetBinContent(ibin);
-				double old_err  = hflux_temp->GetBinError(ibin);
-				double new_err  = 0;
-				if( old_flux>0 && old_err>0 ){
-					new_err = new_flux*(old_err/old_flux);
+		double max_fluxreldiff = 0;
+		for(int ibin=1; ibin<=hflux_raw->GetNbinsX(); ibin++){
+			//====reset
+			hflux_unfold->SetBinContent(ibin, hflux_raw->GetBinContent(ibin));
+			hflux_unfold->SetBinError(ibin, hflux_raw->GetBinError(ibin));
+			//====ecenter
+			double elow = hflux_raw->GetBinLowEdge(ibin);
+			double eup = hflux_raw->GetBinLowEdge(ibin+1);
+			double ecenter = 0.5*(elow+eup);
+			//====acc
+			double acc = hacc->GetBinContent( hacc->FindBin(ecenter) );
+			//====flux_noacc
+			double rawflux_noacc = hrawflux_noacc->GetBinContent( hrawflux_noacc->FindBin(ecenter) );
+			if( acc>0 ){
+				//====unflux
+				double unflux = rawflux_noacc/(acc/1e4);
+				hflux_unfold->SetBinContent(ibin, unflux);
+				//====rawflux
+				double rawflux = hflux_raw->GetBinContent(ibin);
+				double rawflux_err  = hflux_raw->GetBinError(ibin);
+				double unflux_err  = 0;
+				//====unflux_err
+				if( rawflux>0 && rawflux_err>0 ){
+					unflux_err = unflux*(rawflux_err/rawflux);
 				}
-				else if( new_flux>0 ){
-					new_err = 0.05*new_flux;
+				else if( unflux>0 ){
+					unflux_err = 0.05*unflux;
 				}
-				hflux_temp02->SetBinError(ibin, new_err);
-				if( old_flux>0 ){
-					double rel_dev = fabs(new_flux-old_flux)/old_flux;
-					if( rel_dev>max_rel_dev ) max_rel_dev = rel_dev;
+				hflux_unfold->SetBinError(ibin, unflux_err);
+				//====flux relative diff
+				if( rawflux>0 ){
+					double fluxreldiff = fabs(unflux-rawflux)/rawflux;
+					if( fluxreldiff>max_fluxreldiff ) max_fluxreldiff = fluxreldiff;
 				}
 			}
 		}
-		cout<<"iter "<<ic<<" max_rel_dev="<<max_rel_dev<<endl;
-		if( max_rel_dev<1e-3 ){
+		cout<<"iter "<<ic<<" max_fluxreldiff="<<max_fluxreldiff<<endl;
+		//============ iteration convergence check ============
+		if( max_fluxreldiff<1e-3 ){
 			iter_converged = 1;
 			break;
 		}
-		hflux_temp->Reset();
-		hflux_temp->Add(hflux_temp02);
-		// //----save
-		// // if(icut==15 && ic==ic_save){
-		// if(ic==ic_save){
-		// 	fout->cd();
-		// 	hmatrix->Write();
-		// 	hrec0->Write();
-		// 	hgen->Write();
-		// 	hflux->Write();
-		// 	hflux0->Write();
-		// 	hflux1->Write();
-		// 	hflux_diff->Write();
-		// 	hflux_fit->Write();
-		// 	hflux0_add->Write();
-		// 	hflux_add->Write();
-		// 	hflux_temp->Write();
-		// 	hmatrix_temp->Write();
-		// 	hrec->Write();
-		// 	hacc->Write();
-		// 	hflux1_add->Write();
-		// 	hflux_diff_add->Write();
-		// }
-		// //----control
-		// cout<<"calc:icut: "<<icut<<" ic: "<<ic<<endl;
+		//============ reset ============
+		hflux_raw->Reset();
+		hflux_raw->Add(hflux_unfold);
 	}
+	//====iteration failed warning
 	if(icut>=15 && !iter_converged) cout<<"Warning: iteration not converged within ic_max="<<ic_max<<endl;
-	//======== save
+	//============ save ============
 	if(icut==15){
 		fout->cd();
 		hmatrix->Write();
-		hrec0->Write();
+		hrec_bfre->Write();
 		hgen->Write();
-		hmatrix_temp->Write();
-		hrec->Write();
+		hmatrix_re->Write();
+		hrec_afre->Write();
 		hacc->Write();
 	}
-	//======== return
+	//============ return ============
 	return hacc;
 }
 
