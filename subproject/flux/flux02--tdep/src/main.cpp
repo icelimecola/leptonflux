@@ -497,8 +497,9 @@ int CALC_Flux(const FluxConf &conf){
         TH1D *hnum = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hnum_t_ene%02d", i_enebin)));
         TH1D *hexps = dynamic_cast<TH1D*>(hexps_in->Clone(Form("hexps_t_ene%02d", i_enebin)));
         TH1D *htrdeff_time = dynamic_cast<TH1D*>(htrdeff_time_in->Clone(Form("htrdeff_t_ene%02d", i_enebin)));
+        TH1D *hflux_noacc = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hflux_noacc_t_ene%02d", i_enebin)));
         TH1D *hflux = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hflux_t_ene%02d", i_enebin)));
-        if(hnum_pos_measure == nullptr || hnum_ele_measure == nullptr || hnumcorr == nullptr || hnum == nullptr || hexps == nullptr || htrdeff_time == nullptr || hflux == nullptr){
+        if(hnum_pos_measure == nullptr || hnum_ele_measure == nullptr || hnumcorr == nullptr || hnum == nullptr || hexps == nullptr || htrdeff_time == nullptr || hflux_noacc == nullptr || hflux == nullptr){
             cerr<<"ERR CALC_Flux ===== failed to clone hist i_enebin="<<i_enebin<<endl;
             return 1;
         }
@@ -509,6 +510,7 @@ int CALC_Flux(const FluxConf &conf){
         hnum->SetDirectory(nullptr);
         hexps->SetDirectory(nullptr);
         htrdeff_time->SetDirectory(nullptr);
+        hflux_noacc->SetDirectory(nullptr);
         hflux->SetDirectory(nullptr);
 
         hnum_pos_measure->SetTitle(Form("npos measure time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
@@ -517,6 +519,7 @@ int CALC_Flux(const FluxConf &conf){
         hnum->SetTitle(Form("num corr time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
         hexps->SetTitle(Form("exps time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
         htrdeff_time->SetTitle(Form("trdeff time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        hflux_noacc->SetTitle(Form("flux noacc time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
         hflux->SetTitle(Form("flux time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
         int n_bad_bin = 0;
         int n_zero_num = 0;
@@ -547,6 +550,8 @@ int CALC_Flux(const FluxConf &conf){
             double num_err = 0.0;
             double flux = 0.0;
             double flux_err = 0.0;
+            double flux_noacc = 0.0;
+            double flux_noacc_err = 0.0;
             double den_cc = 1.0 - 2.0 * cc.value;
 
             if(fabs(den_cc) < 1.0e-9){
@@ -579,6 +584,14 @@ int CALC_Flux(const FluxConf &conf){
                     + TOOL_CalcRelErr2(eff_total_manual.value, eff_total_manual.error)
                     + TOOL_CalcRelErr2(trdeff_time, trdeff_time_err)
                 );
+                flux_noacc = num / exps / trig.value / eff_total_manual.value / trdeff_time / delta_ene;
+                flux_noacc_err = flux_noacc * sqrt(
+                    TOOL_CalcRelErr2(num, num_err)
+                    + TOOL_CalcRelErr2(exps, exps_err)
+                    + TOOL_CalcRelErr2(trig.value, trig.error)
+                    + TOOL_CalcRelErr2(eff_total_manual.value, eff_total_manual.error)
+                    + TOOL_CalcRelErr2(trdeff_time, trdeff_time_err)
+                );
             }
             else{
                 n_bad_bin++;
@@ -590,6 +603,8 @@ int CALC_Flux(const FluxConf &conf){
             hnumcorr->SetBinError(ibin, num_err);
             hnum->SetBinContent(ibin, num);
             hnum->SetBinError(ibin, num_err);
+            hflux_noacc->SetBinContent(ibin, flux_noacc);
+            hflux_noacc->SetBinError(ibin, flux_noacc_err);
             hflux->SetBinContent(ibin, flux);
             hflux->SetBinError(ibin, flux_err);
         }
@@ -609,6 +624,7 @@ int CALC_Flux(const FluxConf &conf){
         hnum->Write();
         hexps->Write();
         htrdeff_time->Write();
+        hflux_noacc->Write();
         hflux->Write();
 
         if(!DRAW_FluxTime(conf, i_enebin, hflux, f_out.get())){
@@ -618,6 +634,7 @@ int CALC_Flux(const FluxConf &conf){
             delete hnum;
             delete hexps;
             delete htrdeff_time;
+            delete hflux_noacc;
             delete hflux;
             return 1;
         }
@@ -628,6 +645,7 @@ int CALC_Flux(const FluxConf &conf){
         delete hnum;
         delete hexps;
         delete htrdeff_time;
+        delete hflux_noacc;
         delete hflux;
     }
 
