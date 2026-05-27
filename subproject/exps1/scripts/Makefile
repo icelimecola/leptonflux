@@ -39,10 +39,12 @@ NAGDIR=/afs/cern.ch/exp/ams/Offline/CERN/NagLib/
 CERNDIR=/afs/cern.ch/exp/ams/Offline/CERN/2005/lib/
 TRDDIR=/afs/cern.ch/user/t/tsu/public/TRDVertex/
 
+# ======== INCLUDE
+INCLUDE= ./include/
 # ======== SOURCE
 # SRCDIR= ./
 SRCDIR= ./src/
-SRC=$(SRCDIR)$(CODE)
+SRC=$(SRCDIR)$(CODE) $(INCLUDE)general/ConsoleDisplay.cpp
 # ======== OBJECT
 BIN= ./bin/
 MYOBJS = $(SRC:$(SRCDIR)%.cpp=$(BIN)%.o)

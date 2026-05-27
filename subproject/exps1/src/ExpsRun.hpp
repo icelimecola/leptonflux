@@ -12,6 +12,7 @@ using namespace std;
 #include "Include_GCX/ToolFileOut.hpp"
 //====
 #include "Exps.hpp"
+#include "../include/general/ConsoleDisplay.h"
 
 class ExpsRun{
     public:
@@ -55,20 +56,13 @@ void ExpsRun::EXPS_RUN_02(){
     
     //============ run ============
     long nentries = ins_chain.GetChain()->GetEntries();
-    long print_step = nentries/100;
-    if(print_step<1) print_step=1;
+    ConsoleDisplay mydisplay(nentries);
     UInt_t previous_time = 0;
     //====traversal
     cout<<"================ loop ================↓"<<endl;
     for(long entry=0; entry<nentries; entry++){
         //======== output
-        TDatime t;
-        if(entry%print_step==0 || entry==nentries-1){
-            double progress = 100.0*(entry+1)/nentries;
-            cout<<Form("%02d:%02d:%02d", t.GetHour(), t.GetMinute(), t.GetSecond())
-                <<" Processing entry in exps "<<entry<<" / "<<nentries
-                <<" ("<<Form("%.2f", progress)<<"%)"<<endl;
-        }
+        mydisplay.Update(entry);
         //======== getvalue
         ins_chain.GetChain()->GetEntry(entry);
         //======== cut--time
@@ -103,6 +97,7 @@ void ExpsRun::EXPS_RUN_02(){
         //======== filltree
         // ins_tree.FillTree();
     }
+    mydisplay.Finish();
     cout<<"================ loop ================↑"<<endl;
     
     //============ save ============

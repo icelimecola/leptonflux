@@ -33,8 +33,8 @@ LISTNAME=tskim.txt
 # ==========
 LIST=$LISTDIR/$LISTNAME
 # ==========
-# NFPJ=2
-NFPJ=20
+NFPJ=2
+# NFPJ=20
 
 
 # ==============================================
