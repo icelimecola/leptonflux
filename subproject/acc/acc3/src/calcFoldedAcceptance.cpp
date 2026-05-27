@@ -85,12 +85,12 @@ void addGraphWithWeight(TGraphErrors *gout, TGraphErrors *gin, TH1D *hwgt ){
 	}
 }
 
-TH1D *_calcAcceptance(TString fnm, TString fnm_gen, int icut, double emin, double emax, double nplane=1.0){
+TH1D *_calcAcceptance(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, double nplane=1.0){
 	//======== geoacc
 	double A0 = nplane*3.9*3.9*TMath::Pi()*1e4;	//----cm^2sr
 	//======== hsel
-	TFile *file = new TFile(fnm);
-	TH1F *h1sel = dynamic_cast<TH1F*>( file->Get(Form("h1MCEne_cut%02d", icut)) );
+	TFile *file_sel = new TFile(fnm_sel);
+	TH1F *h1sel = dynamic_cast<TH1F*>( file_sel->Get(Form("h1MCEne_cut%02d", icut)) );
 	//======== hgen
  	TFile *file_gen = new TFile( fnm_gen );
 	TH1F *h1gen;
@@ -98,7 +98,7 @@ TH1D *_calcAcceptance(TString fnm, TString fnm_gen, int icut, double emin, doubl
 	else h1gen = dynamic_cast<TH1F*>( file_gen->Get("hgen") );
 	//======== hacc
 	TH1D *hacc = (TH1D*)h1gen->Clone("hacc");
-	hacc->SetNameTitle( "hacceptance_Energy3D", "Acceptance;Energy[GeV];Acceptance[cm^2sr]" );
+	hacc->SetNameTitle( "hacc", "Acceptance;Energy[GeV];Acceptance[cm^2sr]" );
 	//======== traverse
 	int np=0;
 	for(int ix=0; ix<h1sel->GetNbinsX(); ix++){
@@ -119,7 +119,6 @@ TH1D *_calcAcceptance(TString fnm, TString fnm_gen, int icut, double emin, doubl
 		hacc->SetBinError(ix+1, acc_err);
 		//==== end
 		np++;
-		// if(icut==15 && ix>60 && ix<70) cout<<"nacc "<<nsel<<" ngen "<<ngen<<" acc "<<acc<<endl;
 	}
 	//======== return
 	return hacc;
@@ -270,7 +269,7 @@ TH1D *_calcFoldedAcceptance(TString fnm_gen, TString fnm_sel, int icut, double e
 	TH1D *hfluxmodel_expand = (TH1D*)hrec0->Clone("hfluxmodel_expand");
 	hfluxmodel_expand->Reset();
 	// //======== flux--gcx
-	// //----file
+	// //----file_sel
 	// TFile *file_rawflux;
 	// // file_rawflux = new TFile("rawflux_ene.root");
 	// file_rawflux = new TFile("./datain/rawflux_ene.root");
@@ -303,7 +302,7 @@ TH1D *_calcFoldedAcceptance(TString fnm_gen, TString fnm_sel, int icut, double e
 	// hflux->SetDirectory(0);
 	// hflux->SetName("hflux");
 	// //======== fluxfit--gcx
-	// //----file
+	// //----file_sel
 	// TFile *file_fluxmodel;
 	// // file_fluxmodel = new TFile("./fluxmodel_GCX01.root");
 	// // file_fluxmodel = new TFile("./fluxmodel_GCX02--0.98.root");
@@ -614,33 +613,35 @@ void DRAW_Acceptance(TH1D *h1,TString foutname,int icut){
 
 
 int main(){
-	//============ readfile
+	//============ init ============
+	//==== filename-in
 	TString fname_mc[1][2] = {
 		"./datain/mchselect.root","./datain/mchgen.root"
 	};
-	//============init
+	//====minmax
 	double emin,emax;
 	emin = 0.25, emax = 200;
 	// emin = 0, emax = 100;
-	//============hist
+	//====hist
 	const int nCut = 17;
 	// const int nCut = 18;	//----mine
   	TH1D *hacc[nCut]={0}; 
-	//============Hypothesis
+	//====Hypothesis
 	//---- 0-> MC truth, 1-> electron, 2-> positron
 	int Hypothesis; 
 	Hypothesis = 0; 
 	// Hypothesis = 1;
 	// Hypothesis = 2;
-	//============IsPositron
+	//====IsPositron
 	if( Hypothesis==2 ) IsPositron=1;
 	else IsPositron=0;
-	//============writefile
+	//==== filename-out
 	TString foutname;
 	if( Hypothesis==0 ) foutname = "mcacc.root";
-	else if( Hypothesis==1 ) foutname = "foldedacc_ele.root";
-	else foutname = "foldedacc_pos_CORR.root";
+	else if( Hypothesis==1 ) foutname = "unacc_ele.root";
+	else foutname = "unacc_pos_CORR.root";
 	TFile *fout = new TFile(foutname, "recreate");
+
 	//============ calc&draw ============
 	for(int i=0; i<nCut; i++){
 		if(Hypothesis==0){
@@ -653,50 +654,12 @@ int main(){
 		}
 		if(i==15||i==16) DRAW_Acceptance( hacc[i], Form("acceptance_cut%02d", i),i);
 	}
-	//============ ccene ============
-	//====gethist
-	TFile *file_select = new TFile(fname_mc[0][0],"read");
-	TH1F *hgen_ele = dynamic_cast<TH1F*>( file_select->Get( Form("h1MCEne_cut%02d", 15) ) );
-		hgen_ele->SetName("hgen_ele");
-	TH1F *hgen_elecc = dynamic_cast<TH1F*>( file_select->Get( Form("h1MCEne_cut%02d", 16) ) );
-		hgen_elecc->SetName("hgen_elecc");
-	TH1F *hrec_ele = dynamic_cast<TH1F*>( file_select->Get( Form("h1Ene3D_cut%02d", 15) ) );
-		hrec_ele->SetName("hrec_ele");
-	TH1F *hrec_elecc = dynamic_cast<TH1F*>( file_select->Get( Form("h1Ene3D_cut%02d", 16) ) );
-		hrec_elecc->SetName("hrec_elecc");
-	TH1D *cc_ene = (TH1D*)hrec_ele->Clone("cc_ene");
-	//====calc cc
-	double nele,nele_err,nelecc,nelecc_err,cc,cc_err;
-	for(int i=0; i<hrec_ele->GetNbinsX(); i++){
-		cc_ene->SetBinContent(i+1, 0);
-		cc_ene->SetBinError(i+1, 0);
-		// nele = hgen_ele->GetBinContent(i+1);
-		// nele_err = hgen_ele->GetBinError(i+1);
-		// nelecc = hgen_elecc->GetBinContent(i+1);
-		// nelecc_err = hgen_elecc->GetBinError(i+1);
-		nele = hrec_ele->GetBinContent(i+1);
-		nele_err = hrec_ele->GetBinError(i+1);
-		nelecc = hrec_elecc->GetBinContent(i+1);
-		nelecc_err = hrec_elecc->GetBinError(i+1);
-		if(nelecc + nele == 0) continue;
-		cc = nelecc / (nelecc + nele);
-		cc_err = sqrt(pow(nele,2)*pow(nelecc_err,2)+pow(nelecc,2)*pow(nele_err,2))/pow(nelecc+nele,2);
-		cc_ene->SetBinContent(i+1, cc);
-		cc_ene->SetBinError(i+1, cc_err);
-	}
-	//====save cc
-	// fout->cd();
-		// hgen_ele->Write();
-		// hgen_elecc->Write();
-		// hrec_ele->Write();
-		// hrec_elecc->Write();
-		// cc_ene->Write();
+
 	//============ save ============
 	fout->cd();
-	for(int i=0; i<nCut; i++){
-		if( hacc[i] ) hacc[i]->Write();
-	}
+	for(int i=0; i<nCut; i++){if(hacc[i]) hacc[i]->Write();}
 	fout->Close();
+
 	//============ return ============
 	return 0;
 }
