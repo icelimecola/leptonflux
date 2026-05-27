@@ -17,6 +17,7 @@ ConsoleDisplay::ConsoleDisplay(long total_entries){
 	isTTY = isatty(STDOUT_FILENO);
 	needNewLine = 0;
 	lastFillCount = -1;
+	lastLogBucket = -1;
 	refreshInterval = 0.10;
 	lastRefreshTime = 0;
 	//====reset
@@ -27,6 +28,7 @@ void ConsoleDisplay::Reset(long total_entries){
 	totalEntries = total_entries;
 	needNewLine = 0;
 	lastFillCount = -1;
+	lastLogBucket = -1;
 	lastRefreshTime = 0;
 }
 
@@ -34,14 +36,22 @@ void ConsoleDisplay::Update(long entry){
 	if( totalEntries<=0 ) return;
 	if( entry<0 || entry>=totalEntries ) return;
 
-	int nbar = GetBarWidth();
 	double progress = 100.0*(entry+1)/totalEntries;
+	bool is_last_entry = (entry==totalEntries-1);
+
+	if( !isTTY ){
+		int log_bucket = int(progress)/10;
+		if( !is_last_entry && log_bucket==lastLogBucket ) return;
+		PrintProgress(entry);
+		return;
+	}
+
+	int nbar = GetBarWidth();
 	int nfill = int(progress/100.0*nbar);
 	if( nfill<0 ) nfill=0;
 	if( nfill>nbar ) nfill=nbar;
 
 	double now = GetNowTime();
-	bool is_last_entry = (entry==totalEntries-1);
 	bool time_ready = (lastRefreshTime<=0 || now-lastRefreshTime>=refreshInterval);
 	bool bar_changed = (nfill!=lastFillCount);
 
@@ -58,14 +68,6 @@ void ConsoleDisplay::Finish(){
 
 void ConsoleDisplay::PrintProgress(long entry){
 	double progress = 100.0*(entry+1)/totalEntries;
-	int nbar = GetBarWidth();
-	int nfill = int(progress/100.0*nbar);
-	if( nfill<0 ) nfill=0;
-	if( nfill>nbar ) nfill=nbar;
-
-	string bar(nfill, '=');
-	bar += string(nbar-nfill, ' ');
-
 	time_t now_time = time(0);
 	struct tm *t = localtime(&now_time);
 	char timebuf[16] = {0};
@@ -76,9 +78,25 @@ void ConsoleDisplay::PrintProgress(long entry){
 		snprintf(timebuf, sizeof(timebuf), "--:--:--");
 	snprintf(progressbuf, sizeof(progressbuf), "%6.2f", progress);
 
-	if( isTTY )
-		cout << "\r";
-	cout << timebuf
+	if( !isTTY ){
+		cout << timebuf
+			 << " Processing "
+			 << progressbuf << "% "
+			 << entry+1 << " / " << totalEntries << endl;
+		lastLogBucket = int(progress)/10;
+		lastRefreshTime = GetNowTime();
+		return;
+	}
+
+	int nbar = GetBarWidth();
+	int nfill = int(progress/100.0*nbar);
+	if( nfill<0 ) nfill=0;
+	if( nfill>nbar ) nfill=nbar;
+	string bar(nfill, '=');
+	bar += string(nbar-nfill, ' ');
+
+	cout << "\r"
+		 << timebuf
 		 << " Processing [" << bar << "] "
 		 << progressbuf << "% "
 		 << entry+1 << " / " << totalEntries << flush;

@@ -13,6 +13,7 @@ class ConsoleDisplay{
 		bool isTTY;
 		bool needNewLine;
 		int lastFillCount;
+		int lastLogBucket;
 		double refreshInterval;
 		double lastRefreshTime;
 
