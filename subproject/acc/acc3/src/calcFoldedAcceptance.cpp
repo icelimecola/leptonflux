@@ -229,12 +229,12 @@ TF1* FitFluxModel(TH1D *hfluxmodel, double xmin=0.5, double xmax=1000.0){
 // 	// done
 // }
 
-TH1D *_calcFoldedAcceptance(TString fnm_gen, TString fnm_sel, int icut, double emin, double emax, TFile* fout,double nplane=1.0){
+TH1D *_calcFoldedAcceptance(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile* fout,double nplane=1.0){
 	//======== geoacc
 	double A0 = nplane*3.9*3.9*TMath::Pi()*1e4; // acceptance of generation plane [cm^2 sr]
 	//======== hsel
-	TFile *filesel = new TFile(fnm_sel,"read");
-	TH2F *hmatrix = dynamic_cast<TH2F*>(filesel->Get( Form("h2Ene3D_MCEne_cut%02d", icut)));
+	TFile *file_sel = new TFile(fnm_sel,"read");
+	TH2F *hmatrix = dynamic_cast<TH2F*>(file_sel->Get( Form("h2Ene3D_MCEne_cut%02d", icut)));
 	hmatrix->SetName("hmatrix");
 	//======== hgen
 	TFile *file_gen = new TFile(fnm_gen,"read");
@@ -255,9 +255,6 @@ TH1D *_calcFoldedAcceptance(TString fnm_gen, TString fnm_sel, int icut, double e
 	// TH1D *hflux;
 	// if( IsPositron ) hflux = dynamic_cast<TH1D*>(file_fluxmodel->Get("hposflux_model"));
 	// else             hflux = dynamic_cast<TH1D*>(file_fluxmodel->Get("heleflux_model"));
-  	//======== flux--prl122 260322
-	// TFile *file_fluxmodel = new TFile( "./datain/posflux.root", "read" );
-	// TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("hflux") );
   	//======== flux--gcx 260412
 	TFile *file_fluxmodel = new TFile( "./datain/hrawflux.root", "read" );
 	TH1D *hrawflux = dynamic_cast<TH1D*>( file_fluxmodel->Get("h_rawflux") );
@@ -630,7 +627,7 @@ int main(){
 	//---- 0-> MC truth, 1-> electron, 2-> positron
 	int Hypothesis; 
 	Hypothesis = 0; 
-	// Hypothesis = 1;
+	Hypothesis = 1;
 	// Hypothesis = 2;
 	//====IsPositron
 	if( Hypothesis==2 ) IsPositron=1;
@@ -649,8 +646,8 @@ int main(){
 			hacc[i]->SetNameTitle( Form("hacc_cut%02d", i), Form("Acceptance;MC Energy[GeV];Acceptance[cm^{2}sr]") );
 		}
 		else{
-			hacc[i] = _calcFoldedAcceptance( fname_mc[0][1], fname_mc[0][0], i, emin, emax, fout );
-			hacc[i]->SetNameTitle( Form("hacc_cut%02d", i), Form("Acceptance;Reconstructed Energy[GeV];Acceptance[cm^{2}sr]") );
+			hacc[i] = _calcFoldedAcceptance( fname_mc[0][0], fname_mc[0][1], i, emin, emax, fout );
+			hacc[i]->SetNameTitle( Form("hacc_cut%02d", i), Form("Acceptance;ECAL Energy[GeV];Acceptance[cm^{2}sr]") );
 		}
 		if(i==15||i==16) DRAW_Acceptance( hacc[i], Form("acceptance_cut%02d", i),i);
 	}
