@@ -201,11 +201,6 @@ void Analysis::EvalChargeBDT(){
 void Analysis::LoopChain(){
 	//====init hist
 	BookHistograms();
-	//====
-	long nentries = fChain->GetEntries();
-	// long nprint = nentries/100;
-	// if( nprint<1 ) nprint=1;
-	ConsoleDisplay mydisplay(nentries);
 	//====260315 read flux
 	// TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/04.101--ACC1/datain/fluxmodel_prl122.root", "read" );
 	// TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("h_fluxfit") );
@@ -213,14 +208,9 @@ void Analysis::LoopChain(){
 	TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/04.101--ACC1/datain/fluxprl122.root", "read" );
 	TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("hfluxpos") );
 	//====loop
+	long nentries = fChain->GetEntries();
+	ConsoleDisplay mydisplay(nentries);
 	for(long entry=0; entry<nentries; entry++){
-		// TDatime t;
-		// if(entry%nprint==0 || entry==nentries-1){
-		// 	double progress = 100.0*(entry+1)/nentries;
-		// 	cout<<Form("%02d:%02d:%02d", t.GetHour(), t.GetMinute(), t.GetSecond())
-		// 		<<" Processing entry "<<entry<<" / "<<nentries
-		// 		<<" ("<<Form("%.2f", progress)<<"%)"<<endl;
-		// }
 		mydisplay.Update(entry);
 		fChain->GetEntry( entry );
 		//====init
@@ -416,7 +406,6 @@ void Analysis::LoopChain(){
 		// cut[15] = rigidity<0;
 		// cut[16] = rigidity>0;
 		//----260517
-		// cut[0] = tof_betah > 0.8;
 		cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
 		cut[1] = (inecal&3)==3;
 		cut[2] = (trkecalmatch&12)==12;
@@ -426,18 +415,32 @@ void Analysis::LoopChain(){
 		cut[6] = EmBDT>-0.995;
 		cut[7] = (trk_pat&259) && (lvl1_PhysBPatt&62);	//----260318发现并修正
 		cut[8] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
-		// cut[9] = TMath::Abs(Ene/rigidity)>0.65&&TMath::Abs(Ene/rigidity)<5.00&&bdt_chargepid>=0;
 		cut[9] = bdt_chargepid>=0;
 		cut[10] = trk_ntrk<=2 && trd_nhits[2]>=12;	//*
-		// cut[11] = rigidity * mcinfo_q > 0 && trd_klkhd[2][0]<1.5 ;
 		cut[11] = trd_klkhd[2][0]<1.5 ;
 		cut[12] = trd_klkhd[2][1]<0.8;
 		cut[13] = trd_new<0.6;
-		// cut[13] = trd_new<0.7;	//* 4.1
-		// cut[14] = bdtx_combined>0.0; // eff = 0.96
 		cut[14] = trd_new<0.6; // eff = 0.96
 		cut[15] = rigidity<0;
 		cut[16] = rigidity>0;
+		//----260527--fot tsu test
+		// cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
+		// cut[1] = (inecal&3)==3;
+		// cut[2] = (trkecalmatch&12)==12;
+		// cut[3] = tof_qup >0. && tof_qup < 2.0;	//*
+		// cut[4] = tof_qlow>0. && tof_qlow< 5.0;
+		// cut[5] = trk_qin > 0.0 && trk_qin < 1.5; 
+		// cut[6] = EmBDT>-0.995;
+		// cut[7] = (trk_pat&259) && (lvl1_PhysBPatt&62);	//----260318发现并修正
+		// cut[8] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
+		// cut[9] = bdt_chargepid>=0;
+		// cut[10] = trd_nhits[2]>=12 && trd_klkhd[2][0]<1.5 && trd_klkhd[2][1]<0.8;	//*
+		// cut[11] = trk_ntrk<=2;
+		// cut[12] = trk_ntrk==1;
+		// cut[13] = TMath::Abs(Ene/rigidity)>0.65&&TMath::Abs(Ene/rigidity)<5.00;
+		// cut[14] = trd_new<0.7;
+		// cut[15] = rigidity<0;
+		// cut[16] = rigidity>0;
 		//========fill hist
 		//----original
 		// bool passed = 1;
@@ -462,29 +465,35 @@ void Analysis::LoopChain(){
 		// }
 		//----260311--bfre
 		bool passed = 1;
-		bool passed_temp = 1;
+		bool pass14 = 1;
 		for(int i=0; i<nCut; i++){
 			passed = passed && cut[i]; 
-			if(i==14) passed_temp = passed;
-			if(i==15) passed = passed_temp && cut[15];
-			else if(i==16) passed = passed_temp && cut[16];
+			if(i==14) pass14 = passed;
+			if(i==15) passed = pass14 && cut[15];
+			else if(i==16) passed = pass14 && cut[16];
 			if( passed ){
 				h1Ene3D[i]->Fill( Ene, weight );
-				// h1EneC[i]->Fill( ecal_enc, weight );
-				// h1Ene17[i]->Fill( ecal_ene17, weight );
 				h1MCEne[i]->Fill( mcinfo_p, weight );
 				h2Ene3D_MCEne[i]->Fill( mcinfo_p, Ene, weight );
-				// h2EneC_MCEne[i]->Fill( mcinfo_p, ecal_enc, weight );
-				// h2Ene17_MCEne[i]->Fill( mcinfo_p, ecal_ene17, weight );
-				// h2Ene3DMCEneRatio_MCEne[i]->Fill( mcinfo_p, Ene/mcinfo_p, weight );
-				// h2EneCMCEneRatio_MCEne[i]->Fill( mcinfo_p, ecal_enc/mcinfo_p, weight );
-				// h2Ene17MCEneRatio_MCEne[i]->Fill( mcinfo_p, ecal_ene17/mcinfo_p, weight );
-				// h2EneCEne3DRatio_MCEne[i]->Fill( mcinfo_p, ecal_enc/Ene, weight );
-				// h2Ene17Ene3DRatio_MCEne[i]->Fill( mcinfo_p, ecal_ene17/Ene, weight );
-				// h2EneCEne3DRatio_Ene3D[i]->Fill( Ene, ecal_enc/Ene, weight );
-				// h2Ene17Ene3DRatio_Ene3D[i]->Fill( Ene, ecal_ene17/Ene, weight );
 			}
 		}
+		//----260527--for tsutest
+		// bool passed = 1;
+		// bool passed_temp = 1;
+		// bool pass11=0, pass12=0, pass13=0, pass14=0, pass15=0;
+		// for(int i=0; i<nCut; i++){
+		// 	passed = passed && cut[i]; 
+		// 	if(i==11) {pass11=passed && cut[15]; passed = pass11;}
+		// 	if(i==12) {pass12=pass11 && cut[12]; passed = pass12;}
+		// 	if(i==13) {pass13=pass12 && cut[13]; passed = pass13;}
+		// 	if(i==14) {pass14=pass12 && cut[14]; passed = pass14;}
+		// 	if(i==15) {pass15=pass12 && cut[13] && cut[14]; passed = pass15;}
+		// 	if( passed ){
+		// 		h1Ene3D[i]->Fill( Ene, weight );
+		// 		h1MCEne[i]->Fill( mcinfo_p, weight );
+		// 		h2Ene3D_MCEne[i]->Fill( mcinfo_p, Ene, weight );
+		// 	}
+		// }
 		// ----260315--reweight
 		// //----flux
 		// double flux = hfluxmodel->GetBinContent( hfluxmodel->FindBin(mcinfo_p) );
