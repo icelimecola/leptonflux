@@ -34,8 +34,9 @@ LIST=$LISTDIR/$LISTNAME
 # ==========
 # ----260309
 NFPJ=20
+NFPJ=10
 NFPJ=5
-# NFPJ=10
+NFPJ=1
 # ==============================================
 for JID in $(seq 1 1); do
 # for JID in $(seq 21 21); do
