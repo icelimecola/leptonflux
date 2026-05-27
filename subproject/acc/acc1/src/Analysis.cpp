@@ -203,9 +203,9 @@ void Analysis::LoopChain(){
 	BookHistograms();
 	//====
 	long nentries = fChain->GetEntries();
-	long nprint = nentries/100;
-	if( nprint<1 ) nprint=1;
-	ConsoleDisplay mydisplay(nentries, nprint);
+	// long nprint = nentries/100;
+	// if( nprint<1 ) nprint=1;
+	ConsoleDisplay mydisplay(nentries);
 	//====260315 read flux
 	// TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/04.101--ACC1/datain/fluxmodel_prl122.root", "read" );
 	// TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("h_fluxfit") );

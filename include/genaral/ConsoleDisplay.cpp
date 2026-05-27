@@ -6,31 +6,46 @@
 #include <string>
 
 #include <sys/ioctl.h>
+#include <sys/time.h>
 #include <unistd.h>
 
 using namespace std;
 
-ConsoleDisplay::ConsoleDisplay(long total_entries, long print_step){
+ConsoleDisplay::ConsoleDisplay(long total_entries){
 	//====init
 	totalEntries = 0;
-	printStep = 1;
 	isTTY = isatty(STDOUT_FILENO);
 	needNewLine = 0;
+	lastFillCount = -1;
+	refreshInterval = 0.10;
+	lastRefreshTime = 0;
 	//====reset
-	Reset(total_entries, print_step);
+	Reset(total_entries);
 }
 
-void ConsoleDisplay::Reset(long total_entries, long print_step){
+void ConsoleDisplay::Reset(long total_entries){
 	totalEntries = total_entries;
-	printStep = print_step;
-	if( printStep<1 ) printStep = 1;
 	needNewLine = 0;
+	lastFillCount = -1;
+	lastRefreshTime = 0;
 }
 
 void ConsoleDisplay::Update(long entry){
 	if( totalEntries<=0 ) return;
 	if( entry<0 || entry>=totalEntries ) return;
-	if( entry%printStep!=0 && entry!=totalEntries-1 ) return;
+
+	int nbar = GetBarWidth();
+	double progress = 100.0*(entry+1)/totalEntries;
+	int nfill = int(progress/100.0*nbar);
+	if( nfill<0 ) nfill=0;
+	if( nfill>nbar ) nfill=nbar;
+
+	double now = GetNowTime();
+	bool is_last_entry = (entry==totalEntries-1);
+	bool time_ready = (lastRefreshTime<=0 || now-lastRefreshTime>=refreshInterval);
+	bool bar_changed = (nfill!=lastFillCount);
+
+	if( !is_last_entry && !bar_changed && !time_ready ) return;
 	PrintProgress(entry);
 }
 
@@ -51,8 +66,8 @@ void ConsoleDisplay::PrintProgress(long entry){
 	string bar(nfill, '=');
 	bar += string(nbar-nfill, ' ');
 
-	time_t now = time(0);
-	struct tm *t = localtime(&now);
+	time_t now_time = time(0);
+	struct tm *t = localtime(&now_time);
 	char timebuf[16] = {0};
 	char progressbuf[16] = {0};
 	if( t!=0 )
@@ -69,6 +84,8 @@ void ConsoleDisplay::PrintProgress(long entry){
 		 << entry+1 << " / " << totalEntries << flush;
 
 	needNewLine = 1;
+	lastFillCount = nfill;
+	lastRefreshTime = GetNowTime();
 	if( entry==totalEntries-1 ) Finish();
 }
 
@@ -85,4 +102,10 @@ int ConsoleDisplay::GetBarWidth() const{
 	if( nbar<10 ) nbar=10;
 	if( nbar>80 ) nbar=80;
 	return nbar;
+}
+
+double ConsoleDisplay::GetNowTime() const{
+	struct timeval tv;
+	gettimeofday(&tv, 0);
+	return tv.tv_sec + 1.0e-6*tv.tv_usec;
 }
