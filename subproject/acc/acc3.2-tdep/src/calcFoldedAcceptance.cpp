@@ -314,10 +314,12 @@ TH1D *_calcFoldedAccCore(TString fnm_sel, TString fnm_gen, int icut, double emin
 	TH1F *hgen;
 	if( IsFineBinning ) hgen = dynamic_cast<TH1F*>( file_gen->Get("hgen_finebin") );
 	else hgen = dynamic_cast<TH1F*>( file_gen->Get("hgen") );
+	hgen->SetName(Form("hgen%s", htag.Data()));
 	//==== hmatrix
 	TFile *file_sel = new TFile(fnm_sel,"read");
 	TH2F *hmatrix = dynamic_cast<TH2F*>(file_sel->Get( Form("h2Ene3D_MCEne_cut%02d", icut)));
-	hmatrix->SetName("hmatrix");
+	// hmatrix->SetName("hmatrix");
+	hmatrix->SetName(Form("hmatrix%s", htag.Data()));
 	TH2F *hmatrix_re = (TH2F*)hmatrix->Clone(Form("hmatrix_re%s", htag.Data()));
 	//==== hrec
 	TH1D *hrec_bfre = dynamic_cast<TH1D*>( hmatrix_re->ProjectionY( Form("hrec_bfre%s", htag.Data()), 1,  hmatrix_re->GetNbinsX() ) );
@@ -490,11 +492,13 @@ void CALC_TimeDependentAcceptanceCut15(TString fnm_sel, TString fnm_gen, double 
 	if( !BUILD_TimeDependentFluxInputs(file_flux, vrawflux, vrawflux_noacc) ) return;
 	//============ calcunacc ============
 	for(int it=0; it<NTBIN_27D; it++){
+		int save=0;
+		if( it==1 ) save=1;
 		TH1D *hunacc = _calcFoldedAccCore(
 			fnm_sel, fnm_gen, 15, emin, emax, fout,
 			vrawflux[it], vrawflux_noacc[it],
-			Form("_tbin%03d", it), 0
-			// Form("_tbin%03d", it), 1
+			// Form("_tbin%03d", it), 0
+			Form("_t%03d", it), save
 		);
 		if( hunacc ){
 			hunacc->SetNameTitle(
@@ -561,8 +565,8 @@ void CALC_TimeDependentAcceptanceCut15(TString fnm_sel, TString fnm_gen, double 
 				hunfactor_t_ene->SetBinError(it+1, 0);
 			}
 		}
-		hacc_t_ene->Write();
-		hunfactor_t_ene->Write();
+		// hacc_t_ene->Write();
+		// hunfactor_t_ene->Write();
 	}
 	file_mcacc->Close();
 	file_flux->Close();
