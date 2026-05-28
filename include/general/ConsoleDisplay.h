@@ -12,14 +12,15 @@ class ConsoleDisplay{
 		long totalEntries;
 		bool isTTY;
 		bool needNewLine;
-		int lastFillCount;
 		int lastLogBucket;
 		double refreshInterval;
+		double startTime;
 		double lastRefreshTime;
 
 		void PrintProgress(long entry);
+		void FormatDuration(char *buf, int nbuf, double seconds) const;
 		int GetTerminalWidth() const;
-		int GetBarWidth() const;
+		int GetBarWidth(int nfixed=0) const;
 		double GetNowTime() const;
 };
 
