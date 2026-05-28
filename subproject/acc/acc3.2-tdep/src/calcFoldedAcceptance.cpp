@@ -305,7 +305,7 @@ TH1D *BUILD_TimeSeriesHistForEnergy(int iene, const TString &hname, const TStrin
 	return hout;
 }
 
-TH1D *_calcFoldedAccCore(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile *fout, TH1D *hrawflux, TH1D *hrawflux_noacc, TString htag="", int is_save_detail=1, double nplane=1.0){
+TH1D *_calc_unacc_core(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile *fout, TH1D *hrawflux, TH1D *hrawflux_noacc, TString htag="", int is_save_detail=1, double nplane=1.0){
 	//============ init ============
 	//==== geoacc
 	double A0 = nplane*3.9*3.9*TMath::Pi()*1e4; // acceptance of generation plane [cm^2 sr]
@@ -343,8 +343,8 @@ TH1D *_calcFoldedAccCore(TString fnm_sel, TString fnm_gen, int icut, double emin
 	hflux_fit->Reset();
 	//============ traversal ============
 	//==== init1
-	// int ic_max = 1;
-	int ic_max = 10;
+	int ic_max = 1;
+	// int ic_max = 10;
 	//==== init2
 	double elow,eup,nrec,nrec_err,flux,acc,acc_err;
 	double rawflux_xmin = hrawflux->GetBinLowEdge(1);
@@ -469,7 +469,7 @@ TH1D *_calcFoldedAccCore(TString fnm_sel, TString fnm_gen, int icut, double emin
 }
 
 
-TH1D *_calcFoldedAcc(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile* fout,double nplane=1.0){
+TH1D *_calc_unacc(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile* fout,double nplane=1.0){
 	TFile *file_flux = new TFile( "./datain/hrawflux.root", "read" );
 	TH1D *hrawflux_in = dynamic_cast<TH1D*>( file_flux->Get("h_rawflux") );
 	TH1D *hrawflux_noacc_in = dynamic_cast<TH1D*>( file_flux->Get("rawflux_noacc") );
@@ -479,13 +479,13 @@ TH1D *_calcFoldedAcc(TString fnm_sel, TString fnm_gen, int icut, double emin, do
 		cerr << "ERR _calcFoldedAcc ===== missing h_rawflux or rawflux_noacc" << endl;
 		return 0;
 	}
-	TH1D *hunacc = _calcFoldedAccCore(fnm_sel, fnm_gen, icut, emin, emax, fout, hrawflux, hrawflux_noacc, "", 1, nplane);
+	TH1D *hunacc = _calc_unacc_core(fnm_sel, fnm_gen, icut, emin, emax, fout, hrawflux, hrawflux_noacc, "", 1, nplane);
 	file_flux->Close();
 	delete file_flux;
 	return hunacc;
 }
 
-void CALC_TimeDependentAcceptanceCut15(TString fnm_sel, TString fnm_gen, double emin, double emax, TFile *fout){
+void _calc_unacc_tdep_cut15(TString fnm_sel, TString fnm_gen, double emin, double emax, TFile *fout){
 	//============ read fluxt ============
 	TFile *file_flux = new TFile("./datain/hrawflux_t.root", "read");
 	vector<TH1D*> vrawflux, vrawflux_noacc, vunacc, vunfactor;
@@ -494,7 +494,7 @@ void CALC_TimeDependentAcceptanceCut15(TString fnm_sel, TString fnm_gen, double 
 	for(int it=0; it<NTBIN_27D; it++){
 		int save=0;
 		if( it==1 ) save=1;
-		TH1D *hunacc = _calcFoldedAccCore(
+		TH1D *hunacc = _calc_unacc_core(
 			fnm_sel, fnm_gen, 15, emin, emax, fout,
 			vrawflux[it], vrawflux_noacc[it],
 			// Form("_tbin%03d", it), 0
@@ -575,7 +575,7 @@ void CALC_TimeDependentAcceptanceCut15(TString fnm_sel, TString fnm_gen, double 
 }
 
 
-void DRAW_Acceptance(TH1D *h1,TString foutname,int icut){
+void draw_acc(TH1D *h1,TString foutname,int icut){
     //============================ DEC
     TH1D *h1d_temp;
     TAxis *xaxis,*yaxis,*zaxis;
@@ -703,7 +703,7 @@ int main(){
 	// }
 	//----260527 tdep cut15
 	if( Hypothesis!=0 ){
-		CALC_TimeDependentAcceptanceCut15( fname_mc[0][0], fname_mc[0][1], emin, emax, fout );
+		_calc_unacc_tdep_cut15( fname_mc[0][0], fname_mc[0][1], emin, emax, fout );
 	}
 
 	//============ save ============

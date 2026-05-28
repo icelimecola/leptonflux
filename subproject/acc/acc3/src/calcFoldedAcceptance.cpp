@@ -229,7 +229,7 @@ TF1* FitFluxModel(TH1D *hfluxmodel, double xmin=0.5, double xmax=1000.0){
 // 	// done
 // }
 
-TH1D *_calcFoldedAcc(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile* fout,double nplane=1.0){
+TH1D *_calc_unacc(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile* fout,double nplane=1.0){
 	//============ init ============
 	//==== geoacc
 	double A0 = nplane*3.9*3.9*TMath::Pi()*1e4; // acceptance of generation plane [cm^2 sr]
@@ -388,7 +388,7 @@ TH1D *_calcFoldedAcc(TString fnm_sel, TString fnm_gen, int icut, double emin, do
 }
 
 
-void DRAW_Acceptance(TH1D *h1,TString foutname,int icut){
+void draw_acc(TH1D *h1,TString foutname,int icut){
     //============================ DEC
     TH1D *h1d_temp;
     TAxis *xaxis,*yaxis,*zaxis;
@@ -509,10 +509,10 @@ int main(){
 			hacc[i]->SetNameTitle( Form("hacc_cut%02d", i), Form("Acceptance;MC Energy[GeV];Acceptance[cm^{2}sr]") );
 		}
 		else{
-			hacc[i] = _calcFoldedAcc( fname_mc[0][0], fname_mc[0][1], i, emin, emax, fout );
+			hacc[i] = _calc_unacc( fname_mc[0][0], fname_mc[0][1], i, emin, emax, fout );
 			hacc[i]->SetNameTitle( Form("hacc_cut%02d", i), Form("Acceptance;ECAL Energy[GeV];Acceptance[cm^{2}sr]") );
 		}
-		if(i==15||i==16) DRAW_Acceptance( hacc[i], Form("acceptance_cut%02d", i),i);
+		if(i==15||i==16) draw_acc( hacc[i], Form("acceptance_cut%02d", i),i);
 	}
 
 	//============ save ============

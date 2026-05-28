@@ -230,7 +230,7 @@ TF1* FitFluxModel(TH1D *hfluxmodel, double xmin=0.5, double xmax=1000.0){
 // 	// done
 // }
 
-TH1D *_calcFoldedAcc(TString fnm_gen, TString fnm_sel, int icut, double emin, double emax, TFile* fout,double nplane=1.0){
+TH1D *_calc_unacc(TString fnm_gen, TString fnm_sel, int icut, double emin, double emax, TFile* fout,double nplane=1.0){
 	//======== geoacc
 	double A0 = nplane*3.9*3.9*TMath::Pi()*1e4; // acceptance of generation plane [cm^2 sr]
 	//======== hsel
@@ -529,7 +529,7 @@ TH1D *_calcFoldedAcc(TString fnm_gen, TString fnm_sel, int icut, double emin, do
 }
 
 
-void DRAW_Acceptance(TH1D *h1,TString foutname,int icut){
+void draw_acc(TH1D *h1,TString foutname,int icut){
     //============================ DEC
     TH1D *h1d_temp;
     TAxis *xaxis,*yaxis,*zaxis;
