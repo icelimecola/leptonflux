@@ -248,20 +248,17 @@ TF1* FitFluxModel(TH1D *hfluxmodel, double xmin=0.5, double xmax=1000.0){
 	return fflux_fit;
 }
 
-TH1D *BUILD_TimeSliceFluxHist(int itbin, const TString &hname, const TString &htitle){
+TH1D *unacct_init_hene(const TString &hname, const TString &htitle){
 	TH1D *hout = new TH1D(hname, htitle, NENEBIN_TDEP_RAW, ENERGY_BINS_TDEP + FIRST_ENEBIN_TDEP_RAW);
 	hout->SetDirectory(0);
 	hout->Sumw2();
-	for(int ibin=1; ibin<=hout->GetNbinsX(); ibin++){
-		hout->SetBinContent(ibin, 0);
-		hout->SetBinError(ibin, 0);
-	}
+	hout->Reset();
 	return hout;
 }
 
 TH1D *BUILD_RawFluxFrom1GeV(TH1D *hin, const TString &hname){
 	if( hin==0 ) return 0;
-	TH1D *hout = BUILD_TimeSliceFluxHist(0, hname, hin->GetTitle());
+	TH1D *hout = unacct_init_hene(hname, hin->GetTitle());
 	for(int ibin=1; ibin<=hout->GetNbinsX(); ibin++){
 		double ecenter = hout->GetBinCenter(ibin);
 		int ibin_in = hin->FindBin(ecenter);
@@ -271,22 +268,25 @@ TH1D *BUILD_RawFluxFrom1GeV(TH1D *hin, const TString &hname){
 	return hout;
 }
 
-bool BUILD_TimeDependentFluxInputs(TFile *file_flux, vector<TH1D*> &vrawflux, vector<TH1D*> &vrawflux_noacc){
+bool unacct_get_rawflux(TFile *file_flux, vector<TH1D*> &vrawflux, vector<TH1D*> &vrawflux_noacc){
 	if( file_flux==0 ) return false;
+	//====inithene
 	vrawflux.clear();
 	vrawflux_noacc.clear();
 	for(int it=0; it<NTBIN_27D; it++){
-		vrawflux.push_back( BUILD_TimeSliceFluxHist(it, Form("hrawflux_tbin%03d", it), Form("hrawflux_tbin%03d", it)) );
-		vrawflux_noacc.push_back( BUILD_TimeSliceFluxHist(it, Form("hrawflux_noacc_tbin%03d", it), Form("hrawflux_noacc_tbin%03d", it)) );
+		vrawflux.push_back( unacct_init_hene(Form("hrawflux_t%03d", it), Form("hrawflux_t%03d", it)) );
+		vrawflux_noacc.push_back( unacct_init_hene(Form("hrawflux_noacc_t%03d", it), Form("hrawflux_noacc_t%03d", it)) );
 	}
-
 	for(int ie=FIRST_ENEBIN_TDEP_RAW; ie<NENEBIN_TDEP; ie++){
+		//====getht (by ene)
 		TH1D *hflux_t = dynamic_cast<TH1D*>( file_flux->Get(Form("hflux_27d_t_ene%02d", ie)) );
 		TH1D *hflux_noacc_t = dynamic_cast<TH1D*>( file_flux->Get(Form("hflux_noacc_27d_t_ene%02d", ie)) );
 		if( hflux_t==0 || hflux_noacc_t==0 ){
-			cerr << "ERR BUILD_TimeDependentFluxInputs ===== missing hist for enebin " << ie << endl;
+			cerr << "ERR unacct_get_rawflux ===== missing hist for enebin " << ie << endl;
 			return false;
 		}
+		//====fillhene (by time)
+		//----use the startbin as bin1
 		int ibin_out = ie - FIRST_ENEBIN_TDEP_RAW + 1;
 		for(int it=0; it<NTBIN_27D; it++){
 			vrawflux[it]->SetBinContent(ibin_out, hflux_t->GetBinContent(it+1));
@@ -298,7 +298,7 @@ bool BUILD_TimeDependentFluxInputs(TFile *file_flux, vector<TH1D*> &vrawflux, ve
 	return true;
 }
 
-TH1D *BUILD_TimeSeriesHistForEnergy(int iene, const TString &hname, const TString &htitle){
+TH1D *unacct_init_ht(const TString &hname, const TString &htitle){
 	TH1D *hout = new TH1D(hname, htitle, NTBIN_27D, TMIN_27D, TMAX_27D);
 	hout->SetDirectory(0);
 	hout->Sumw2();
@@ -485,17 +485,17 @@ TH1D *_calc_unacc(TString fnm_sel, TString fnm_gen, int icut, double emin, doubl
 	return hunacc;
 }
 
-void _calc_unacc_tdep_cut15(TString fnm_sel, TString fnm_gen, double emin, double emax, TFile *fout){
+void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile *fout){
+	vector<TH1D*> vrawflux, vrawflux_noacc, vunacc, vunfactor;
 	//============ read fluxt ============
 	TFile *file_flux = new TFile("./datain/hrawflux_t.root", "read");
-	vector<TH1D*> vrawflux, vrawflux_noacc, vunacc, vunfactor;
-	if( !BUILD_TimeDependentFluxInputs(file_flux, vrawflux, vrawflux_noacc) ) return;
+	if( !unacct_get_rawflux(file_flux, vrawflux, vrawflux_noacc) ) return;
 	//============ calcunacc ============
 	for(int it=0; it<NTBIN_27D; it++){
 		int save=0;
 		if( it==1 ) save=1;
 		TH1D *hunacc = _calc_unacc_core(
-			fnm_sel, fnm_gen, 15, emin, emax, fout,
+			fnm_sel, fnm_gen, icut, emin, emax, fout,
 			vrawflux[it], vrawflux_noacc[it],
 			// Form("_tbin%03d", it), 0
 			Form("_t%03d", it), save
@@ -503,31 +503,33 @@ void _calc_unacc_tdep_cut15(TString fnm_sel, TString fnm_gen, double emin, doubl
 		if( hunacc ){
 			hunacc->SetNameTitle(
 				Form("hunacc_tbin%03d", it),
-				Form("Acceptance cut15 tbin%03d;ECAL Energy[GeV];Acceptance[cm^{2}sr]", it)
+				Form("Acceptance cut%02d tbin%03d;ECAL Energy[GeV];Acceptance[cm^{2}sr]", icut, it)
 			);
 			vunacc.push_back(hunacc);
 		}
 	}
-	//============ read mcacc ============
+	//============ get mcacc ============
 	TFile *file_mcacc = new TFile("./datain/mcacc.root", "read");
-	TH1F *hmcacc_cut15 = dynamic_cast<TH1F*>( file_mcacc->Get("hacc_cut15") );
-	if( hmcacc_cut15==0 ){
-		cerr << "ERR CALC_TimeDependentAcceptanceCut15 ===== missing hacc_cut15 in mcacc.root" << endl;
-		return;
-	}
+	TH1F *hmcacc = dynamic_cast<TH1F*>( file_mcacc->Get("hacc_cut15") );
+		if( hmcacc==0 ){
+			cerr << "ERR CALC_TimeDependentAcceptanceCut15 ===== missing hacc_cut15 in mcacc.root" << endl;
+			return;
+		}
 	//============ calc unfactor ============
 	for(int it=0; it<NTBIN_27D; it++){
 		if( it>=(int)vunacc.size() || vunacc[it]==0 ) continue;
-		TH1D *hunfactor_tbin = (TH1D*)vunacc[it]->Clone( Form("hunfactor_tbin%03d", it) );
-		hunfactor_tbin->SetTitle( Form("unacc/mcacc tbin%03d;ECAL Energy[GeV];unacc/mcacc", it) );
-		for(int ie=1; ie<=hunfactor_tbin->GetNbinsX(); ie++){
-			double acc = vunacc[it]->GetBinContent(ie);
-			double mcacc = hmcacc_cut15->GetBinContent(ie);
-			hunfactor_tbin->SetBinContent(ie, 0);
-			hunfactor_tbin->SetBinError(ie, 0);
-			if( mcacc>0 ) hunfactor_tbin->SetBinContent(ie, acc/mcacc);
+		TH1D *hunfactor = (TH1D*)vunacc[it]->Clone( Form("hunfactor%03d", it) );
+		hunfactor->SetTitle( Form("unacc/mcacc t%03d;ECAL Energy[GeV];unacc/mcacc", it) );
+		for(int ie=0; ie<hunfactor->GetNbinsX(); ie++){
+			double unacc = vunacc[it]->GetBinContent(ie);
+			double mcacc = hmcacc->GetBinContent(ie);
+			hunfactor->Reset();
+			if( mcacc>0 ){
+				hunfactor->SetBinContent(ie+1, unacc/mcacc);
+				hunfactor->SetBinError(ie+1, 0);
+			}
 		}
-		vunfactor.push_back(hunfactor_tbin);
+		vunfactor.push_back(hunfactor);
 	}
 	//============ save ============
 	// fout->cd();
@@ -541,32 +543,30 @@ void _calc_unacc_tdep_cut15(TString fnm_sel, TString fnm_gen, double emin, doubl
 	//============ edep to tdep ============
 	fout->cd();
 	for(int ie=FIRST_ENEBIN_TDEP_RAW; ie<NENEBIN_TDEP; ie++){
+		//====init hunacc&hunfactor 
 		double elow = ENERGY_BINS_TDEP[ie];
 		double eup = ENERGY_BINS_TDEP[ie+1];
-		TH1D *hacc_t_ene = BUILD_TimeSeriesHistForEnergy(
-			ie,
-			Form("hacc_cut15_t_ene%02d", ie),
-			Form("Acceptance cut15 %.2f-%.2f GeV;time;Acceptance[cm^{2}sr]", elow, eup)
+		TH1D *hunacc_t = unacct_init_ht(
+			Form("hunacc_t_ene%02d", ie),
+			Form("Acceptance %.2f-%.2f GeV;time;Acceptance[cm^{2}sr]", elow, eup)
 		);
-		TH1D *hunfactor_t_ene = BUILD_TimeSeriesHistForEnergy(
-			ie,
-			Form("hunfactor_t_ene%02d", ie),
+		TH1D *hunfactor_t = unacct_init_ht(
+			Form("hunfactor_t%02d", ie),
 			Form("unacc/mcacc %.2f-%.2f GeV;time;unacc/mcacc", elow, eup)
 		);
+		//====fill
 		for(int it=0; it<NTBIN_27D; it++){
 			if( it>=(int)vunacc.size() || vunacc[it]==0 ) continue;
-			int ibin_acc = ie + 1;
-			double acc = vunacc[it]->GetBinContent(ibin_acc);
-			double acc_err = vunacc[it]->GetBinError(ibin_acc);
-			hacc_t_ene->SetBinContent(it+1, acc);
-			hacc_t_ene->SetBinError(it+1, acc_err);
+			double acc = vunacc[it]->GetBinContent(ie+1);
+			double acc_err = vunacc[it]->GetBinError(ie+1);
+			hunacc_t->Reset();
 			if( it<(int)vunfactor.size() && vunfactor[it] ){
-				hunfactor_t_ene->SetBinContent(it+1, vunfactor[it]->GetBinContent(ibin_acc));
-				hunfactor_t_ene->SetBinError(it+1, 0);
+				hunfactor_t->SetBinContent(it+1, vunfactor[it]->GetBinContent(ie+1));
+				hunfactor_t->SetBinError(it+1, 0);
 			}
 		}
-		// hacc_t_ene->Write();
-		// hunfactor_t_ene->Write();
+		// hunacc_t->Write();
+		// hunfactor_t->Write();
 	}
 	file_mcacc->Close();
 	file_flux->Close();
@@ -659,6 +659,8 @@ void draw_acc(TH1D *h1,TString foutname,int icut){
 }
 
 
+
+
 int main(){
 	//============ init ============
 	//==== filename-in
@@ -671,7 +673,6 @@ int main(){
 	// emin = 0, emax = 100;
 	//====hist
 	const int nCut = 17;
-	// const int nCut = 18;	//----mine
   	TH1D *hacc[nCut]={0}; 
 	//====Hypothesis
 	//---- 0-> MC truth, 1-> electron, 2-> positron
@@ -703,7 +704,7 @@ int main(){
 	// }
 	//----260527 tdep cut15
 	if( Hypothesis!=0 ){
-		_calc_unacc_tdep_cut15( fname_mc[0][0], fname_mc[0][1], emin, emax, fout );
+		_calc_unacc_tdep( fname_mc[0][0], fname_mc[0][1], 15, emin, emax, fout);
 	}
 
 	//============ save ============
