@@ -166,7 +166,7 @@ double _FluxModel_Positron(double *x, double *par){
 	return (E*E)/(Ehat*Ehat)*(diffuse + source);
 }
 
-TF1* FitFluxModel(TH1D *hfluxmodel, double xmin=0.5, double xmax=1000.0){
+TF1* fit_flux(TH1D *hfluxmodel, double xmin=0.5, double xmax=1000.0){
 	//======== check input
 	if( hfluxmodel==0 ){
 		cerr << "FitFluxModel Error: null histogram" << endl;
@@ -281,7 +281,7 @@ TH1D *_calc_unacc(TString fnm_sel, TString fnm_gen, int icut, double emin, doubl
 		// if(icut!=15 || icut!=16) continue;
 		if(icut<15 ) continue;
 		//============ fit ============
-		fflux_fit = FitFluxModel(hflux_raw, fit_xmin, fit_xmax);
+		fflux_fit = fit_flux(hflux_raw, fit_xmin, fit_xmax);
 		if( fflux_fit ) fflux_fit->SetName(Form("hflux_fit_iter%02d", ic));
 		hflux_fit->Reset();
 		for(int ibin=1; ibin<=hflux_fit->GetNbinsX(); ibin++){

@@ -207,19 +207,19 @@ double _FluxModel_Positron(double *x, double *par){
 	return (E*E)/(Ehat*Ehat)*(diffuse + source);
 }
 
-TF1* FitFluxModel(TH1D *hfluxmodel, double xmin=0.5, double xmax=1000.0){
+TF1* fit_flux(TH1D *hflux, double xmin=0.5, double xmax=1000.0){
 	//======== check input
-	if( hfluxmodel==0 ){
+	if( hflux==0 ){
 		cerr << "FitFluxModel Error: null histogram" << endl;
 		return 0;
 	}
-	//======== ensure there are usable points for TH1::Fit (requires positive bin error)
+	//======== enough fit points check
 	int nfit_points = 0;
-	for(int ibin=1; ibin<=hfluxmodel->GetNbinsX(); ibin++){
-		double xc = hfluxmodel->GetBinCenter(ibin);
+	for(int ibin=1; ibin<=hflux->GetNbinsX(); ibin++){
+		double xc = hflux->GetBinCenter(ibin);
 		if( xc<xmin || xc>xmax ) continue;
-		double yc = hfluxmodel->GetBinContent(ibin);
-		double ey = hfluxmodel->GetBinError(ibin);
+		double yc = hflux->GetBinContent(ibin);
+		double ey = hflux->GetBinError(ibin);
 		if( yc>0 && ey>0 ) nfit_points++;
 	}
 	if( nfit_points<3 ){
@@ -227,7 +227,7 @@ TF1* FitFluxModel(TH1D *hfluxmodel, double xmin=0.5, double xmax=1000.0){
 		return 0;
 	}
 	//======== init fit function
-	TString fname = Form("%s_fit", hfluxmodel->GetName());
+	TString fname = Form("%s_fit", hflux->GetName());
 	TF1 *fflux_fit = new TF1(fname, _FluxModel_Positron, xmin, xmax, 6);
 	fflux_fit->SetNpx(1000);
 	fflux_fit->SetParNames("invEs", "Cs", "gamma_s", "Cd", "gamma_d", "phi_eplus");
@@ -240,7 +240,7 @@ TF1* FitFluxModel(TH1D *hfluxmodel, double xmin=0.5, double xmax=1000.0){
 	fflux_fit->SetParLimits(4, -8.0, -0.5);      // gamma_d
 	fflux_fit->SetParLimits(5, 0.0, 5.0);        // phi_eplus [GeV]
 	//======== fit
-	int fit_status = hfluxmodel->Fit(fflux_fit, "RQM0");
+	int fit_status = hflux->Fit(fflux_fit, "RQM0");
 	if( fit_status!=0 ){
 		cerr << "FitFluxModel Warning: fit status = " << fit_status << endl;
 	}
@@ -347,16 +347,18 @@ TH1D *_calc_unacc_core(TString fnm_sel, TString fnm_gen, int icut, double emin, 
 	// int ic_max = 10;
 	//==== init2
 	double elow,eup,nrec,nrec_err,flux,acc,acc_err;
+	int iter_converged = 0;
+	//==== init3--for fit
 	double rawflux_xmin = hrawflux->GetBinLowEdge(1);
 	double fit_xmin = rawflux_xmin;
 	double fit_xmax = hrec_bfre->GetBinLowEdge(hrec_bfre->GetNbinsX()+1);
-	int iter_converged = 0;
+	//==== iteration
 	for(int ic=0;ic<ic_max;ic++){
 		//==== cut--index
 		// if(icut!=15 || icut!=16) continue;
 		if(icut<15 ) continue;
 		//============ fit ============
-		fflux_fit = FitFluxModel(hflux_raw, fit_xmin, fit_xmax);
+		fflux_fit = fit_flux(hflux_raw, fit_xmin, fit_xmax);
 		if( fflux_fit ) fflux_fit->SetName(Form("fflux_fit_iter%02d%s", ic, htag.Data()));
 		hflux_fit->Reset();
 		for(int ibin=1; ibin<=hflux_fit->GetNbinsX(); ibin++){
@@ -486,7 +488,7 @@ TH1D *_calc_unacc(TString fnm_sel, TString fnm_gen, int icut, double emin, doubl
 }
 
 void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile *fout){
-	//============ edep ============
+	//============ edep-unacc ============
 	vector<TH1D*> vrawflux, vrawflux_noacc, vunacc, vunfactor;
 	//==== read fluxt
 	TFile *file_flux = new TFile("./datain/hrawflux_t.root", "read");
@@ -509,6 +511,7 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 			vunacc.push_back(hunacc);
 		}
 	}
+	//============ edep-unfactor ============
 	//==== get mcacc
 	TFile *file_mcacc = new TFile("./datain/mcacc.root", "read");
 	TH1F *hmcacc = dynamic_cast<TH1F*>( file_mcacc->Get("hacc_cut15") );
@@ -532,7 +535,7 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 		}
 		vunfactor.push_back(hunfactor);
 	}
-	//==== save
+	//============ edep-save ============
 	// fout->cd();
 	// for(int it=0; it<NTBIN_27D; it++){
 	// 	if( vrawflux_noacc[it] ) vrawflux_noacc[it]->Write();
@@ -572,6 +575,9 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 		// hunacc_t->Write();
 		// hunfactor_t->Write();
 	}
+
+
+	//============ end ============
 	file_mcacc->Close();
 	file_flux->Close();
 	delete file_mcacc;
