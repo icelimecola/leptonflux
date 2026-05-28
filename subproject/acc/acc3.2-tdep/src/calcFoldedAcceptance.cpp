@@ -193,7 +193,7 @@ void ReweightMCMatrix(TH2F *hmatrix, TH1D *hflux, TH1F *hgen, double xmin, doubl
 	}
 }
 
-double _FluxModel_Positron(double *x, double *par){
+double fluxmodel_positron(double *x, double *par){
 	// par[0]=1/Es [TeV^-1], par[1]=Cs, par[2]=gamma_s, par[3]=Cd, par[4]=gamma_d, par[5]=phi_e+ [GeV]
 	const double E1 = 7.0;   // GeV
 	const double E2 = 60.0;  // GeV
@@ -216,19 +216,18 @@ TF1* fit_flux(TH1D *hflux, double xmin=0.5, double xmax=1000.0){
 	//======== enough fit points check
 	int nfit_points = 0;
 	for(int ibin=1; ibin<=hflux->GetNbinsX(); ibin++){
-		double xc = hflux->GetBinCenter(ibin);
-		if( xc<xmin || xc>xmax ) continue;
-		double yc = hflux->GetBinContent(ibin);
-		double ey = hflux->GetBinError(ibin);
-		if( yc>0 && ey>0 ) nfit_points++;
+		double x = hflux->GetBinCenter(ibin);
+		if( x<xmin || x>xmax ) continue;
+		double y = hflux->GetBinContent(ibin);
+		double yerr = hflux->GetBinError(ibin);
+		if( y>0 && yerr>0 ) nfit_points++;
 	}
 	if( nfit_points<3 ){
 		cerr << "FitFluxModel Warning: insufficient fit points (" << nfit_points << ")" << endl;
 		return 0;
 	}
 	//======== init fit function
-	TString fname = Form("%s_fit", hflux->GetName());
-	TF1 *fflux_fit = new TF1(fname, _FluxModel_Positron, xmin, xmax, 6);
+	TF1 *fflux_fit = new TF1("fflux_fit", fluxmodel_positron, xmin, xmax, 6);
 	fflux_fit->SetNpx(1000);
 	fflux_fit->SetParNames("invEs", "Cs", "gamma_s", "Cd", "gamma_d", "phi_eplus");
 	fflux_fit->SetParameters(1.23, 6.80e-5, -2.58, 6.51e-2, -4.07, 1.10);
@@ -349,8 +348,7 @@ TH1D *_calc_unacc_core(TString fnm_sel, TString fnm_gen, int icut, double emin, 
 	double elow,eup,nrec,nrec_err,flux,acc,acc_err;
 	int iter_converged = 0;
 	//==== init3--for fit
-	double rawflux_xmin = hrawflux->GetBinLowEdge(1);
-	double fit_xmin = rawflux_xmin;
+	double fit_xmin = hrawflux->GetBinLowEdge(1);
 	double fit_xmax = hrec_bfre->GetBinLowEdge(hrec_bfre->GetNbinsX()+1);
 	//==== iteration
 	for(int ic=0;ic<ic_max;ic++){

@@ -153,7 +153,7 @@ void ReweightMCMatrix(TH2F *hmatrix, TH1D *hflux, TH1F *hgen, double xmin, doubl
 	}
 }
 
-double _FluxModel_Positron(double *x, double *par){
+double fluxmodel_positron(double *x, double *par){
 	// par[0]=1/Es [TeV^-1], par[1]=Cs, par[2]=gamma_s, par[3]=Cd, par[4]=gamma_d, par[5]=phi_e+ [GeV]
 	const double E1 = 7.0;   // GeV
 	const double E2 = 60.0;  // GeV
@@ -188,7 +188,7 @@ TF1* fit_flux(TH1D *hfluxmodel, double xmin=0.5, double xmax=1000.0){
 	}
 	//======== init fit function
 	TString fname = Form("%s_fit", hfluxmodel->GetName());
-	TF1 *fflux_fit = new TF1(fname, _FluxModel_Positron, xmin, xmax, 6);
+	TF1 *fflux_fit = new TF1(fname, fluxmodel_positron, xmin, xmax, 6);
 	fflux_fit->SetNpx(1000);
 	fflux_fit->SetParNames("invEs", "Cs", "gamma_s", "Cd", "gamma_d", "phi_eplus");
 	fflux_fit->SetParameters(1.23, 6.80e-5, -2.58, 6.51e-2, -4.07, 1.10);
