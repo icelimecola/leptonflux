@@ -194,16 +194,18 @@ void ReweightMCMatrix(TH2F *hmatrix, TH1D *hflux, TH1F *hgen, double xmin, doubl
 }
 
 double fluxmodel_positron(double *x, double *par){
-	// par[0]=1/Es [TeV^-1], par[1]=Cs, par[2]=gamma_s, par[3]=Cd, par[4]=gamma_d, par[5]=phi_e+ [GeV]
+	// par[0]=phi_e+ [GeV], par[1]=Cd, par[2]=gamma_d, par[3]=Cs, par[4]=gamma_s, par[5]=1/Es [TeV^-1]
+	//====constant
 	const double E1 = 7.0;   // GeV
 	const double E2 = 60.0;  // GeV
+	double invEs_GeVinv = par[5]*1e-3; // convert TeV^-1 to GeV^-1
+	//====E
 	double E = x[0];
-	double Ehat = E + par[5];
+	double Ehat = E + par[0];
 	if( E<=0 || Ehat<=0 ) return 0;
-
-	double invEs_GeVinv = par[0]*1e-3; // convert TeV^-1 to GeV^-1
-	double diffuse = par[3]*pow(Ehat/E1, par[4]);
-	double source = par[1]*pow(Ehat/E2, par[2])*exp(-Ehat*invEs_GeVinv);
+	//====model
+	double diffuse = par[1]*pow(Ehat/E1, par[2]);
+	double source = par[3]*pow(Ehat/E2, par[4])*exp(-Ehat*invEs_GeVinv);
 	return (E*E)/(Ehat*Ehat)*(diffuse + source);
 }
 
@@ -228,16 +230,16 @@ TF1* fit_flux(TH1D *hflux, double xmin=0.5, double xmax=1000.0){
 	}
 	//======== init fit function
 	TF1 *fflux_fit = new TF1("fflux_fit", fluxmodel_positron, xmin, xmax, 6);
-	fflux_fit->SetNpx(1000);
-	fflux_fit->SetParNames("invEs", "Cs", "gamma_s", "Cd", "gamma_d", "phi_eplus");
-	fflux_fit->SetParameters(1.23, 6.80e-5, -2.58, 6.51e-2, -4.07, 1.10);
+	fflux_fit->SetNpx(10000);
+	fflux_fit->SetParNames("phi_eplus", "Cd", "gamma_d", "Cs", "gamma_s", "invEs");
+	fflux_fit->SetParameters(1.10, 6.51e-2, -4.07, 6.80e-5, -2.58, 1.23);
 	//======== parameter limits
-	fflux_fit->SetParLimits(0, 1e-4, 20.0);      // invEs [TeV^-1]
-	fflux_fit->SetParLimits(1, 1e-8, 1.0);       // Cs
-	fflux_fit->SetParLimits(2, -8.0, -0.5);      // gamma_s
-	fflux_fit->SetParLimits(3, 1e-6, 1.0);       // Cd
-	fflux_fit->SetParLimits(4, -8.0, -0.5);      // gamma_d
-	fflux_fit->SetParLimits(5, 0.0, 5.0);        // phi_eplus [GeV]
+	fflux_fit->SetParLimits(0, 0.0, 5.0);        // phi_e+ [GeV]
+	fflux_fit->SetParLimits(1, 1e-6, 1.0);       // Cd
+	fflux_fit->SetParLimits(2, -8.0, -0.5);      // gamma_d
+	fflux_fit->SetParLimits(3, 1e-8, 1.0);       // Cs
+	fflux_fit->SetParLimits(4, -8.0, -0.5);      // gamma_s
+	fflux_fit->SetParLimits(5, 1e-4, 20.0);      // 1/Es [TeV^-1]
 	//======== fit
 	int fit_status = hflux->Fit(fflux_fit, "RQM0");
 	if( fit_status!=0 ){
