@@ -7,3 +7,4 @@
 /subproject/**/dataiss/
 /subproject/**/third_party/
 /subproject/**/include/
+/subproject/**/*.root
