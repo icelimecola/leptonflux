@@ -486,11 +486,12 @@ TH1D *_calc_unacc(TString fnm_sel, TString fnm_gen, int icut, double emin, doubl
 }
 
 void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile *fout){
+	//============ edep ============
 	vector<TH1D*> vrawflux, vrawflux_noacc, vunacc, vunfactor;
-	//============ read fluxt ============
+	//==== read fluxt
 	TFile *file_flux = new TFile("./datain/hrawflux_t.root", "read");
 	if( !unacct_get_rawflux(file_flux, vrawflux, vrawflux_noacc) ) return;
-	//============ calcunacc ============
+	//==== calcunacc
 	for(int it=0; it<NTBIN_27D; it++){
 		int save=0;
 		if( it==1 ) save=1;
@@ -508,14 +509,14 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 			vunacc.push_back(hunacc);
 		}
 	}
-	//============ get mcacc ============
+	//==== get mcacc
 	TFile *file_mcacc = new TFile("./datain/mcacc.root", "read");
 	TH1F *hmcacc = dynamic_cast<TH1F*>( file_mcacc->Get("hacc_cut15") );
 		if( hmcacc==0 ){
 			cerr << "ERR CALC_TimeDependentAcceptanceCut15 ===== missing hacc_cut15 in mcacc.root" << endl;
 			return;
 		}
-	//============ calc unfactor ============
+	//==== calc unfactor
 	for(int it=0; it<NTBIN_27D; it++){
 		if( it>=(int)vunacc.size() || vunacc[it]==0 ) continue;
 		TH1D *hunfactor = (TH1D*)vunacc[it]->Clone( Form("hunfactor%03d", it) );
@@ -531,7 +532,7 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 		}
 		vunfactor.push_back(hunfactor);
 	}
-	//============ save ============
+	//==== save
 	// fout->cd();
 	// for(int it=0; it<NTBIN_27D; it++){
 	// 	if( vrawflux_noacc[it] ) vrawflux_noacc[it]->Write();
@@ -540,7 +541,9 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 	// 	vunacc[it]->Write();
 	// 	vunfactor[it]->Write();
 	// }
-	//============ edep to tdep ============
+
+
+	//============ tdep ============
 	fout->cd();
 	for(int ie=FIRST_ENEBIN_TDEP_RAW; ie<NENEBIN_TDEP; ie++){
 		//====init hunacc&hunfactor 
@@ -565,6 +568,7 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 				hunfactor_t->SetBinError(it+1, 0);
 			}
 		}
+		//====save
 		// hunacc_t->Write();
 		// hunfactor_t->Write();
 	}
