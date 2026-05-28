@@ -458,7 +458,11 @@ TH1D *_calcFoldedAccCore(TString fnm_sel, TString fnm_gen, int icut, double emin
 		hunacc->Write();
 	}
 	//============ return ============
-	// hacc->SetDirectory(0);
+	hunacc->SetDirectory(0);
+	file_sel->Close();
+	file_gen->Close();
+	delete file_sel;
+	delete file_gen;
 	return hunacc;
 }
 
@@ -473,7 +477,10 @@ TH1D *_calcFoldedAcc(TString fnm_sel, TString fnm_gen, int icut, double emin, do
 		cerr << "ERR _calcFoldedAcc ===== missing h_rawflux or rawflux_noacc" << endl;
 		return 0;
 	}
-	return _calcFoldedAccCore(fnm_sel, fnm_gen, icut, emin, emax, fout, hrawflux, hrawflux_noacc, "", 1, nplane);
+	TH1D *hunacc = _calcFoldedAccCore(fnm_sel, fnm_gen, icut, emin, emax, fout, hrawflux, hrawflux_noacc, "", 1, nplane);
+	file_flux->Close();
+	delete file_flux;
+	return hunacc;
 }
 
 void CALC_TimeDependentAcceptanceCut15(TString fnm_sel, TString fnm_gen, double emin, double emax, TFile *fout){
@@ -486,8 +493,8 @@ void CALC_TimeDependentAcceptanceCut15(TString fnm_sel, TString fnm_gen, double 
 		TH1D *hunacc = _calcFoldedAccCore(
 			fnm_sel, fnm_gen, 15, emin, emax, fout,
 			vrawflux[it], vrawflux_noacc[it],
-			// Form("_tbin%03d", it), 0
-			Form("_tbin%03d", it), 1
+			Form("_tbin%03d", it), 0
+			// Form("_tbin%03d", it), 1
 		);
 		if( hunacc ){
 			hunacc->SetNameTitle(
@@ -528,6 +535,7 @@ void CALC_TimeDependentAcceptanceCut15(TString fnm_sel, TString fnm_gen, double 
 	// 	vunfactor[it]->Write();
 	// }
 	//============ edep to tdep ============
+	fout->cd();
 	for(int ie=FIRST_ENEBIN_TDEP_RAW; ie<NENEBIN_TDEP; ie++){
 		double elow = ENERGY_BINS_TDEP[ie];
 		double eup = ENERGY_BINS_TDEP[ie+1];
@@ -556,6 +564,10 @@ void CALC_TimeDependentAcceptanceCut15(TString fnm_sel, TString fnm_gen, double 
 		hacc_t_ene->Write();
 		hunfactor_t_ene->Write();
 	}
+	file_mcacc->Close();
+	file_flux->Close();
+	delete file_mcacc;
+	delete file_flux;
 }
 
 
