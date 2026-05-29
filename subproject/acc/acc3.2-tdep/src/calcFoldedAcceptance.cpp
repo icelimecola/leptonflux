@@ -3,17 +3,23 @@
 #include "TH2F.h"
 #include "TH2D.h"
 #include "TFile.h"
+#include "TDirectory.h"
 #include "TGraphErrors.h"
+#include "TGraphAsymmErrors.h"
 #include "TGraph.h"
 #include "TCanvas.h"
 #include "TStyle.h"
 #include "TLegend.h"
+#include "TLatex.h"
 #include "TString.h"
 #include "TMath.h"
 #include "TF1.h"
+#include "TSystem.h"
 #include <vector>
 #include <memory>
 #include <iostream>
+#include <cstdio>
+#include <ctime>
 using namespace std;
 #include "TGaxis.h"
 #include "TROOT.h"
@@ -28,6 +34,8 @@ static const int NTBIN_27D = 225;
 static const double WT_27D = 60.0*60.0*24.0*27.0;
 static const double TMIN_27D = 1305417600.0;
 static const double TMAX_27D = TMIN_27D + NTBIN_27D*WT_27D;
+static const double TDRAW_XMIN = 1305849600.0;
+static const double TDRAW_XMAX = 1761955200.0;
 static const double ENERGY_BINS_TDEP[NENEBIN_TDEP + 1] = {
 	0.80, 1, 1.16, 1.33, 1.51,
 	1.71, 1.92, 2.15, 2.40, 2.67,
@@ -209,43 +217,209 @@ double fluxmodel_positron(double *x, double *par){
 	return (E*E)/(Ehat*Ehat)*(diffuse + source);
 }
 
-TF1* fit_flux(TH1D *hflux, double xmin=0.5, double xmax=1000.0){
+double fluxmodel_positron_e3(double *x, double *par){
+	double E = x[0];
+	return E*E*E*fluxmodel_positron(x, par);
+}
+
+double get_lw_center(double elow, double eup, double gamma=3.0){
+	return pow((pow(eup,gamma+1)-pow(elow,gamma+1))/(eup-elow)/(gamma+1), 1.0/gamma);
+}
+
+TGraphAsymmErrors *hist_to_gae(TH1D *hflux, const TString &gname){
+	if( hflux==0 ) return 0;
+	TGraphAsymmErrors *g = new TGraphAsymmErrors();
+	g->SetNameTitle(gname, gname);
+	for(int ibin=1; ibin<=hflux->GetNbinsX(); ibin++){
+		double y = hflux->GetBinContent(ibin);
+		double yerr = hflux->GetBinError(ibin);
+		if( y<=0 || yerr<=0 ) continue;
+		double elow = hflux->GetBinLowEdge(ibin);
+		double eup = hflux->GetBinLowEdge(ibin+1);
+		double x = get_lw_center(elow, eup);
+		int ip = g->GetN();
+		g->SetPoint(ip, x, y);
+		g->SetPointError(ip, 0, 0, yerr, yerr);
+	}
+	return g;
+}
+
+TGraphAsymmErrors *scale_gae_e3(TGraphAsymmErrors *gin, const TString &gname, double xmin=-1){
+	if( gin==0 ) return 0;
+	TGraphAsymmErrors *g = new TGraphAsymmErrors();
+	g->SetNameTitle(gname, gname);
+	for(int i=0; i<gin->GetN(); i++){
+		double x,y;
+		gin->GetPoint(i, x, y);
+		if( x<xmin ) continue;
+		double s = x*x*x;
+		int ip = g->GetN();
+		g->SetPoint(ip, x, y*s);
+		g->SetPointError(ip, gin->GetErrorXlow(i), gin->GetErrorXhigh(i), gin->GetErrorYlow(i)*s, gin->GetErrorYhigh(i)*s);
+	}
+	return g;
+}
+
+TGraphAsymmErrors *merge_gae(TGraphAsymmErrors *g1, TGraphAsymmErrors *g2, const TString &gname){
+	TGraphAsymmErrors *g = new TGraphAsymmErrors();
+	g->SetNameTitle(gname, gname);
+	TGraphAsymmErrors *vg[2] = {g1, g2};
+	for(int ig=0; ig<2; ig++){
+		if( vg[ig]==0 ) continue;
+		for(int i=0; i<vg[ig]->GetN(); i++){
+			double x,y;
+			vg[ig]->GetPoint(i, x, y);
+			int ip = g->GetN();
+			g->SetPoint(ip, x, y);
+			g->SetPointError(ip, vg[ig]->GetErrorXlow(i), vg[ig]->GetErrorXhigh(i), vg[ig]->GetErrorYlow(i), vg[ig]->GetErrorYhigh(i));
+		}
+	}
+	return g;
+}
+
+TString format_gmt_date(double unix_time){
+	time_t tt = (time_t)unix_time;
+	tm *gt = gmtime(&tt);
+	if( gt==0 ) return "";
+	return Form("%04d.%02d.%02d", gt->tm_year+1900, gt->tm_mon+1, gt->tm_mday);
+}
+
+TString get_tdep_time_label(const TString &tag){
+	int it = -1;
+	if( sscanf(tag.Data(), "_t%d", &it)!=1 ) return "";
+	if( it<0 || it>=NTBIN_27D ) return "";
+	double t1 = TMIN_27D + it*WT_27D;
+	double t2 = t1 + WT_27D;
+	return format_gmt_date(t1) + "-" + format_gmt_date(t2);
+}
+
+void write_fit_gae(TGraphAsymmErrors *graw_e3, TGraphAsymmErrors *gprl_e3, TGraphAsymmErrors *gfit, const TString &tag, TFile *fout){
+	if( fout==0 ) return;
+	fout->cd();
+	TDirectory *dir = fout->GetDirectory("fitgae");
+	if( dir==0 ) dir = fout->mkdir("fitgae");
+	dir->cd();
+	if( graw_e3 ){
+		graw_e3->SetNameTitle(Form("graw_flux_e3%s", tag.Data()), Form("rawflux E^{3}%s", tag.Data()));
+		graw_e3->Write("", TObject::kOverwrite);
+	}
+	if( gprl_e3 ){
+		gprl_e3->SetNameTitle(Form("gprl2019_flux_e3_gt30%s", tag.Data()), Form("PRL2019 E^{3} E>30 GeV%s", tag.Data()));
+		gprl_e3->Write("", TObject::kOverwrite);
+	}
+	if( gfit ){
+		gfit->SetNameTitle(Form("gfit_flux_e3%s", tag.Data()), Form("rawflux+PRL2019 E^{3}%s", tag.Data()));
+		gfit->Write("", TObject::kOverwrite);
+	}
+	fout->cd();
+}
+
+void draw_flux_fit(TGraphAsymmErrors *graw_e3, TGraphAsymmErrors *gprl_e3, TF1 *ffit_e3, double fitxmin, double fitxmax, const TString &tag, TFile *fout=0){
+	TCanvas can(Form("can_fluxfit%s", tag.Data()), Form("can_fluxfit%s", tag.Data()), 1000, 700);
+	can.SetLogx();
+	can.SetGridx();
+	can.SetGridy();
+	graw_e3->SetMarkerStyle(20);
+	graw_e3->SetMarkerColor(kRed+1);
+	graw_e3->SetLineColor(kRed+1);
+	gprl_e3->SetMarkerStyle(24);
+	gprl_e3->SetMarkerColor(kBlue+1);
+	gprl_e3->SetLineColor(kBlue+1);
+	ffit_e3->SetLineColor(kBlack);
+	ffit_e3->SetLineWidth(2);
+	graw_e3->Draw("AP");
+	if( fitxmin>0 && fitxmax>fitxmin ) graw_e3->GetXaxis()->SetLimits(fitxmin, fitxmax);
+	graw_e3->GetXaxis()->SetTitle("Energy [GeV]");
+	graw_e3->GetYaxis()->SetTitle("E^{3} Flux");
+	gprl_e3->Draw("P SAME");
+	ffit_e3->Draw("L SAME");
+	TLegend leg(0.58,0.68,0.88,0.86);
+	leg.AddEntry(graw_e3, "rawflux", "P");
+	leg.AddEntry(gprl_e3, "PRL2019 E>30 GeV", "P");
+	leg.AddEntry(ffit_e3, "fit", "L");
+	leg.Draw();
+	TString time_label = get_tdep_time_label(tag);
+	if( time_label!="" ){
+		TLatex latex;
+		latex.SetNDC();
+		latex.SetTextFont(62);
+		latex.SetTextSize(0.035);
+		latex.SetTextAlign(22);
+		latex.DrawLatex(0.5, 0.92, time_label);
+	}
+	if( fout ){
+		fout->cd();
+		TDirectory *dir = fout->GetDirectory("fitcanvas");
+		if( dir==0 ) dir = fout->mkdir("fitcanvas");
+		dir->cd();
+		can.Write("", TObject::kOverwrite);
+		fout->cd();
+	}
+	can.SaveAs(Form("fluxfit%s.pdf", tag.Data()));
+}
+
+TF1* fit_flux(TH1D *hflux, double xmin=0.5, double xmax=1000.0, bool is_draw_fit=false, TFile *fout=0, TString htag=""){
 	//======== check input
 	if( hflux==0 ){
 		cerr << "FitFluxModel Error: null histogram" << endl;
 		return 0;
 	}
-	//======== enough fit points check
-	int nfit_points = 0;
-	for(int ibin=1; ibin<=hflux->GetNbinsX(); ibin++){
-		double x = hflux->GetBinCenter(ibin);
-		if( x<xmin || x>xmax ) continue;
-		double y = hflux->GetBinContent(ibin);
-		double yerr = hflux->GetBinError(ibin);
-		if( y>0 && yerr>0 ) nfit_points++;
+	//======== build fit graph
+	TGraphAsymmErrors *graw = hist_to_gae(hflux, "graw_flux");
+	TGraphAsymmErrors *graw_e3 = scale_gae_e3(graw, "graw_flux_e3");
+	TFile *fprl = new TFile("./datain/posiflux_prl2019.root", "read");
+	// TGraphAsymmErrors *gprl = fprl ? dynamic_cast<TGraphAsymmErrors*>(fprl->Get("graph1")) : 0;
+	TGraphAsymmErrors *gprl = dynamic_cast<TGraphAsymmErrors*>(fprl->Get("graph1"));
+	TGraphAsymmErrors *gprl_e3 = scale_gae_e3(gprl, "gprl2019_flux_e3_gt30", 30.0);
+	TGraphAsymmErrors *gfit = merge_gae(graw_e3, gprl_e3, "gfit_flux_e3");
+	if( gfit==0 || gfit->GetN()<3 ){
+		cerr << "FitFluxModel Warning: insufficient fit points (" << (gfit ? gfit->GetN() : 0) << ")" << endl;
+		if( fprl ) fprl->Close();
+		return 0;
 	}
-	if( nfit_points<3 ){
-		cerr << "FitFluxModel Warning: insufficient fit points (" << nfit_points << ")" << endl;
+	double fitxmin = 1e30;
+	double fitxmax = -1e30;
+	for(int i=0; i<gfit->GetN(); i++){
+		double x,y;
+		gfit->GetPoint(i, x, y);
+		if( x<fitxmin ) fitxmin = x;
+		if( x>fitxmax ) fitxmax = x;
+	}
+	if( fitxmin>=fitxmax ){
+		cerr << "FitFluxModel Warning: bad fit range" << endl;
+		if( fprl ) fprl->Close();
 		return 0;
 	}
 	//======== init fit function
-	TF1 *fflux_fit = new TF1("fflux_fit", fluxmodel_positron, xmin, xmax, 6);
-	fflux_fit->SetNpx(10000);
-	fflux_fit->SetParNames("phi_eplus", "Cd", "gamma_d", "Cs", "gamma_s", "invEs");
-	fflux_fit->SetParameters(1.10, 6.51e-2, -4.07, 6.80e-5, -2.58, 1.23);
+	TF1 *fflux_fit_e3 = new TF1("fflux_fit_e3", fluxmodel_positron_e3, fitxmin, fitxmax, 6);
+	fflux_fit_e3->SetNpx(10000);
+	fflux_fit_e3->SetParNames("phi_eplus", "Cd", "gamma_d", "Cs", "gamma_s", "invEs");
+	fflux_fit_e3->SetParameters(1.10, 6.51e-2, -4.07, 6.80e-5, -2.58, 1.23);
 	//======== parameter limits
-	fflux_fit->SetParLimits(0, 0.0, 5.0);        // phi_e+ [GeV]
-	fflux_fit->SetParLimits(1, 1e-6, 1.0);       // Cd
-	fflux_fit->SetParLimits(2, -8.0, -0.5);      // gamma_d
-	fflux_fit->SetParLimits(3, 1e-8, 1.0);       // Cs
-	fflux_fit->SetParLimits(4, -8.0, -0.5);      // gamma_s
-	fflux_fit->SetParLimits(5, 1e-4, 20.0);      // 1/Es [TeV^-1]
+	fflux_fit_e3->SetParLimits(0, 0.0, 5.0);        // phi_e+ [GeV]
+	fflux_fit_e3->SetParLimits(1, 1e-6, 1.0);       // Cd
+	fflux_fit_e3->SetParLimits(2, -8.0, -0.5);      // gamma_d
+	fflux_fit_e3->SetParLimits(3, 1e-8, 1.0);       // Cs
+	fflux_fit_e3->SetParLimits(4, -8.0, -0.5);      // gamma_s
+	fflux_fit_e3->SetParLimits(5, 1e-4, 20.0);      // 1/Es [TeV^-1]
 	//======== fit
-	int fit_status = hflux->Fit(fflux_fit, "RQM0");
+	int fit_status = gfit->Fit(fflux_fit_e3, "RQM0");
 	if( fit_status!=0 ){
 		cerr << "FitFluxModel Warning: fit status = " << fit_status << endl;
 	}
-	//======== return
+	if( is_draw_fit ) write_fit_gae(graw_e3, gprl_e3, gfit, htag, fout);
+	if( is_draw_fit && graw_e3 && gprl_e3 && fflux_fit_e3 ) draw_flux_fit(graw_e3, gprl_e3, fflux_fit_e3, fitxmin, fitxmax, htag, fout);
+
+	TF1 *fflux_fit = new TF1("fflux_fit", fluxmodel_positron, 0.8, fitxmax, 6);
+	fflux_fit->SetNpx(10000);
+	fflux_fit->SetParNames("phi_eplus", "Cd", "gamma_d", "Cs", "gamma_s", "invEs");
+	for(int ipar=0; ipar<6; ipar++){
+		fflux_fit->SetParameter(ipar, fflux_fit_e3->GetParameter(ipar));
+		fflux_fit->SetParError(ipar, fflux_fit_e3->GetParError(ipar));
+	}
+
+	if( fprl ) fprl->Close();
+	delete fflux_fit_e3;
 	return fflux_fit;
 }
 
@@ -306,6 +480,74 @@ TH1D *unacct_init_ht(const TString &hname, const TString &htitle){
 	return hout;
 }
 
+bool DRAW_UnfactorTime(int ie, TH1D *hunfactor_t, TFile *fout){
+	if( hunfactor_t==0 || fout==0 ) return false;
+	TString outdir = "unfactor_tdep_canvas";
+	TString canvas_name = Form("cunfactor_t_ene%02d", ie);
+	TString fout_pdf = Form("%s/hunfactor_t%02d.pdf", outdir.Data(), ie);
+	double elow = ENERGY_BINS_TDEP[ie];
+	double eup = ENERGY_BINS_TDEP[ie+1];
+
+	gSystem->mkdir(outdir, true);
+	TCanvas *c = new TCanvas(canvas_name, canvas_name, 1000, 400);
+	TAxis *xaxis = hunfactor_t->GetXaxis();
+	TAxis *yaxis = hunfactor_t->GetYaxis();
+
+	hunfactor_t->SetStats(0);
+	c->SetTopMargin(0.13);
+	c->SetBottomMargin(0.15);
+	c->SetLeftMargin(0.13);
+	c->SetRightMargin(0.08);
+	c->cd();
+	gPad->SetGridx();
+	gPad->SetGridy();
+
+	xaxis->SetNameTitle("Date", "Date");
+	xaxis->CenterTitle();
+	xaxis->SetTitleFont(62);
+	xaxis->SetTitleSize(0.05);
+	xaxis->SetTitleOffset(1.2);
+	xaxis->SetLabelOffset(0.025);
+	gStyle->SetTimeOffset(0);
+	xaxis->SetTimeDisplay(1);
+	xaxis->SetTimeFormat("%b/%d/%Y");
+	xaxis->SetNdivisions(-505);
+	xaxis->SetRangeUser(TDRAW_XMIN, TDRAW_XMAX);
+
+	yaxis->SetNameTitle("unacc/mcacc", "unacc/mcacc");
+	yaxis->CenterTitle();
+	yaxis->SetTitleFont(62);
+	yaxis->SetTitleSize(0.05);
+	yaxis->SetTitleOffset(0.9);
+	yaxis->SetLabelOffset(0.012);
+
+	hunfactor_t->SetMarkerStyle(20);
+	hunfactor_t->SetMarkerSize(0.9);
+	hunfactor_t->SetMarkerColor(kBlue);
+	hunfactor_t->SetLineColor(kBlue);
+	hunfactor_t->SetLineWidth(2);
+	gStyle->SetEndErrorSize(0);
+	TGaxis::SetMaxDigits(3);
+	hunfactor_t->Draw("E1X0P");
+
+	TLatex latex;
+	latex.SetNDC();
+	latex.SetTextFont(62);
+	latex.SetTextSize(0.033);
+	latex.SetTextAlign(22);
+	latex.DrawLatex(0.5, 0.92, Form("Energy %g to %g GeV", elow, eup));
+
+	c->SaveAs(fout_pdf);
+	fout->cd();
+	TDirectory *dir = fout->GetDirectory("unfactor_tdep_canvas");
+	if( dir==0 ) dir = fout->mkdir("unfactor_tdep_canvas");
+	dir->cd();
+	c->Write("", TObject::kOverwrite);
+	fout->cd();
+	delete c;
+	return true;
+}
+
 TH1D *_calc_unacc_core(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile *fout, TH1D *hrawflux, TH1D *hrawflux_noacc, TString htag="", int is_save_detail=1, double nplane=1.0){
 	//============ init ============
 	//==== geoacc
@@ -344,8 +586,8 @@ TH1D *_calc_unacc_core(TString fnm_sel, TString fnm_gen, int icut, double emin, 
 	hflux_fit->Reset();
 	//============ traversal ============
 	//==== init1
-	int ic_max = 1;
-	// int ic_max = 10;
+	// int ic_max = 1;
+	int ic_max = 10;
 	//==== init2
 	double elow,eup,nrec,nrec_err,flux,acc,acc_err;
 	int iter_converged = 0;
@@ -358,7 +600,7 @@ TH1D *_calc_unacc_core(TString fnm_sel, TString fnm_gen, int icut, double emin, 
 		// if(icut!=15 || icut!=16) continue;
 		if(icut<15 ) continue;
 		//============ fit ============
-		fflux_fit = fit_flux(hflux_raw, fit_xmin, fit_xmax);
+		fflux_fit = fit_flux(hflux_raw, fit_xmin, fit_xmax, is_save_detail, fout, htag);
 		if( fflux_fit ) fflux_fit->SetName(Form("fflux_fit_iter%02d%s", ic, htag.Data()));
 		hflux_fit->Reset();
 		for(int ibin=1; ibin<=hflux_fit->GetNbinsX(); ibin++){
@@ -520,30 +762,32 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 			return;
 		}
 	//==== calc unfactor
-	for(int it=0; it<NTBIN_27D; it++){
-		if( it>=(int)vunacc.size() || vunacc[it]==0 ) continue;
-		TH1D *hunfactor = (TH1D*)vunacc[it]->Clone( Form("hunfactor%03d", it) );
-		hunfactor->SetTitle( Form("unacc/mcacc t%03d;ECAL Energy[GeV];unacc/mcacc", it) );
-		for(int ie=0; ie<hunfactor->GetNbinsX(); ie++){
-			double unacc = vunacc[it]->GetBinContent(ie);
-			double mcacc = hmcacc->GetBinContent(ie);
+		for(int it=0; it<NTBIN_27D; it++){
+			if( it>=(int)vunacc.size() || vunacc[it]==0 ) continue;
+			TH1D *hunfactor = (TH1D*)vunacc[it]->Clone( Form("hunfactor%03d", it) );
+			hunfactor->SetTitle( Form("unacc/mcacc t%03d;ECAL Energy[GeV];unacc/mcacc", it) );
 			hunfactor->Reset();
-			if( mcacc>0 ){
-				hunfactor->SetBinContent(ie+1, unacc/mcacc);
-				hunfactor->SetBinError(ie+1, 0);
+			for(int ie=1; ie<=hunfactor->GetNbinsX(); ie++){
+				double unacc = vunacc[it]->GetBinContent(ie);
+				double ecenter = hunfactor->GetBinCenter(ie);
+				int ibin_mcacc = hmcacc->FindBin(ecenter);
+				double mcacc = hmcacc->GetBinContent(ibin_mcacc);
+				if( mcacc>0 ){
+					hunfactor->SetBinContent(ie, unacc/mcacc);
+					hunfactor->SetBinError(ie, 0);
+				}
 			}
-		}
 		vunfactor.push_back(hunfactor);
 	}
 	//============ edep-save ============
-	// fout->cd();
-	// for(int it=0; it<NTBIN_27D; it++){
-	// 	if( vrawflux_noacc[it] ) vrawflux_noacc[it]->Write();
-	// 	if( vrawflux[it] ) vrawflux[it]->Write();
-	// 	if( it>=(int)vunacc.size() || vunacc[it]==0 ) continue;
-	// 	vunacc[it]->Write();
-	// 	vunfactor[it]->Write();
-	// }
+	fout->cd();
+	for(int it=0; it<NTBIN_27D; it++){
+		if( vrawflux_noacc[it] ) vrawflux_noacc[it]->Write();
+		if( vrawflux[it] ) vrawflux[it]->Write();
+		if( it>=(int)vunacc.size() || vunacc[it]==0 ) continue;
+		vunacc[it]->Write();
+		vunfactor[it]->Write();
+	}
 
 
 	//============ tdep ============
@@ -561,19 +805,23 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 			Form("unacc/mcacc %.2f-%.2f GeV;time;unacc/mcacc", elow, eup)
 		);
 		//====fill
+		double ecenter = 0.5*(elow+eup);
 		for(int it=0; it<NTBIN_27D; it++){
 			if( it>=(int)vunacc.size() || vunacc[it]==0 ) continue;
-			double acc = vunacc[it]->GetBinContent(ie+1);
-			double acc_err = vunacc[it]->GetBinError(ie+1);
-			hunacc_t->Reset();
+			int ibin_ene = vunacc[it]->FindBin(ecenter);
+			double acc = vunacc[it]->GetBinContent(ibin_ene);
+			double acc_err = vunacc[it]->GetBinError(ibin_ene);
+			hunacc_t->SetBinContent(it+1, acc);
+			hunacc_t->SetBinError(it+1, acc_err);
 			if( it<(int)vunfactor.size() && vunfactor[it] ){
-				hunfactor_t->SetBinContent(it+1, vunfactor[it]->GetBinContent(ie+1));
+				hunfactor_t->SetBinContent(it+1, vunfactor[it]->GetBinContent(ibin_ene));
 				hunfactor_t->SetBinError(it+1, 0);
 			}
 		}
 		//====save
-		// hunacc_t->Write();
-		// hunfactor_t->Write();
+		hunacc_t->Write();
+		hunfactor_t->Write();
+		DRAW_UnfactorTime(ie, hunfactor_t, fout);
 	}
 
 
