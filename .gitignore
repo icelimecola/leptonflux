@@ -8,3 +8,4 @@
 /subproject/**/third_party/
 /subproject/**/include/
 /subproject/**/*.root
+/subproject/**/*.pdf
