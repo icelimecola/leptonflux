@@ -62,21 +62,26 @@ struct SeleffItem{
     bool use_in_total;
 };
 
+struct FluxBin{
+    double num = 0.0;
+    double num_err = 0.0;
+    double flux = 0.0;
+    double flux_err = 0.0;
+    double flux_noacc = 0.0;
+    double flux_noacc_err = 0.0;
+    bool bad_cc = false;
+    bool good = false;
+};
+
 
 //==================================================== TOOL_
+static const double WT_27D = 60.0 * 60.0 * 24.0 * 27.0;
+static const int NT_27D = 225;
+static const double TMIN_27D = 1305417600.0;
+static const double TMAX_27D = TMIN_27D + NT_27D * WT_27D;
+
 TString TOOL_FormatE(double x){
     return Form("%g", x);
-}
-
-TString TOOL_GetNFileName(const FluxConf &conf, int i_enebin){
-    return Form(
-        "%s/%s/htime_ene%02d_%sGeV_%s.root",
-        conf.datadir.Data(),
-        conf.species.Data(),
-        i_enebin,
-        TOOL_FormatE(ENERGY_BINS[i_enebin]).Data(),
-        conf.species.Data()
-    );
 }
 
 TString TOOL_GetNFileName(const TString &datadir, const TString &species, int i_enebin){
@@ -156,15 +161,10 @@ double TOOL_CalcNCorrEleErr(double npos_measure, double npos_err, double nele_me
     );
 }
 
-TH1D *TOOL_Build27DayHist(TH1D *hin, const TString &hname, const TString &htitle){
+TH1D *TOOL_Build27DayStatHist(TH1 *hin, const TString &hname, const TString &htitle){
     if(hin == nullptr) return nullptr;
 
-    const double wt_27d = 60.0 * 60.0 * 24.0 * 27.0;
-    const int nt_27d = 225;
-    const double tmin_27d = 1305417600.0;
-    const double tmax_27d = tmin_27d + nt_27d * wt_27d;
-
-    TH1D *hout = new TH1D(hname, htitle, nt_27d, tmin_27d, tmax_27d);
+    TH1D *hout = new TH1D(hname, htitle, NT_27D, TMIN_27D, TMAX_27D);
     if(hout == nullptr) return nullptr;
     hout->SetDirectory(nullptr);
     hout->Sumw2();
@@ -183,6 +183,67 @@ TH1D *TOOL_Build27DayHist(TH1D *hin, const TString &hname, const TString &htitle
     }
 
     return hout;
+}
+
+FluxBin TOOL_CalcFluxBin(
+    const FluxConf &conf,
+    double npos_measure,
+    double npos_measure_err,
+    double nele_measure,
+    double nele_measure_err,
+    double exps,
+    double exps_err,
+    double trdeff_time,
+    double trdeff_time_err,
+    const EneValue &cc,
+    const EneValue &acc,
+    const EneValue &trig,
+    const EneValue &eff_total_manual,
+    double delta_ene
+){
+    FluxBin out;
+    double den_cc = 1.0 - 2.0 * cc.value;
+    if(fabs(den_cc) < 1.0e-9){
+        out.bad_cc = true;
+        return out;
+    }
+
+    if(conf.species == "npos"){
+        out.num = TOOL_CalcNCorrPos(npos_measure, nele_measure, cc.value);
+        out.num_err = TOOL_CalcNCorrPosErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
+    }
+    else{
+        out.num = TOOL_CalcNCorrEle(npos_measure, nele_measure, cc.value);
+        out.num_err = TOOL_CalcNCorrEleErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
+    }
+
+    out.good = TOOL_IsPositive(out.num)
+        && TOOL_IsPositive(exps)
+        && TOOL_IsPositive(acc.value)
+        && TOOL_IsPositive(trig.value)
+        && TOOL_IsPositive(eff_total_manual.value)
+        && TOOL_IsPositive(trdeff_time)
+        && TOOL_IsPositive(delta_ene);
+    if(!out.good) return out;
+
+    out.flux = out.num / exps / acc.value / trig.value / eff_total_manual.value / trdeff_time / delta_ene;
+    out.flux_err = out.flux * sqrt(
+        TOOL_CalcRelErr2(out.num, out.num_err)
+        + TOOL_CalcRelErr2(exps, exps_err)
+        + TOOL_CalcRelErr2(acc.value, acc.error)
+        + TOOL_CalcRelErr2(trig.value, trig.error)
+        + TOOL_CalcRelErr2(eff_total_manual.value, eff_total_manual.error)
+        + TOOL_CalcRelErr2(trdeff_time, trdeff_time_err)
+    );
+    out.flux_noacc = out.num / exps / trig.value / eff_total_manual.value / trdeff_time / delta_ene;
+    out.flux_noacc_err = out.flux_noacc * sqrt(
+        TOOL_CalcRelErr2(out.num, out.num_err)
+        + TOOL_CalcRelErr2(exps, exps_err)
+        + TOOL_CalcRelErr2(trig.value, trig.error)
+        + TOOL_CalcRelErr2(eff_total_manual.value, eff_total_manual.error)
+        + TOOL_CalcRelErr2(trdeff_time, trdeff_time_err)
+    );
+    return out;
 }
 
 TString TOOL_GetOutBase(const TString &foutname){
@@ -462,7 +523,6 @@ int CALC_Flux(const FluxConf &conf){
     }
 
     for(int i_enebin=0; i_enebin<NENEBIN; i_enebin++){
-        TString fpath_num = TOOL_GetNFileName(conf, i_enebin);
         TString fpath_num_pos = TOOL_GetNFileName(conf.datadir, "npos", i_enebin);
         TString fpath_num_ele = TOOL_GetNFileName(conf.datadir, "nele", i_enebin);
         TString hname_exps = TOOL_GetExpsHistName(conf, i_enebin);
@@ -477,7 +537,6 @@ int CALC_Flux(const FluxConf &conf){
         unique_ptr<TFile> f_num_pos;
         unique_ptr<TFile> f_num_ele;
         unique_ptr<TFile> f_trdeff_time;
-        EneValue trdeff_time_ene{};
 
         if(!READ_OpenFile(fpath_num_pos, f_num_pos)) return 1;
         if(!READ_OpenFile(fpath_num_ele, f_num_ele)) return 1;
@@ -487,7 +546,8 @@ int CALC_Flux(const FluxConf &conf){
         TH1 *hnum_ele_in = READ_GetHist(f_num_ele.get(), hname_num);
         TH1 *hexps_in = READ_GetHist(f_exps.get(), hname_exps);
         TH1 *htrdeff_time_in = READ_GetHist(f_trdeff_time.get(), "hratio1");
-        if(hnum_pos_in == nullptr || hnum_ele_in == nullptr || hexps_in == nullptr || htrdeff_time_in == nullptr) return 1;
+        TH1 *htrdeff_time_27d_in = READ_GetHist(f_trdeff_time.get(), "hratio27");
+        if(hnum_pos_in == nullptr || hnum_ele_in == nullptr || hexps_in == nullptr || htrdeff_time_in == nullptr || htrdeff_time_27d_in == nullptr) return 1;
         if(!READ_CheckTimeShape(hnum_pos_in, hexps_in, i_enebin)) return 1;
         if(!READ_CheckTimeShape(hnum_ele_in, hexps_in, i_enebin)) return 1;
         if(!READ_CheckTimeShape(hnum_pos_in, hnum_ele_in, i_enebin)) return 1;
@@ -528,10 +588,23 @@ int CALC_Flux(const FluxConf &conf){
         TH1D *htrdeff_time = dynamic_cast<TH1D*>(htrdeff_time_in->Clone(Form("htrdeff_t_ene%02d", i_enebin)));
         TH1D *hflux_noacc = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hflux_noacc_t_ene%02d", i_enebin)));
         TH1D *hflux = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hflux_t_ene%02d", i_enebin)));
+        TH1D *hnum_pos_measure_27d = TOOL_Build27DayStatHist(hnum_pos_in, Form("hnum_pos_measure_27d_t_ene%02d", i_enebin), Form("npos measure 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        TH1D *hnum_ele_measure_27d = TOOL_Build27DayStatHist(hnum_ele_in, Form("hnum_ele_measure_27d_t_ene%02d", i_enebin), Form("nele measure 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        TH1D *hexps_27d = TOOL_Build27DayStatHist(hexps_in, Form("hexps_27d_t_ene%02d", i_enebin), Form("exps 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        TH1D *htrdeff_time_27d = dynamic_cast<TH1D*>(htrdeff_time_27d_in->Clone(Form("htrdeff_27d_t_ene%02d", i_enebin)));
+        TH1D *hnumcorr_27d = hnum_pos_measure_27d == nullptr ? nullptr : dynamic_cast<TH1D*>(hnum_pos_measure_27d->Clone(Form("hnumcorr_27d_t_ene%02d", i_enebin)));
+        TH1D *hnum_27d = hnum_pos_measure_27d == nullptr ? nullptr : dynamic_cast<TH1D*>(hnum_pos_measure_27d->Clone(Form("hnum_27d_t_ene%02d", i_enebin)));
+        TH1D *hflux_noacc_27d = hnum_pos_measure_27d == nullptr ? nullptr : dynamic_cast<TH1D*>(hnum_pos_measure_27d->Clone(Form("hflux_noacc_27d_t_ene%02d", i_enebin)));
+        TH1D *hflux_27d = hnum_pos_measure_27d == nullptr ? nullptr : dynamic_cast<TH1D*>(hnum_pos_measure_27d->Clone(Form("hflux_27d_t_ene%02d", i_enebin)));
         if(hnum_pos_measure == nullptr || hnum_ele_measure == nullptr || hnumcorr == nullptr || hnum == nullptr || hexps == nullptr || htrdeff_time == nullptr || hflux_noacc == nullptr || hflux == nullptr){
             cerr<<"ERR CALC_Flux ===== failed to clone hist i_enebin="<<i_enebin<<endl;
             return 1;
         }
+        if(hnum_pos_measure_27d == nullptr || hnum_ele_measure_27d == nullptr || hexps_27d == nullptr || htrdeff_time_27d == nullptr || hnumcorr_27d == nullptr || hnum_27d == nullptr || hflux_noacc_27d == nullptr || hflux_27d == nullptr){
+            cerr<<"ERR CALC_Flux ===== failed to create 27day hist i_enebin="<<i_enebin<<endl;
+            return 1;
+        }
+        if(!READ_CheckTimeShape(htrdeff_time_27d, hexps_27d, i_enebin)) return 1;
 
         hnum_pos_measure->SetDirectory(nullptr);
         hnum_ele_measure->SetDirectory(nullptr);
@@ -541,6 +614,11 @@ int CALC_Flux(const FluxConf &conf){
         htrdeff_time->SetDirectory(nullptr);
         hflux_noacc->SetDirectory(nullptr);
         hflux->SetDirectory(nullptr);
+        htrdeff_time_27d->SetDirectory(nullptr);
+        hnumcorr_27d->SetDirectory(nullptr);
+        hnum_27d->SetDirectory(nullptr);
+        hflux_noacc_27d->SetDirectory(nullptr);
+        hflux_27d->SetDirectory(nullptr);
 
         hnum_pos_measure->SetTitle(Form("npos measure time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
         hnum_ele_measure->SetTitle(Form("nele measure time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
@@ -550,10 +628,23 @@ int CALC_Flux(const FluxConf &conf){
         htrdeff_time->SetTitle(Form("trdeff time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
         hflux_noacc->SetTitle(Form("flux noacc time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
         hflux->SetTitle(Form("flux time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        hnumcorr_27d->SetTitle(Form("ncorr 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        hnum_27d->SetTitle(Form("num corr 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        htrdeff_time_27d->SetTitle(Form("trdeff 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        hflux_noacc_27d->SetTitle(Form("flux noacc 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        hflux_27d->SetTitle(Form("flux 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        hnumcorr_27d->Reset();
+        hnum_27d->Reset();
+        hflux_noacc_27d->Reset();
+        hflux_27d->Reset();
         int n_bad_bin = 0;
         int n_zero_num = 0;
         int n_zero_exps = 0;
         int n_bad_cc = 0;
+        int n_bad_bin_27d = 0;
+        int n_zero_num_27d = 0;
+        int n_zero_exps_27d = 0;
+        int n_bad_cc_27d = 0;
 
         cout<<"IN CALC_Flux ===== i_enebin="<<i_enebin
             <<" elow="<<ENERGY_BINS[i_enebin]
@@ -575,92 +666,51 @@ int CALC_Flux(const FluxConf &conf){
             double exps_err = hexps->GetBinError(ibin);
             double trdeff_time = htrdeff_time->GetBinContent(ibin);
             double trdeff_time_err = htrdeff_time->GetBinError(ibin);
-            double num = 0.0;
-            double num_err = 0.0;
-            double flux = 0.0;
-            double flux_err = 0.0;
-            double flux_noacc = 0.0;
-            double flux_noacc_err = 0.0;
-            double den_cc = 1.0 - 2.0 * cc.value;
+            FluxBin out = TOOL_CalcFluxBin(conf, npos_measure, npos_measure_err, nele_measure, nele_measure_err, exps, exps_err, trdeff_time, trdeff_time_err, cc, acc, trig, eff_total_manual, delta_ene);
 
-            if(fabs(den_cc) < 1.0e-9){
-                n_bad_cc++;
-            }
-            else{
-                if(conf.species == "npos"){
-                    num = TOOL_CalcNCorrPos(npos_measure, nele_measure, cc.value);
-                    num_err = TOOL_CalcNCorrPosErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
-                }
-                else{
-                    num = TOOL_CalcNCorrEle(npos_measure, nele_measure, cc.value);
-                    num_err = TOOL_CalcNCorrEleErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
-                }
-            }
-
-            if(TOOL_IsPositive(num)
-            && TOOL_IsPositive(exps)
-            && TOOL_IsPositive(acc.value)
-            && TOOL_IsPositive(trig.value)
-            && TOOL_IsPositive(eff_total_manual.value)
-            && TOOL_IsPositive(trdeff_time)
-            && TOOL_IsPositive(delta_ene)){
-                flux = num / exps / acc.value / trig.value / eff_total_manual.value / trdeff_time / delta_ene;
-                flux_err = flux * sqrt(
-                    TOOL_CalcRelErr2(num, num_err)
-                    + TOOL_CalcRelErr2(exps, exps_err)
-                    + TOOL_CalcRelErr2(acc.value, acc.error)
-                    + TOOL_CalcRelErr2(trig.value, trig.error)
-                    + TOOL_CalcRelErr2(eff_total_manual.value, eff_total_manual.error)
-                    + TOOL_CalcRelErr2(trdeff_time, trdeff_time_err)
-                );
-                flux_noacc = num / exps / trig.value / eff_total_manual.value / trdeff_time / delta_ene;
-                flux_noacc_err = flux_noacc * sqrt(
-                    TOOL_CalcRelErr2(num, num_err)
-                    + TOOL_CalcRelErr2(exps, exps_err)
-                    + TOOL_CalcRelErr2(trig.value, trig.error)
-                    + TOOL_CalcRelErr2(eff_total_manual.value, eff_total_manual.error)
-                    + TOOL_CalcRelErr2(trdeff_time, trdeff_time_err)
-                );
-            }
-            else{
+            if(out.bad_cc) n_bad_cc++;
+            if(!out.good){
                 n_bad_bin++;
-                if(num <= 0.0) n_zero_num++;
+                if(out.num <= 0.0) n_zero_num++;
                 if(exps <= 0.0) n_zero_exps++;
             }
 
-            hnumcorr->SetBinContent(ibin, num);
-            hnumcorr->SetBinError(ibin, num_err);
-            hnum->SetBinContent(ibin, num);
-            hnum->SetBinError(ibin, num_err);
-            hflux_noacc->SetBinContent(ibin, flux_noacc);
-            hflux_noacc->SetBinError(ibin, flux_noacc_err);
-            hflux->SetBinContent(ibin, flux);
-            hflux->SetBinError(ibin, flux_err);
+            hnumcorr->SetBinContent(ibin, out.num);
+            hnumcorr->SetBinError(ibin, out.num_err);
+            hnum->SetBinContent(ibin, out.num);
+            hnum->SetBinError(ibin, out.num_err);
+            hflux_noacc->SetBinContent(ibin, out.flux_noacc);
+            hflux_noacc->SetBinError(ibin, out.flux_noacc_err);
+            hflux->SetBinContent(ibin, out.flux);
+            hflux->SetBinError(ibin, out.flux_err);
         }
 
-        TH1D *hflux_noacc_27d = TOOL_Build27DayHist(
-            hflux_noacc,
-            Form("hflux_noacc_27d_t_ene%02d", i_enebin),
-            Form("flux noacc 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1])
-        );
-        TH1D *hflux_27d = TOOL_Build27DayHist(
-            hflux,
-            Form("hflux_27d_t_ene%02d", i_enebin),
-            Form("flux 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1])
-        );
-        if(hflux_noacc_27d == nullptr || hflux_27d == nullptr){
-            cerr<<"ERR CALC_Flux ===== failed to build 27day hist i_enebin="<<i_enebin<<endl;
-            delete hnum_pos_measure;
-            delete hnum_ele_measure;
-            delete hnumcorr;
-            delete hnum;
-            delete hexps;
-            delete htrdeff_time;
-            delete hflux_noacc;
-            delete hflux;
-            delete hflux_noacc_27d;
-            delete hflux_27d;
-            return 1;
+        for(int ibin=1; ibin<=hflux_27d->GetNbinsX(); ibin++){
+            double npos_measure = hnum_pos_measure_27d->GetBinContent(ibin);
+            double npos_measure_err = hnum_pos_measure_27d->GetBinError(ibin);
+            double nele_measure = hnum_ele_measure_27d->GetBinContent(ibin);
+            double nele_measure_err = hnum_ele_measure_27d->GetBinError(ibin);
+            double exps = hexps_27d->GetBinContent(ibin);
+            double exps_err = hexps_27d->GetBinError(ibin);
+            double trdeff_time = htrdeff_time_27d->GetBinContent(ibin);
+            double trdeff_time_err = htrdeff_time_27d->GetBinError(ibin);
+            FluxBin out = TOOL_CalcFluxBin(conf, npos_measure, npos_measure_err, nele_measure, nele_measure_err, exps, exps_err, trdeff_time, trdeff_time_err, cc, acc, trig, eff_total_manual, delta_ene);
+
+            if(out.bad_cc) n_bad_cc_27d++;
+            if(!out.good){
+                n_bad_bin_27d++;
+                if(out.num <= 0.0) n_zero_num_27d++;
+                if(exps <= 0.0) n_zero_exps_27d++;
+            }
+
+            hnumcorr_27d->SetBinContent(ibin, out.num);
+            hnumcorr_27d->SetBinError(ibin, out.num_err);
+            hnum_27d->SetBinContent(ibin, out.num);
+            hnum_27d->SetBinError(ibin, out.num_err);
+            hflux_noacc_27d->SetBinContent(ibin, out.flux_noacc);
+            hflux_noacc_27d->SetBinError(ibin, out.flux_noacc_err);
+            hflux_27d->SetBinContent(ibin, out.flux);
+            hflux_27d->SetBinError(ibin, out.flux_err);
         }
 
         cout<<"IN CALC_Flux ===== summary"
@@ -671,6 +721,10 @@ int CALC_Flux(const FluxConf &conf){
             <<" n_bad_cc="<<n_bad_cc
             <<" nbin_1day="<<hflux->GetNbinsX()
             <<" nbin_27day="<<hflux_27d->GetNbinsX()
+            <<" n_bad_bin_27d="<<n_bad_bin_27d
+            <<" n_zero_num_27d="<<n_zero_num_27d
+            <<" n_zero_exps_27d="<<n_zero_exps_27d
+            <<" n_bad_cc_27d="<<n_bad_cc_27d
             <<endl;
 
         f_out->cd();
@@ -682,10 +736,12 @@ int CALC_Flux(const FluxConf &conf){
         htrdeff_time->Write();
         hflux_noacc->Write();
         hflux->Write();
-        if(i_enebin==0){
-            hflux_noacc_27d->Reset();
-            hflux_27d->Reset();
-        }
+        hnum_pos_measure_27d->Write();
+        hnum_ele_measure_27d->Write();
+        hnumcorr_27d->Write();
+        hnum_27d->Write();
+        hexps_27d->Write();
+        htrdeff_time_27d->Write();
         hflux_noacc_27d->Write();
         hflux_27d->Write();
 
@@ -698,6 +754,12 @@ int CALC_Flux(const FluxConf &conf){
             delete htrdeff_time;
             delete hflux_noacc;
             delete hflux;
+            delete hnum_pos_measure_27d;
+            delete hnum_ele_measure_27d;
+            delete hnumcorr_27d;
+            delete hnum_27d;
+            delete hexps_27d;
+            delete htrdeff_time_27d;
             delete hflux_noacc_27d;
             delete hflux_27d;
             return 1;
@@ -711,6 +773,12 @@ int CALC_Flux(const FluxConf &conf){
         delete htrdeff_time;
         delete hflux_noacc;
         delete hflux;
+        delete hnum_pos_measure_27d;
+        delete hnum_ele_measure_27d;
+        delete hnumcorr_27d;
+        delete hnum_27d;
+        delete hexps_27d;
+        delete htrdeff_time_27d;
         delete hflux_noacc_27d;
         delete hflux_27d;
     }
