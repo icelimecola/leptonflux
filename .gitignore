@@ -9,3 +9,4 @@
 /subproject/**/include/
 /subproject/**/*.root
 /subproject/**/*.pdf
+/subproject/**/*.exe
