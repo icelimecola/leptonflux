@@ -6,12 +6,12 @@ using namespace std;
 #include <TFile.h>
 #include <TDatime.h>
 //====
-#include "Include_GCX/ToolFileName.hpp"
-#include "Include_GCX/ToolChain.hpp"
-#include "Include_GCX/ToolTree.hpp"
-#include "Include_GCX/ToolFileOut.hpp"
-//====
 #include "Exps.hpp"
+//====
+#include "../include/rootclass_gcx/ToolFileName.hpp"
+#include "../include/rootclass_gcx/ToolChain.hpp"
+#include "../include/rootclass_gcx/ToolTree.hpp"
+#include "../include/rootclass_gcx/ToolFileOut.hpp"
 #include "../include/general/ConsoleDisplay.h"
 
 class ExpsRun{
