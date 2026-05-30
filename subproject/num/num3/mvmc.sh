@@ -5,4 +5,4 @@ mkdir -p ./datamc/pdf
 mkdir -p ./datamc/tfit
 # ============================================================ mv
 mv ./*.pdf ./datamc/pdf/
-mv ./fitresult_*.root ./datamc/tfit/
+mv ./tfit_*.root ./datamc/tfit/
