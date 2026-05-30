@@ -5,6 +5,7 @@ using namespace std;
 #include "TH1D.h"
 #include "TH2D.h"
 #include "TCanvas.h"
+#include "TDirectory.h"
 #include "VarMinitree.hpp"
 
 
@@ -227,31 +228,49 @@ void ExpsHist::HIST_FillExps_TvE(){
 
 void ExpsHist::HIST_WriteHist_TvE(){
 	//============ init
+	double factor[nsf] = { 1, 1.1, 1.2, 1.3, 1.4 };
 	int nfov,nsf;
 	nfov=1;
 	// nsf=1;
 	nsf=5;
 	//============ save
 	//====save--h2
+		TDirectory *dir_top = gDirectory;
+		TDirectory *dir_h2 = dir_top->GetDirectory("h2");
+		if( !dir_h2 ) dir_h2 = dir_top->mkdir("h2");
+		dir_h2->cd();
 	for(int isf=0;isf<nsf;isf++){
 		if( h2exp_st_TvE[isf] ) h2exp_st_TvE[isf]->Write();
 		if( h2exp_igrf_TvE[isf] ) h2exp_igrf_TvE[isf]->Write();
 		if( h2exp_ts05_TvE[isf] ) h2exp_ts05_TvE[isf]->Write();
 	}
 	//====save--h1ene
+		dir_top->cd();
+		TDirectory *dir_h1ene = dir_top->GetDirectory("h1ene");
+		if( !dir_h1ene ) dir_h1ene = dir_top->mkdir("h1ene");
 	for(int ifov=0;ifov<nfov;ifov++){
 	for(int isf=0;isf<nsf;isf++){
+			TDirectory *dir_sf = dir_h1ene->GetDirectory(Form("sf%g", factor[isf]));
+			if( !dir_sf ) dir_sf = dir_h1ene->mkdir(Form("sf%g", factor[isf]));
+			dir_sf->cd();
 		if(h1exp_st_E[ifov][isf]) h1exp_st_E[ifov][isf]->Write();
 		if(h1exp_igrf_E[ifov][isf]) h1exp_igrf_E[ifov][isf]->Write();
 	}
 	}
 	//====save--h1t
+		dir_top->cd();
+		TDirectory *dir_h1t = dir_top->GetDirectory("h1t");
+		if( !dir_h1t ) dir_h1t = dir_top->mkdir("h1t");
 	for(int ifov=0;ifov<nfov;ifov++){
 	for(int isf=0;isf<nsf;isf++){
+			TDirectory *dir_sf = dir_h1t->GetDirectory(Form("sf%g", factor[isf]));
+			if( !dir_sf ) dir_sf = dir_h1t->mkdir(Form("sf%g", factor[isf]));
+			dir_sf->cd();
 	for(int iene=0;iene<nenebin;iene++){
 		if(h1exp_st_T[ifov][isf][iene]) h1exp_st_T[ifov][isf][iene]->Write();
 		if(h1exp_igrf_T[ifov][isf][iene]) h1exp_igrf_T[ifov][isf][iene]->Write();
 	}
 	}
 	}
+		dir_top->cd();
 }

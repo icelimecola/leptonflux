@@ -5,6 +5,7 @@ using namespace std;
 #include "TString.h"
 // #include "TChain.h"
 #include "TCanvas.h"
+#include "TDirectory.h"
 #include "TFile.h"
 #include "TH1D.h"
 #include "TH2D.h"
@@ -287,16 +288,16 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
 		ins_filein = new TFile(fullfilename_vector.at(i));
 		//====add--h2
 		for(int isf=0;isf<nsf;isf++){
-            if( h2exp_st_TvE[isf] ) h2exp_st_TvE[isf]->Add((TH2D*)ins_filein->Get(Form("h2exp_st_TvE_sf%g", factor[isf])));
-			if( h2exp_igrf_TvE[isf] ) h2exp_igrf_TvE[isf]->Add((TH2D*)ins_filein->Get(Form("h2exp_igrf_TvE_sf%g", factor[isf])));
-			if( h2exp_ts05_TvE[isf] ) h2exp_ts05_TvE[isf]->Add((TH2D*)ins_filein->Get(Form("h2exp_ts05_TvE_sf%g", factor[isf])));
+            if( h2exp_st_TvE[isf] ) h2exp_st_TvE[isf]->Add((TH2D*)ins_filein->Get(Form("h2/h2exp_st_TvE_sf%g", factor[isf])));
+			if( h2exp_igrf_TvE[isf] ) h2exp_igrf_TvE[isf]->Add((TH2D*)ins_filein->Get(Form("h2/h2exp_igrf_TvE_sf%g", factor[isf])));
+			if( h2exp_ts05_TvE[isf] ) h2exp_ts05_TvE[isf]->Add((TH2D*)ins_filein->Get(Form("h2/h2exp_ts05_TvE_sf%g", factor[isf])));
 		}
 		//====add--h1ene
 		for(int ifov=0;ifov<nfov;ifov++){
         for(int isf=0;isf<nsf;isf++){
             if( h1exp_st_E[ifov][isf] ){
-                h1exp_st_E[ifov][isf]->Add((TH1D*)ins_filein->Get(Form("h1exp_st_E_fov%g_sf%g", fov[ifov], factor[isf])));
-                h1exp_igrf_E[ifov][isf]->Add((TH1D*)ins_filein->Get(Form("h1exp_igrf_E_fov%g_sf%g", fov[ifov], factor[isf])));
+                h1exp_st_E[ifov][isf]->Add((TH1D*)ins_filein->Get(Form("h1ene/sf%g/h1exp_st_E_fov%g_sf%g", factor[isf], fov[ifov], factor[isf])));
+                h1exp_igrf_E[ifov][isf]->Add((TH1D*)ins_filein->Get(Form("h1ene/sf%g/h1exp_igrf_E_fov%g_sf%g", factor[isf], fov[ifov], factor[isf])));
             }
             // if(h1exp_st_Efine[ifov][isf]){
             //     h1exp_st_Efine[ifov][isf]->Add((TH1D*)ins_filein->Get(Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf])));
@@ -308,8 +309,8 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
         for(int ifov=0;ifov<nfov;ifov++){
         for(int isf=0;isf<nsf;isf++){
         for(int iene=0;iene<nenebin;iene++){
-            h1exp_st_T[ifov][isf][iene]->Add((TH1D*)ins_filein->Get(Form("h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1])));
-            h1exp_igrf_T[ifov][isf][iene]->Add((TH1D*)ins_filein->Get(Form("h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1])));
+            h1exp_st_T[ifov][isf][iene]->Add((TH1D*)ins_filein->Get(Form("h1t/sf%g/h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", factor[isf], fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1])));
+            h1exp_igrf_T[ifov][isf][iene]->Add((TH1D*)ins_filein->Get(Form("h1t/sf%g/h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", factor[isf], fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1])));
         }
         }
         }
@@ -320,27 +321,44 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
 
 void ExpsHist::EXPSHIST_WriteHist_dayVSene(){
 	//============ init ============
+	double factor[nsf] = { 1, 1.1, 1.2, 1.3, 1.4 };
 	int nfov,nsf;
 	nfov=1;
 	// int nsf=1;
 	nsf=5;
 	//============ save ============
 	//====save--h2
+        TDirectory *dir_top = gDirectory;
+        TDirectory *dir_h2 = dir_top->GetDirectory("h2");
+        if( !dir_h2 ) dir_h2 = dir_top->mkdir("h2");
+        dir_h2->cd();
 	for(int isf=0;isf<nsf;isf++){
 		if( h2exp_st_TvE[isf] ) h2exp_st_TvE[isf]->Write();
 		if( h2exp_igrf_TvE[isf] ) h2exp_igrf_TvE[isf]->Write();
 		if( h2exp_ts05_TvE[isf] ) h2exp_ts05_TvE[isf]->Write();
 	}
 	//====save--h1ene
+        dir_top->cd();
+        TDirectory *dir_h1ene = dir_top->GetDirectory("h1ene");
+        if( !dir_h1ene ) dir_h1ene = dir_top->mkdir("h1ene");
 	for(int ifov=0;ifov<nfov;ifov++){
     for(int isf=0;isf<nsf;isf++){
+            TDirectory *dir_sf = dir_h1ene->GetDirectory(Form("sf%g", factor[isf]));
+            if( !dir_sf ) dir_sf = dir_h1ene->mkdir(Form("sf%g", factor[isf]));
+            dir_sf->cd();
 		if(h1exp_st_E[ifov][isf]) h1exp_st_E[ifov][isf]->Write();
 		if(h1exp_igrf_E[ifov][isf]) h1exp_igrf_E[ifov][isf]->Write();
     }
 	}
 	//====save--h1t
+        dir_top->cd();
+        TDirectory *dir_h1t = dir_top->GetDirectory("h1t");
+        if( !dir_h1t ) dir_h1t = dir_top->mkdir("h1t");
 	for(int ifov=0;ifov<nfov;ifov++){
     for(int isf=0;isf<nsf;isf++){
+            TDirectory *dir_sf = dir_h1t->GetDirectory(Form("sf%g", factor[isf]));
+            if( !dir_sf ) dir_sf = dir_h1t->mkdir(Form("sf%g", factor[isf]));
+            dir_sf->cd();
     for(int iene=0;iene<nenebin;iene++){
         if(h1exp_st_T[ifov][isf][iene]){
             h1exp_st_T[ifov][isf][iene]->Write();
@@ -349,6 +367,7 @@ void ExpsHist::EXPSHIST_WriteHist_dayVSene(){
     }
     }
 	}
+        dir_top->cd();
 }
 
 
