@@ -5,4 +5,4 @@ mkdir -p ./dataiss/pdf
 mkdir -p ./dataiss/tfit
 # ============================================================ mv
 mv ./*.pdf ./dataiss/pdf/
-mv ./tfit_*.root ./dataiss/tfit/
+mv ./tfit*.root ./dataiss/tfit/
