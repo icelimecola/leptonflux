@@ -7,6 +7,7 @@ using namespace std;
 #include "TTimeStamp.h"
 #include "TMath.h"
 //==== 
+#include "../include/general/RootSaveDir.hpp"
 #include "VarFittree.hpp"
 
 class FitHist:virtual public VarFittree{
@@ -295,8 +296,10 @@ void FitHist::FITHIST_FillH_Template(){
 
 
 void FitHist::FITHIST_SaveH_Template(){
+    RootSaveDir::Enter("temp");
     hEleSample->Write();
     hProSample->Write();
+    RootSaveDir::Exit();
 }
 
 
@@ -456,6 +459,7 @@ void FitHist::FITHIST_SaveH(){
     for (int it = 0; it < nt; it++){
         //============ sample
         if(hNegaSample[ilat][it]->GetEntries()>0){
+            RootSaveDir::Enter("sample");
             //==== sample
             hPosiSample[ilat][it]->Write();
             hNegaSample[ilat][it]->Write();
@@ -465,8 +469,10 @@ void FitHist::FITHIST_SaveH(){
             //==== sampletrigger
             hNegaSample_phy[ilat][it]->Write();
             hNegaSample_unphy[ilat][it]->Write();
+            RootSaveDir::Exit();
         }
         //============ seleff
+        RootSaveDir::Enter("eff");
         hTOFpass[ilat][it]->Write();
         hTOFtotal[ilat][it]->Write();
         hTRDpass[ilat][it]->Write();
@@ -486,16 +492,16 @@ void FitHist::FITHIST_SaveH(){
         hTrktotal_qin[ilat][it]->Write();
         hTrkpass_ntrk[ilat][it]->Write();
         hTrktotal_ntrk[ilat][it]->Write();
+        RootSaveDir::Exit();
     }
     }
-    h1_EoP->Write();
-    h2_EoP_embdt->Write();
 }
 
 
 void FitHist::FITHIST_SaveH(int ilat,int it){
     //============ sample
     if(hNegaSample[ilat][it]->GetEntries()>0){
+        RootSaveDir::Enter("sample");
         //==== sample
         hPosiSample[ilat][it]->Write();
         hNegaSample[ilat][it]->Write();
@@ -504,10 +510,10 @@ void FitHist::FITHIST_SaveH(int ilat,int it){
         //==== sample entries
         hPosiSample_n[ilat][it]->Write();
         hNegaSample_n[ilat][it]->Write();
+        RootSaveDir::Exit();
     }
-    h1_EoP->Write();
-    h2_EoP_embdt->Write();
     //============ seleff
+    RootSaveDir::Enter("eff");
     hTOFpass[ilat][it]->Write();
     hTOFtotal[ilat][it]->Write();
     hTRDpass[ilat][it]->Write();
@@ -527,6 +533,7 @@ void FitHist::FITHIST_SaveH(int ilat,int it){
     hTrktotal_qin[ilat][it]->Write();
     hTrkpass_ntrk[ilat][it]->Write();
     hTrktotal_ntrk[ilat][it]->Write();
+    RootSaveDir::Exit();
 }
 
 

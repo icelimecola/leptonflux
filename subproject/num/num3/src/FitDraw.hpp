@@ -15,6 +15,7 @@ using namespace std;
 #include "TGaxis.h"
 #include "TLatex.h"
 //==== 
+#include "../include/general/RootSaveDir.hpp"
 #include "FitDoFit.hpp"
 
 class FitDraw:public FitDoFit{
@@ -318,7 +319,9 @@ void FitDraw::FITDRAW_DoChi2Test(){
 }
 //=============================================================================== save
 void FitDraw::FITDRAW_SaveDraw(int i_enebin,int i_perbin){
+		RootSaveDir::Enter("draw");
 	ins_can->Write();
+		RootSaveDir::Exit();
 	// ins_can_ESEFF->Write();
 	// cout<<"fitdraw_savecanvas--end"<<endl;
 	//==== save file
