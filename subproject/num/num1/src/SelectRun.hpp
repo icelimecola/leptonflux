@@ -6,10 +6,10 @@ using namespace std;
 #include <TDatime.h>
 #include <TTimeStamp.h>
 //====
-#include "Include_GCX/ToolFileName.hpp"
-#include "Include_GCX/ToolChain.hpp"
-#include "Include_GCX/ToolTreeArray.hpp"
-#include "Include_GCX/ToolFileOut.hpp"
+#include "../include/rootclass_gcx/ToolFileName.hpp"
+#include "../include/rootclass_gcx/ToolChain.hpp"
+#include "../include/rootclass_gcx/ToolTreeArray.hpp"
+#include "../include/rootclass_gcx/ToolFileOut.hpp"
 //====
 #include "Select.hpp"
 //====
