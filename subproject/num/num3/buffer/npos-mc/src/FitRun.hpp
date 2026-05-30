@@ -5,12 +5,12 @@ using namespace std;
 #include<TF1.h>
 #include<TChain.h>
 #include "TStyle.h"
-#include "TDatime.h"
 //====
-#include "Include_GCX/ToolFileName.hpp"
-#include "Include_GCX/ToolChain.hpp"
-#include "Include_GCX/ToolFileOut.hpp"
-#include "Include_GCX/ToolTreeArray.hpp"
+#include "../include/rootclass_gcx/ToolFileName.hpp"
+#include "../include/rootclass_gcx/ToolChain.hpp"
+#include "../include/rootclass_gcx/ToolFileOut.hpp"
+#include "../include/rootclass_gcx/ToolTreeArray.hpp"
+#include "../include/general/ConsoleDisplay.h"
 //====
 #include "Fit.hpp"
 
@@ -78,17 +78,10 @@ void FitRun::FIT_RUN_iene(int i_enebin,vector<int>bin_division,int printlv){
     ins_fit.FITHIST_InitH();
     //======== traversal
     long nentries = ins_chain.GetChain()->GetEntries();
-    long print_step = nentries/100;
-    if(print_step<1) print_step=1;
+    ConsoleDisplay mydisplay_hist(nentries);
     for(long entry=0; entry<nentries; entry++){
         //======== print
-        TDatime t;
-        if(entry%print_step==0 || entry==nentries-1){
-            double progress = 100.0*(entry+1)/nentries;
-            cout<<Form("%02d:%02d:%02d", t.GetHour(), t.GetMinute(), t.GetSecond())
-                <<" Processing entry in hist "<<entry<<" / "<<nentries
-                <<" ("<<Form("%.2f", progress)<<"%)"<<endl;
-        }
+        mydisplay_hist.Update(entry);
         ins_chain.GetChain()->GetEntry(entry);
             // if(entry%1000000==0) cout<<"ene: "<<ins_fit.energy_bins[i_enebin]<<"; cfi[0]: "<<ins_fit.cfi[0]<<endl;
         //======== cut--time
@@ -130,6 +123,7 @@ void FitRun::FIT_RUN_iene(int i_enebin,vector<int>bin_division,int printlv){
         ins_fit.FITHIST_FillH_Template();
         ins_fit.FITHIST_FillH(i_enebin,imlat,it,entry);
     }
+    mydisplay_hist.Finish();
     ins_fit.FITHIST_SaveH_Template();
     if(saveall) ins_fit.FITHIST_SaveH();
     else ins_fit.FITHIST_SaveH(ilat_save,it_save);
@@ -138,19 +132,12 @@ void FitRun::FIT_RUN_iene(int i_enebin,vector<int>bin_division,int printlv){
     //============ fit ============
     cout<<"=============================================="<<endl;
     cout<<"========fit========"<<endl;
-    long print_step_fit = nt/100;
-    if(print_step_fit<1) print_step_fit=1;
+    ConsoleDisplay mydisplay_fit((long)nlat*nt);
     long nfitcond_fail = 0;
     for (int ilat = 0; ilat < nlat; ilat++){
     for (int it = 0; it < nt; it++){
         //============ output
-        TDatime t;
-        if(it%print_step_fit==0 || it==nt-1){
-            double progress_fit = 100.0*(it+1)/nt;
-            cout<<Form("%02d:%02d:%02d", t.GetHour(), t.GetMinute(), t.GetSecond())
-                <<" Processing entry in fit "<<it<<" / "<<nt
-                <<" ("<<Form("%.2f", progress_fit)<<"%)"<<endl;
-        }
+        mydisplay_fit.Update((long)ilat*nt+it);
         //============ init
         //==== resetfitR
         ins_fit.fitR = {};
@@ -266,6 +253,7 @@ void FitRun::FIT_RUN_iene(int i_enebin,vector<int>bin_division,int printlv){
         // ins_fileout.GetFileOut()->Close();
     }
     }
+    mydisplay_fit.Finish();
     cout<<"========fit condition failed: "<<nfitcond_fail<<" / "<<((long)nlat*nt)<<endl;
     
     

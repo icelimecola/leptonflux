@@ -3,13 +3,13 @@ _Pragma("once")
 #include <iostream>
 using namespace std;
 #include <TString.h>
-#include <TDatime.h>
 #include <TTimeStamp.h>
 //====
 #include "../include/rootclass_gcx/ToolFileName.hpp"
 #include "../include/rootclass_gcx/ToolChain.hpp"
 #include "../include/rootclass_gcx/ToolTreeArray.hpp"
 #include "../include/rootclass_gcx/ToolFileOut.hpp"
+#include "../include/general/ConsoleDisplay.h"
 //====
 #include "Select.hpp"
 //====
@@ -60,18 +60,11 @@ void SelectRun::SECLECT_RUN(){
     //============ select ============
     //====init
     long nentries = ins_chain.GetChain()->GetEntries();
-    long print_step = nentries/100;
-    if(print_step<1) print_step=1;
+    ConsoleDisplay mydisplay(nentries);
     //====traversal
     for(long entry=0; entry<nentries; entry++){
         //====print
-        TDatime t;
-        if(entry%print_step==0 || entry==nentries-1){
-            double progress = 100.0*(entry+1)/nentries;
-            cout<<Form("%02d:%02d:%02d", t.GetHour(), t.GetMinute(), t.GetSecond())
-                <<" Processing entry "<<entry<<" / "<<nentries
-                <<" ("<<Form("%.2f", progress)<<"%)"<<endl;
-        }
+        mydisplay.Update(entry);
         //====getentry
         ins_chain.GetChain()->GetEntry(entry);
         //====ene
@@ -151,6 +144,7 @@ void SelectRun::SECLECT_RUN(){
         //==== fill
         if(ins_select.PROCESS_SELECT_ShouldFill()) ins_treearray.FillTreeArray(ins_select.PROCESS_GetEnebinIndex());
     }
+    mydisplay.Finish();
     
     //============ save ============
     ins_fileout.GetFileOut()->cd();

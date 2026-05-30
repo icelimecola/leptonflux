@@ -2,12 +2,12 @@ _Pragma("once")
 
 #include <iostream>
 using namespace std;
-#include "TDatime.h"
 
-#include "Include_GCX/ToolFileName.hpp"
-#include "Include_GCX/ToolChain.hpp"
-#include "Include_GCX/ToolFileOut.hpp"
-#include "Include_GCX/ToolTreeArray.hpp"
+#include "../include/rootclass_gcx/ToolFileName.hpp"
+#include "../include/rootclass_gcx/ToolChain.hpp"
+#include "../include/rootclass_gcx/ToolFileOut.hpp"
+#include "../include/rootclass_gcx/ToolTreeArray.hpp"
+#include "../include/general/ConsoleDisplay.h"
 #include "VarEneBin.hpp"
 #include "Merge.hpp"
 
@@ -64,19 +64,13 @@ void MergeRun::MERGE_RUN_i(int i_enebin){
     ins_me.INIT_TREEARRAY_BuildBrand(ins_treearray.GetNTree(),ins_treearray.GetTreeArray(),i_enebin);
     //======== traverse
     long nentries = ins_chain.GetChain()->GetEntries();
-    long print_step = nentries/100;
-    if(print_step<1) print_step=1;
+    ConsoleDisplay mydisplay(nentries);
     for(long entry=0; entry<nentries; entry++){
-        TDatime t;
-        if(entry%print_step==0 || entry==nentries-1){
-            double progress = 100.0*(entry+1)/nentries;
-            cout<<Form("%02d:%02d:%02d", t.GetHour(), t.GetMinute(), t.GetSecond())
-                <<" Processing entry in merge "<<entry<<" / "<<nentries
-                <<" ("<<Form("%.2f", progress)<<"%)"<<endl;
-        }
+        mydisplay.Update(entry);
         ins_chain.GetChain()->GetEntry(entry);
         ins_treearray.FillTreeArray(0);
     }
+    mydisplay.Finish();
     //======== save
     ins_fileout.GetFileOut()->cd();
     ins_treearray.WriteTreeArray();
