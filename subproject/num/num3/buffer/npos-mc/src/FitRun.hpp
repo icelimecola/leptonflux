@@ -69,7 +69,7 @@ void FitRun::FIT_RUN_iene(int i_enebin,vector<int>bin_division,int printlv){
     //----260419.01
     ins_treearray.InitTreeArray(vector<int>{nlat,1});
     ins_fit.INIT_TREEARRAY_BuildBrand(vector<int>{nlat,1},ins_treearray.GetTreeArray());
-    ins_fileout.InitFileOut(Form("fitresult_enebin%02d_%gGeV.root",i_enebin,ins_fit.energy_bins[i_enebin]));
+    ins_fileout.InitFileOut(Form("tfit%02d_%gGeV.root",i_enebin,ins_fit.energy_bins[i_enebin]));
     
     
     //============ hist ============
