@@ -94,8 +94,10 @@ void FitDraw::FITDRAW_InitDraw(int i_enebin,int i_perbin,int i_perbin_save){
     h1d_PDFelectron->SetLineColor( color[2] );
     h1d_PDFelectron->SetMarkerColor( color[2] );
 	if(i_perbin==i_perbin_save){
+		RootSaveDir::Enter("draw");
 		h1d_PDFproton->Write();
 		h1d_PDFelectron->Write();
+		RootSaveDir::Exit();
 	}
 	//==================================== init_Number_pos
 	//-- h1d_nproton
@@ -114,9 +116,11 @@ void FitDraw::FITDRAW_InitDraw(int i_enebin,int i_perbin,int i_perbin_save){
 	h1d_nSum_pospro->SetLineWidth(2);
     h1d_nSum_pospro->SetMarkerColor( color[3] );
 	if(i_perbin==i_perbin_save){
+		RootSaveDir::Enter("draw");
 		h1d_nproton->Write();
 		h1d_npositron->Write();
 		h1d_nSum_pospro->Write();
+		RootSaveDir::Exit();
 	}
 	//==================================== init_Number_neg
 	//-- h1d_nccproton
@@ -135,9 +139,11 @@ void FitDraw::FITDRAW_InitDraw(int i_enebin,int i_perbin,int i_perbin_save){
 	h1d_nSum_eleccpro->SetLineWidth(2);
     h1d_nSum_eleccpro->SetMarkerColor( color[3] );
 	if(i_perbin==i_perbin_save){
+		RootSaveDir::Enter("draw");
 		h1d_nccproton->Write();
 		h1d_nelectron->Write();
 		h1d_nSum_eleccpro->Write();
+		RootSaveDir::Exit();
 	}
 }
 
