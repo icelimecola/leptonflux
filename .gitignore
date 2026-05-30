@@ -7,6 +7,6 @@
 /subproject/**/dataiss/
 /subproject/**/third_party/
 /subproject/**/include/
-/subproject/**/*.root
-/subproject/**/*.pdf
-/subproject/**/*.exe
+**/*.root
+**/*.pdf
+**/*.exe
