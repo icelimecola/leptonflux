@@ -101,20 +101,20 @@ class VarFittree: public VarBuffertree,public VarEneBin{
     // const double tmax = tmin+nt*wt;	    //----1823817600
     //==== 27days
     //----prl130posi--260421
-    // const double wt = 60*60*24*27;
-    // static const int nt=225;
-    // const double tmin = 1305417600;
-    // const double tmax = tmin+nt*wt;	    //----1830297600
+    const double wt = 60*60*24*27;
+    static const int nt=225;
+    const double tmin = 1305417600;
+    const double tmax = tmin+nt*wt;	    //----1830297600
     //----fortest--260522
     // const double wt = 60*60*24*27*3;
     // static const int nt=75;
     // const double tmin = 1305417600;
     // const double tmax = tmin+nt*wt;	    //----1830297600
     //----fortest2--260523
-    const double wt = 60*60*24*27*2;
-    static const int nt=112;
-    const double tmin = 1305417600;
-    const double tmax = tmin+nt*wt;	    //----1827964800
+    // const double wt = 60*60*24*27*2;
+    // static const int nt=112;
+    // const double tmin = 1305417600;
+    // const double tmax = tmin+nt*wt;	    //----1827964800
     //====other
     int noperiod=0;
     //==== func
