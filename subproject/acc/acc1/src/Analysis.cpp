@@ -406,23 +406,23 @@ void Analysis::LoopChain(){
 		// cut[15] = rigidity<0;
 		// cut[16] = rigidity>0;
 		//----260517
-		cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
-		cut[1] = (inecal&3)==3;
-		cut[2] = (trkecalmatch&12)==12;
-		cut[3] = tof_qup >0. && tof_qup < 3.0;	//*
-		cut[4] = tof_qlow>0. && tof_qlow< 5.0;
-		cut[5] = trk_qin > 0.7 && trk_qin < 1.5; 
-		cut[6] = EmBDT>-0.995;
-		cut[7] = (trk_pat&259) && (lvl1_PhysBPatt&62);	//----260318发现并修正
-		cut[8] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
-		cut[9] = bdt_chargepid>=0;
-		cut[10] = trk_ntrk<=2 && trd_nhits[2]>=12;	//*
-		cut[11] = trd_klkhd[2][0]<1.5 ;
-		cut[12] = trd_klkhd[2][1]<0.8;
-		cut[13] = trd_new<0.6;
-		cut[14] = trd_new<0.6; // eff = 0.96
-		cut[15] = rigidity<0;
-		cut[16] = rigidity>0;
+		// cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
+		// cut[1] = (inecal&3)==3;
+		// cut[2] = (trkecalmatch&12)==12;
+		// cut[3] = tof_qup >0. && tof_qup < 3.0;	//*
+		// cut[4] = tof_qlow>0. && tof_qlow< 5.0;
+		// cut[5] = trk_qin > 0.7 && trk_qin < 1.5; 
+		// cut[6] = EmBDT>-0.995;
+		// cut[7] = (trk_pat&259) && (lvl1_PhysBPatt&62);	//----260318发现并修正
+		// cut[8] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
+		// cut[9] = bdt_chargepid>=0;
+		// cut[10] = trk_ntrk<=2 && trd_nhits[2]>=12;	//*
+		// cut[11] = trd_klkhd[2][0]<1.5 ;
+		// cut[12] = trd_klkhd[2][1]<0.8;
+		// cut[13] = trd_new<0.6;
+		// cut[14] = trd_new<0.6; // eff = 0.96
+		// cut[15] = rigidity<0;
+		// cut[16] = rigidity>0;
 		//----260527--fot tsu test
 		// cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
 		// cut[1] = (inecal&3)==3;
@@ -441,6 +441,24 @@ void Analysis::LoopChain(){
 		// cut[14] = trd_new<0.7;
 		// cut[15] = rigidity<0;
 		// cut[16] = rigidity>0;
+		//----260531
+		cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
+		cut[1] = (inecal&3)==3;
+		cut[2] = (trkecalmatch&12)==12;
+		cut[3] = tof_qup >0. && tof_qup < 2.0;
+		cut[4] = tof_qlow>0. && tof_qlow< 5.0;
+		cut[5] = trk_qin > 0. && trk_qin < 1.5; 
+		cut[6] = EmBDT>-0.995;
+		cut[7] = (trk_pat&259) && (lvl1_PhysBPatt&62);
+		cut[8] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
+		cut[9] = bdt_chargepid>=0;
+		cut[10] = trk_ntrk==1 && trd_nhits[2]>=12;	//*
+		cut[11] = trd_klkhd[2][0]<1.5 ;
+		cut[12] = trd_klkhd[2][1]<0.8;
+		cut[13] = TMath::Abs(Ene/rigidity)>0.65&&TMath::Abs(Ene/rigidity)<5.00;
+		cut[14] = trd_new<0.7; // eff = 0.96
+		cut[15] = rigidity<0;
+		cut[16] = rigidity>0;
 		//========fill hist
 		//----original
 		// bool passed = 1;
@@ -494,42 +512,7 @@ void Analysis::LoopChain(){
 		// 		h2Ene3D_MCEne[i]->Fill( mcinfo_p, Ene, weight );
 		// 	}
 		// }
-		// ----260315--reweight
-		// //----flux
-		// double flux = hfluxmodel->GetBinContent( hfluxmodel->FindBin(mcinfo_p) );
-		// //----binwidth
-		// int mcpbin = GetBinIndex(mcinfo_p);
-		// double mcpbinlow = energy_bins[mcpbin];
-		// double mcpbinup = energy_bins[mcpbin+1]; 
-		// //----reweight
-		// double reweight = 1.0;
-		// reweight = weight * mcinfo_p * flux;
-		// // reweight = weight * mcinfo_p * flux * (mcpbinup - mcpbinlow);
-		// //----fill
-		// bool passed = 1;
-		// bool passed_temp = 1;
-		// for(int i=0; i<nCut; i++){
-		// 	passed = passed && cut[i]; 
-		// 	if(i==14) passed_temp = passed;
-		// 	if(i==15) passed = passed_temp && cut[i];
-		// 	if(i==16) passed = passed_temp && cut[i];
-		// 	if( passed ){
-		// 		h1MCEne[i]->Fill( mcinfo_p, reweight );
-		// 		h1Ene3D[i]->Fill( Ene, reweight );
-		// 		h2Ene3D_MCEne[i]->Fill( mcinfo_p, Ene, reweight );
-		// 	}
-		// }
 	}
-	// TH1D *cc_ene = new TH1D("cc_ene", "cc_ene", nbin, energy_bins);
-	// double nele,nelecc,cc,cc_err;
-	// for(int i=0; i<nbin; i++){
-	// 	nele = h1Ene3D[15]->GetBinContent(i+1);
-	// 	nelecc = h1Ene3D[16]->GetBinContent(i+1);
-	// 	cc = nelecc / (nelecc + nele);
-	// 	cc_err = sqrt( cc*(1-cc)/nelecc + cc*cc*nele/(nelecc*nele) );
-	// 	cc_ene->SetBinContent(i+1, cc);
-	// 	cc_ene->SetBinError(i+1, cc_err);
-	// }
 	//====save
 	mydisplay.Finish();
 	fout->cd();
