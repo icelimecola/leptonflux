@@ -5,7 +5,7 @@ FPATH="datain/hene_*eff.root"
 FOUTNAME="hene_combine"
 XMIN=""
 XMAX=""
-YMIN=0.85
+YMIN=0.83
 YMAX=1.02
 
 if [[ $# -ge 1 ]]; then
