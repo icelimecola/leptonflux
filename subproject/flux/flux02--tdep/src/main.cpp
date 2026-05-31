@@ -9,6 +9,7 @@ using namespace std;
 #include "TFile.h"
 #include "TH1.h"
 #include "TH1D.h"
+#include "TH2.h"
 #include "TCanvas.h"
 #include "TStyle.h"
 #include "TGaxis.h"
@@ -95,7 +96,7 @@ TString TOOL_FormatE(double x){
 
 TString TOOL_GetNFileName(const TString &datadir, const TString &species, int i_enebin){
     return Form(
-        "%s/%s/htime_ene%02d_%sGeV_%s.root",
+        "%s/%s/htime_tfit%02d_%sGeV_%s.root",
         datadir.Data(),
         species.Data(),
         i_enebin,
@@ -106,20 +107,18 @@ TString TOOL_GetNFileName(const TString &datadir, const TString &species, int i_
 
 TString TOOL_GetTRDEffTimeFileName(const TString &datadir, int i_enebin){
     return Form(
-        "%s/trdeff/htime_ene%02d_%sGeV_trdeff.root",
+        "%s/trdeff/htime_tfit%02d_%sGeV_trdeff.root",
         datadir.Data(),
         i_enebin,
         TOOL_FormatE(ENERGY_BINS[i_enebin]).Data()
     );
 }
 
-TString TOOL_GetExpsHistName(const FluxConf &conf, int i_enebin){
+TString TOOL_GetExpsHistName(const FluxConf &conf){
     return Form(
-        "h1exp_%s_T_fov25_sf%s_ene%sto%sGeV",
+        "h2/h2exp_%s_TvE_sf%s",
         conf.exps_mode.Data(),
-        conf.exps_sf.Data(),
-        TOOL_FormatE(ENERGY_BINS[i_enebin]).Data(),
-        TOOL_FormatE(ENERGY_BINS[i_enebin + 1]).Data()
+        conf.exps_sf.Data()
     );
 }
 
@@ -308,6 +307,33 @@ bool READ_GetEneValue(TFile *f, const TString &hname, double energy, EneValue &o
     return true;
 }
 
+TH1D *READ_BuildExpsTimeHist(TFile *f, const FluxConf &conf, int i_enebin){
+    TString hname = TOOL_GetExpsHistName(conf);
+    TH2 *h2 = dynamic_cast<TH2*>(READ_GetHist(f, hname));
+    if(h2 == nullptr) return nullptr;
+
+    double elow = ENERGY_BINS[i_enebin];
+    double eup = ENERGY_BINS[i_enebin + 1];
+    int iy1 = h2->GetYaxis()->FindBin(elow + 1.0e-9);
+    int iy2 = h2->GetYaxis()->FindBin(eup - 1.0e-9);
+    if(iy1 < 1 || iy2 > h2->GetNbinsY() || iy2 < iy1){
+        cerr<<"ERR READ_BuildExpsTimeHist ===== bad energy range"
+            <<" i_enebin="<<i_enebin
+            <<" elow="<<elow
+            <<" eup="<<eup
+            <<" iy1="<<iy1
+            <<" iy2="<<iy2
+            <<endl;
+        return nullptr;
+    }
+
+    TH1D *hout = h2->ProjectionX(Form("hexps_in_t_ene%02d", i_enebin), iy1, iy2, "e");
+    if(hout == nullptr) return nullptr;
+    hout->SetDirectory(nullptr);
+    hout->SetTitle(Form("exps time, %g to %g GeV", elow, eup));
+    return hout;
+}
+
 bool READ_CheckTimeShape(TH1 *h_num, TH1 *h_exps, int i_enebin){
     if(h_num == nullptr || h_exps == nullptr) return false;
     if(h_num->GetNbinsX() != h_exps->GetNbinsX()){
@@ -455,9 +481,9 @@ void INIT(int argc, char *argv[], FluxConf &conf){
             <<endl;
         exit(1);
     }
-    if(conf.exps_mode != "igrf" && conf.exps_mode != "st"){
+    if(conf.exps_mode != "igrf" && conf.exps_mode != "st" && conf.exps_mode != "ts05"){
         cerr<<"ERR INIT ===== unsupported exps_mode "<<conf.exps_mode
-            <<" ; only igrf/st"
+            <<" ; only igrf/st/ts05"
             <<endl;
         exit(1);
     }
@@ -534,7 +560,6 @@ int CALC_Flux(const FluxConf &conf){
     for(int i_enebin=0; i_enebin<NENEBIN; i_enebin++){
         TString fpath_num_pos = TOOL_GetNFileName(conf.datadir, "npos", i_enebin);
         TString fpath_num_ele = TOOL_GetNFileName(conf.datadir, "nele", i_enebin);
-        TString hname_exps = TOOL_GetExpsHistName(conf, i_enebin);
         TString hname_num = "htime";
         double emid = 0.5 * (ENERGY_BINS[i_enebin] + ENERGY_BINS[i_enebin + 1]);
         double delta_ene = ENERGY_BINS[i_enebin + 1] - ENERGY_BINS[i_enebin];
@@ -553,7 +578,7 @@ int CALC_Flux(const FluxConf &conf){
 
         TH1 *hnum_pos_in = READ_GetHist(f_num_pos.get(), hname_num);
         TH1 *hnum_ele_in = READ_GetHist(f_num_ele.get(), hname_num);
-        TH1 *hexps_in = READ_GetHist(f_exps.get(), hname_exps);
+        TH1D *hexps_in = READ_BuildExpsTimeHist(f_exps.get(), conf, i_enebin);
         TH1 *htrdeff_time_in = READ_GetHist(f_trdeff_time.get(), "hratio1");
         TH1 *htrdeff_time_27d_in = READ_GetHist(f_trdeff_time.get(), "hratio27");
         if(hnum_pos_in == nullptr || hnum_ele_in == nullptr || hexps_in == nullptr || htrdeff_time_in == nullptr || htrdeff_time_27d_in == nullptr) return 1;
