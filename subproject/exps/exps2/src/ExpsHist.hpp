@@ -256,10 +256,10 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
                 nenebin, energy_bins);
             h1exp_igrf_E[ifov][isf] = new TH1D( Form("h1exp_igrf_E_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_igrf_E_fov%g_sf%g", fov[ifov], factor[isf]), 
                 nenebin, energy_bins);
-            h1exp_st_Efine[ifov][isf] = new TH1D( Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf]), 
-                nenebin_fine, energy_bins_fine);
-            h1exp_igrf_Efine[ifov][isf] = new TH1D( Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf]), 
-                nenebin_fine, energy_bins_fine);
+            // h1exp_st_Efine[ifov][isf] = new TH1D( Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf]), 
+            //     nenebin_fine, energy_bins_fine);
+            // h1exp_igrf_Efine[ifov][isf] = new TH1D( Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf]), 
+                // nenebin_fine, energy_bins_fine);
         }
 		}
 		//====h1t
