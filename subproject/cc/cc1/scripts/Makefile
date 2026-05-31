@@ -18,11 +18,12 @@ NAGDIR=/afs/cern.ch/exp/ams/Offline/CERN/NagLib/
 CERNDIRLIB=/afs/cern.ch/exp/ams/Offline/CERN/2005/lib/
 # SRC= ./
 SRC= ./src/
+INCLUDE= ./include/
 BIN= ./bin/
 # ======== SOURCE NAME
 # SRCS= $(SRC)TRK.C
 # SRCS=$(SRC)t_add.C $(SRC)Analysis.C $(SRC)MyBDT_ChargePID.C $(SRC)ConfigParser.C
-SRCS=$(SRC)t_add.cpp $(SRC)Analysis.cpp $(SRC)MyBDT_ChargePID.cpp $(SRC)ConfigParser.cpp
+SRCS=$(SRC)t_add.cpp $(SRC)Analysis.cpp $(SRC)MyBDT_ChargePID.cpp $(SRC)ConfigParser.cpp $(INCLUDE)/general/ConsoleDisplay.cpp
 # SRCS= $(SRC)TRK.cpp
 # ======== OBJECT NAME
 # MYOBJS := $(SRCS:$(SRC)%.C=$(BIN)%.o)
@@ -84,7 +85,6 @@ Analysis: $(MYOBJS)
 
 AnalysisLepton: $(SRC)t_add.C $(SRC)AnalysisLepton.C $(SRC)Analysis.h $(SRC)t_add.h $(SRC)MyBDT_ChargePID.C $(SRC)ConfigParser.C
 	$(CXX) -qopenmp -o AnalysisLepton.exe t_add.C AnalysisLepton.C MyBDT_ChargePID.C ConfigParser.C $(CXXFLAGS) $(LIBS)
-
 
 
 
