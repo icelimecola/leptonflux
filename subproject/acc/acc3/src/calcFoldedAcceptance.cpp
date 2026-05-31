@@ -490,7 +490,7 @@ int main(){
 	//---- 0-> MC truth, 1-> electron, 2-> positron
 	int Hypothesis; 
 	Hypothesis = 0; 
-	Hypothesis = 1;
+	// Hypothesis = 1;
 	// Hypothesis = 2;
 	//====IsPositron
 	if( Hypothesis==2 ) IsPositron=1;
