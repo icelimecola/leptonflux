@@ -3,6 +3,7 @@ using namespace std;
 
 #include <algorithm>
 #include <cctype>
+#include <cmath>
 #include <cstdlib>
 #include <glob.h>
 #include <map>
@@ -27,19 +28,28 @@ using namespace std;
 #include "TLine.h"
 
 //====================================================
-const int NENEBIN = 54;
-const double ENERGY_BINS[NENEBIN + 1] = {
-	0.80, 1, 1.16, 1.33, 1.51,
+// const int NENEBIN = 54;
+// const double ENERGY_BINS[NENEBIN + 1] = {
+// 	0.80, 1, 1.16, 1.33, 1.51,
+// 	1.71, 1.92, 2.15, 2.40, 2.67,
+// 	2.97, 3.29, 3.64, 4.02, 4.43,
+// 	4.88, 5.37, 5.90, 6.47, 7.09,
+// 	7.76, 8.48, 9.26, 10.10, 11,
+// 	12, 13, 14.10, 15.30, 16.60,
+// 	18, 19.50, 21.10, 22.80, 24.70,
+// 	26.70, 28.80, 31.10, 33.50, 36.10,
+// 	38.90, 41.90, 45.10, 48.50, 52.20,
+// 	56.10, 60.30, 64.80, 69.70, 74.90,
+// 	80.50, 86.50, 93, 100, 108
+// };
+const int NENEBIN = 29;
+const double *ENERGY_BINS = new double[NENEBIN+1]{
+	0.80, 1.00, 1.16, 1.33, 1.51,
 	1.71, 1.92, 2.15, 2.40, 2.67,
 	2.97, 3.29, 3.64, 4.02, 4.43,
 	4.88, 5.37, 5.90, 6.47, 7.09,
-	7.76, 8.48, 9.26, 10.10, 11,
-	12, 13, 14.10, 15.30, 16.60,
-	18, 19.50, 21.10, 22.80, 24.70,
-	26.70, 28.80, 31.10, 33.50, 36.10,
-	38.90, 41.90, 45.10, 48.50, 52.20,
-	56.10, 60.30, 64.80, 69.70, 74.90,
-	80.50, 86.50, 93, 100, 108
+	7.76, 8.48, 9.26, 10.10, 11.0,
+	13.0, 16.6, 22.8, 41.9, 45.10
 };
 
 struct VarConf{
@@ -144,7 +154,7 @@ TString GET_EFFLABEL(const TString &effname){
 		{"trkeff", "Tracker Eff."}
 	};
 	string key = effname.Data();
-	if(label_map.count(key) > 0) return label_map[key];
+	if(label_map.count(key) > 0) return label_map[key].c_str();
 	return effname;
 }
 
