@@ -691,7 +691,7 @@ int main(){
 	TAxis *xaxis_cc = cc_ene->GetXaxis();
 	TAxis *yaxis_cc = cc_ene->GetYaxis();
 	cc_ene->SetStats(0);
-	cc_ene->SetNameTitle("", "");
+	cc_ene->SetNameTitle("cc_ene", "cc_ene");
 	c_cc->SetTopMargin(0.13);
 	c_cc->SetBottomMargin(0.15);
 	c_cc->SetLeftMargin(0.13);
@@ -726,9 +726,9 @@ int main(){
 	// 	if( cc_bin + cc_err_bin > cc_max ) cc_max = cc_bin + cc_err_bin;
 	// }
 	// cc_ene->SetMaximum(cc_max > 0 ? cc_max * 1.25 : 1.0);
+	xaxis_cc->SetRangeUser(1,41.9);
 	cc_ene->SetMaximum(2e-3);
 	cc_ene->SetMinimum(5e-5);
-	xaxis_cc->SetRangeUser(1,41.9);
 	gStyle->SetEndErrorSize(0);
 	TGaxis::SetMaxDigits(3);
 	cc_ene->Draw("E1X0P");
