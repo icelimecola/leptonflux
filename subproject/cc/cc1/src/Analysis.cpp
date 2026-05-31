@@ -55,6 +55,47 @@ void Analysis::BuildMCWeightFromFluxModel(TString flux_model_file, TH1D *hweight
 */
 
 
+double fluxmodel_positron_cc(double *x, double *par){
+	// par[0]=phi_e+ [GeV], par[1]=Cd, par[2]=gamma_d, par[3]=Cs, par[4]=gamma_s, par[5]=1/Es [TeV^-1]
+	//====constant
+	const double E1 = 7.0;   // GeV
+	const double E2 = 60.0;  // GeV
+	double invEs_GeVinv = par[5]*1e-3; // TeV^-1 -> GeV^-1
+	//====E
+	double E = x[0];
+	double Ehat = E + par[0];
+	if( E<=0 || Ehat<=0 ) return 0;
+	//====model
+	double diffuse = par[1]*pow(Ehat/E1, par[2]);
+	double source = par[3]*pow(Ehat/E2, par[4])*exp(-Ehat*invEs_GeVinv);
+	return (E*E)/(Ehat*Ehat)*(diffuse + source);
+}
+
+TH1D *Analysis::BuildFluxModelPositron(TString hname, TF1 *&fflux){
+	//====260531 build flux density in cc energy bins
+	TH1D *hflux = 0;
+	if( IsFineBinning ) hflux = new TH1D(hname, hname+";Energy [GeV];Flux", nbin_fine, energy_bins_fine);
+	else                hflux = new TH1D(hname, hname+";Energy [GeV];Flux", nbin, energy_bins);
+	hflux->SetDirectory(0);
+	//====model from acc3.2-tdep
+	double xmin = hflux->GetBinLowEdge(1);
+	double xmax = hflux->GetBinLowEdge(hflux->GetNbinsX()+1);
+	fflux = new TF1("fflux_posi_cc", fluxmodel_positron_cc, xmin, xmax, 6);
+	fflux->SetNpx(10000);
+	fflux->SetParNames("phi_eplus", "Cd", "gamma_d", "Cs", "gamma_s", "invEs");
+	fflux->SetParameters(1.10, 6.51e-2, -4.07, 6.80e-5, -2.58, 1.23);
+	//====fill bin-averaged flux density
+	for(int ibin=1; ibin<=hflux->GetNbinsX(); ibin++){
+		double elow = hflux->GetBinLowEdge(ibin);
+		double eup = hflux->GetBinLowEdge(ibin+1);
+		double flux = 0;
+		if( eup>elow ) flux = fflux->Integral(elow, eup)/(eup - elow);
+		hflux->SetBinContent(ibin, flux);
+		hflux->SetBinError(ibin, 0);
+	}
+	return hflux;
+}
+
 void Analysis::DefineEcalFiducialVolume(){
 	static const double ecal_entry_z0 = -143.2;
 	static const double ecal_exit_z0 = -158.9;
@@ -207,8 +248,11 @@ void Analysis::LoopChain(){
 	// TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("h_fluxfit") );
 	//----260413.01----rightfluxprl122
 	// TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/250614.01-DAILYFLUX/04.101--ACC1/datain/fluxprl122.root", "read" );
-	TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/cc1/datain/fluxprl122.root", "read" );
-	TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("hfluxpos") );
+	// TFile *file_fluxmodel = new TFile( "/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/cc1/datain/fluxprl122.root", "read" );
+	// TH1D *hfluxmodel = dynamic_cast<TH1D*>( file_fluxmodel->Get("hfluxpos") );
+	//----260531 generate flux directly in cc enebin
+	TF1 *ffluxmodel = 0;
+	TH1D *hfluxmodel = BuildFluxModelPositron("hfluxpos_model_cc", ffluxmodel);
 	//====loop
 	long nentries = fChain->GetEntries();
 	ConsoleDisplay mydisplay(nentries);
@@ -516,11 +560,9 @@ void Analysis::LoopChain(){
 		// }
 		// ----260315--reweight
 		//----flux
-		double flux = hfluxmodel->GetBinContent( hfluxmodel->FindBin(mcinfo_p) );
-		//----binwidth
-		int mcpbin = GetBinIndex(mcinfo_p);
-		double mcpbinlow = energy_bins[mcpbin];
-		double mcpbinup = energy_bins[mcpbin+1]; 
+		int mcpbin = hfluxmodel->FindBin(mcinfo_p);
+		if( mcpbin<1 || mcpbin>hfluxmodel->GetNbinsX() ) continue;
+		double flux = hfluxmodel->GetBinContent( mcpbin );
 		//----reweight
 		double reweight = 1.0;
 		reweight = weight * mcinfo_p * flux;
@@ -562,6 +604,8 @@ void Analysis::LoopChain(){
 	//====save
 	mydisplay.Finish();
 	fout->cd();
+	if( ffluxmodel ) ffluxmodel->Write();
+	if( hfluxmodel ) hfluxmodel->Write();
 	fout->Write();
 	// cc_ene->Write();
 	fout->Close();

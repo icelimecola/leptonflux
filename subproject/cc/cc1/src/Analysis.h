@@ -68,6 +68,7 @@ class Analysis : public t_add{
 		void loadMCweight();
 		void BuildMCWeight();
 		void BuildMCWeightFromFluxModel(TString fname, TH1D *hweight);
+		TH1D *BuildFluxModelPositron(TString hname, TF1 *&fflux);
 		TH1D *h1d_mcweight_ele;
 		TH1D *h1d_mcweight_pos;
 
