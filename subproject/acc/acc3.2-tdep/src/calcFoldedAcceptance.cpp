@@ -26,29 +26,41 @@ using namespace std;
 
 
 int IsPositron = 0;
-int IsFineBinning = 0;
-static const int NENEBIN_TDEP = 54;
-static const int FIRST_ENEBIN_TDEP_RAW = 1;
-static const int NENEBIN_TDEP_RAW = NENEBIN_TDEP - FIRST_ENEBIN_TDEP_RAW;
+//====timebin
 static const int NTBIN_27D = 225;
 static const double WT_27D = 60.0*60.0*24.0*27.0;
 static const double TMIN_27D = 1305417600.0;
 static const double TMAX_27D = TMIN_27D + NTBIN_27D*WT_27D;
 static const double TDRAW_XMIN = 1305849600.0;
 static const double TDRAW_XMAX = 1761955200.0;
+//====enebin
+int IsFineBinning = 0;
+// static const int NENEBIN_TDEP = 54;
+// static const double ENERGY_BINS_TDEP[NENEBIN_TDEP + 1] = {
+// 	0.80, 1, 1.16, 1.33, 1.51,
+// 	1.71, 1.92, 2.15, 2.40, 2.67,
+// 	2.97, 3.29, 3.64, 4.02, 4.43,
+// 	4.88, 5.37, 5.90, 6.47, 7.09,
+// 	7.76, 8.48, 9.26, 10.10, 11,
+// 	12, 13, 14.10, 15.30, 16.60,
+// 	18, 19.50, 21.10, 22.80, 24.70,
+// 	26.70, 28.80, 31.10, 33.50, 36.10,
+// 	38.90, 41.90, 45.10, 48.50, 52.20,
+// 	56.10, 60.30, 64.80, 69.70, 74.90,
+// 	80.50, 86.50, 93, 100, 108
+// };
+static const int NENEBIN_TDEP = 29;
 static const double ENERGY_BINS_TDEP[NENEBIN_TDEP + 1] = {
-	0.80, 1, 1.16, 1.33, 1.51,
+	0.80, 1.00, 1.16, 1.33, 1.51,
 	1.71, 1.92, 2.15, 2.40, 2.67,
 	2.97, 3.29, 3.64, 4.02, 4.43,
 	4.88, 5.37, 5.90, 6.47, 7.09,
-	7.76, 8.48, 9.26, 10.10, 11,
-	12, 13, 14.10, 15.30, 16.60,
-	18, 19.50, 21.10, 22.80, 24.70,
-	26.70, 28.80, 31.10, 33.50, 36.10,
-	38.90, 41.90, 45.10, 48.50, 52.20,
-	56.10, 60.30, 64.80, 69.70, 74.90,
-	80.50, 86.50, 93, 100, 108
+	7.76, 8.48, 9.26, 10.10, 11.0,
+	13.0, 16.6, 22.8, 41.9, 45.10
 };
+//====enebin--readcut
+static const int FIRST_ENEBIN_TDEP_RAW = 1;
+static const int NENEBIN_TDEP_RAW = NENEBIN_TDEP - FIRST_ENEBIN_TDEP_RAW;
 
 TGraphErrors *convert_TH1_to_graph(TH1* h1, double xmin=0){
 	int np=0;
