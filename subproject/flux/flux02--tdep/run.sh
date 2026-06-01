@@ -21,12 +21,12 @@ EXEFILE="${SRCDIR}/flux_tdep.exe"
 
 #====================================================
 #---- cmdline override
-#---- $1:
+#---- $1: foutname
+#---- $2: datadir
+#---- $3:
 #     1) npos
 #     2) nele
 #     3) ALL -> run npos + nele
-#---- $2: datadir
-#---- $3: foutname
 #---- $4: exps_mode (igrf/st)
 #---- $5: exps_sf (1/1.1/1.2/...)
 #---- $6: xmin
@@ -35,17 +35,17 @@ EXEFILE="${SRCDIR}/flux_tdep.exe"
 #---- $9: ymax
 RUN_ALL=0
 if [[ $# -ge 1 ]]; then
-    if [[ "$1" == "ALL" ]]; then
-        RUN_ALL=1
-    else
-        SPECIES="$1"
-    fi
+    FOUTNAME="$1"
 fi
 if [[ $# -ge 2 ]]; then
     DATADIR="$2"
 fi
 if [[ $# -ge 3 ]]; then
-    FOUTNAME="$3"
+    if [[ "$3" == "ALL" ]]; then
+        RUN_ALL=1
+    else
+        SPECIES="$3"
+    fi
 fi
 if [[ $# -ge 4 ]]; then
     EXPS_MODE="$4"
@@ -73,9 +73,9 @@ BUILD_EXE(){
 }
 
 RUN_ONE(){
-    local species_now="$1"
+    local foutname_now="$1"
     local datadir_now="$2"
-    local foutname_now="$3"
+    local species_now="$3"
     local exps_mode_now="$4"
     local exps_sf_now="$5"
     local xmin_now="$6"
@@ -95,7 +95,7 @@ RUN_ONE(){
     echo "IN RUN_ROOT ===== time-bin default in source = 1day"
     echo "IN RUN_ROOT ===== 27day option kept commented in src/main.cpp"
 
-    "${EXEFILE}" "${species_now}" "${datadir_now}" "${foutname_now}" "${exps_mode_now}" "${exps_sf_now}" "${xmin_now}" "${xmax_now}" "${ymin_now}" "${ymax_now}"
+    "${EXEFILE}" "${foutname_now}" "${datadir_now}" "${species_now}" "${exps_mode_now}" "${exps_sf_now}" "${xmin_now}" "${xmax_now}" "${ymin_now}" "${ymax_now}"
 }
 
 #====================================================
@@ -108,10 +108,10 @@ echo "IN RUN_ROOT ===== EXEFILE=${EXEFILE}"
 BUILD_EXE
 
 if [[ "${RUN_ALL}" -eq 1 ]]; then
-    RUN_ONE "npos" "${DATADIR}" "hflux_t_${EXPS_MODE}_sf${EXPS_SF}.root" "${EXPS_MODE}" "${EXPS_SF}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}"
-    RUN_ONE "nele" "${DATADIR}" "hflux_t_${EXPS_MODE}_sf${EXPS_SF}_nele.root" "${EXPS_MODE}" "${EXPS_SF}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}"
+    RUN_ONE "hflux_t_${EXPS_MODE}_sf${EXPS_SF}.root" "${DATADIR}" "npos" "${EXPS_MODE}" "${EXPS_SF}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}"
+    RUN_ONE "hflux_t_${EXPS_MODE}_sf${EXPS_SF}_nele.root" "${DATADIR}" "nele" "${EXPS_MODE}" "${EXPS_SF}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}"
 else
-    RUN_ONE "${SPECIES}" "${DATADIR}" "${FOUTNAME}" "${EXPS_MODE}" "${EXPS_SF}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}"
+    RUN_ONE "${FOUTNAME}" "${DATADIR}" "${SPECIES}" "${EXPS_MODE}" "${EXPS_SF}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}"
 fi
 
 echo "IN RUN_ROOT ===== done"

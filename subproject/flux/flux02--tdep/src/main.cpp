@@ -44,10 +44,10 @@ static const double ENERGY_BINS[NENEBIN + 1] = {
 };
 
 struct FluxConf{
-    TString datadir;
-    TString species;
+    TString findir;
     TString foutname;
-    TString exps_mode;
+    TString particle;
+    TString exps_geomagmode;
     TString exps_sf;
     bool has_xmin;
     bool has_xmax;
@@ -117,7 +117,7 @@ TString TOOL_GetTRDEffTimeFileName(const TString &datadir, int i_enebin){
 TString TOOL_GetExpsHistName(const FluxConf &conf){
     return Form(
         "h2/h2exp_%s_TvE_sf%s",
-        conf.exps_mode.Data(),
+        conf.exps_geomagmode.Data(),
         conf.exps_sf.Data()
     );
 }
@@ -216,7 +216,7 @@ FluxBin TOOL_CalcFluxBin(
         return out;
     }
 
-    if(conf.species == "npos"){
+    if(conf.particle == "npos"){
         out.num = TOOL_CalcNCorrPos(npos_measure, nele_measure, cc.value);
         out.num_err = TOOL_CalcNCorrPosErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
     }
@@ -399,7 +399,7 @@ bool DRAW_FluxTime(const FluxConf &conf, int i_enebin, TH1D *hflux, TFile *fout)
     if(conf.has_xmin && conf.has_xmax) xaxis->SetRangeUser(conf.xmin, conf.xmax);
     if(!conf.has_xmin && !conf.has_xmax) xaxis->SetRangeUser(conf.xmin, conf.xmax);
 
-    yaxis->SetNameTitle("flux", Form("Flux (%s)", conf.species.Data()));
+    yaxis->SetNameTitle("flux", Form("Flux (%s)", conf.particle.Data()));
     yaxis->CenterTitle();
     yaxis->SetTitleFont(62);
     yaxis->SetTitleSize(0.05);
@@ -439,10 +439,10 @@ bool DRAW_FluxTime(const FluxConf &conf, int i_enebin, TH1D *hflux, TFile *fout)
 
 //==================================================== INIT_
 void INIT(int argc, char *argv[], FluxConf &conf){
-    conf.datadir = "datain";
-    conf.species = "npos";
+    conf.findir = "datain";
+    conf.particle = "npos";
     conf.foutname = "hflux_t_igrf.root";
-    conf.exps_mode = "igrf";
+    conf.exps_geomagmode = "igrf";
     conf.exps_sf = "1";
     conf.has_xmin = false;
     conf.has_xmax = false;
@@ -453,10 +453,10 @@ void INIT(int argc, char *argv[], FluxConf &conf){
     conf.ymin = 0.0;
     conf.ymax = 15.0;
 
-    if(argc > 1) conf.species = argv[1];
-    if(argc > 2) conf.datadir = argv[2];
-    if(argc > 3) conf.foutname = argv[3];
-    if(argc > 4) conf.exps_mode = argv[4];
+    if(argc > 1) conf.foutname = argv[1];
+    if(argc > 2) conf.findir = argv[2];
+    if(argc > 3) conf.particle = argv[3];
+    if(argc > 4) conf.exps_geomagmode = argv[4];
     if(argc > 5) conf.exps_sf = argv[5];
     if(argc > 6 && argv[6][0] != '\0'){
         conf.xmin = atof(argv[6]);
@@ -475,23 +475,23 @@ void INIT(int argc, char *argv[], FluxConf &conf){
         conf.has_ymax = true;
     }
 
-    if(!TOOL_IsSupportedSpecies(conf.species)){
-        cerr<<"ERR INIT ===== unsupported species "<<conf.species
+    if(!TOOL_IsSupportedSpecies(conf.particle)){
+        cerr<<"ERR INIT ===== unsupported species "<<conf.particle
             <<" ; only npos/nele"
             <<endl;
         exit(1);
     }
-    if(conf.exps_mode != "igrf" && conf.exps_mode != "st" && conf.exps_mode != "ts05"){
-        cerr<<"ERR INIT ===== unsupported exps_mode "<<conf.exps_mode
+    if(conf.exps_geomagmode != "igrf" && conf.exps_geomagmode != "st" && conf.exps_geomagmode != "ts05"){
+        cerr<<"ERR INIT ===== unsupported exps_mode "<<conf.exps_geomagmode
             <<" ; only igrf/st/ts05"
             <<endl;
         exit(1);
     }
 
-    cout<<"IN INIT ===== species="<<conf.species
-        <<" datadir="<<conf.datadir
+    cout<<"IN INIT ===== species="<<conf.particle
+        <<" datadir="<<conf.findir
         <<" foutname="<<conf.foutname
-        <<" exps_mode="<<conf.exps_mode
+        <<" exps_mode="<<conf.exps_geomagmode
         <<" exps_sf="<<conf.exps_sf
         <<" xmin="<<(conf.has_xmin ? Form("%g", conf.xmin) : TString("N/A"))
         <<" xmax="<<(conf.has_xmax ? Form("%g", conf.xmax) : TString("N/A"))
@@ -516,16 +516,16 @@ int CALC_Flux(const FluxConf &conf){
     vector<unique_ptr<TFile>> vfile_eff;
     vector<TH1D*> vh_eff_hist;
 
-    if(!READ_OpenFile(conf.datadir + "/mcacc.root", f_acc)) return 1;
-    if(!READ_OpenFile(conf.datadir + "/cc.root", f_cc)) return 1;
-    if(!READ_OpenFile(conf.datadir + "/hene_trigeff.root", f_trig)) return 1;
-    if(!READ_OpenFile(conf.datadir + "/hexps.root", f_exps)) return 1;
-    if(!READ_OpenFile(conf.datadir + "/seleff/hene_totaleff.root", f_eff_total_input)) return 1;
+    if(!READ_OpenFile(conf.findir + "/mcacc.root", f_acc)) return 1;
+    if(!READ_OpenFile(conf.findir + "/cc.root", f_cc)) return 1;
+    if(!READ_OpenFile(conf.findir + "/hene_trigeff.root", f_trig)) return 1;
+    if(!READ_OpenFile(conf.findir + "/hexps.root", f_exps)) return 1;
+    if(!READ_OpenFile(conf.findir + "/seleff/hene_totaleff.root", f_eff_total_input)) return 1;
 
     vfile_eff.resize(seleff_items.size());
     vh_eff_hist.resize(seleff_items.size(), nullptr);
     for(size_t ieff=0; ieff<seleff_items.size(); ieff++){
-        if(!READ_OpenFile(conf.datadir + "/" + seleff_items[ieff].filename, vfile_eff[ieff])) return 1;
+        if(!READ_OpenFile(conf.findir + "/" + seleff_items[ieff].filename, vfile_eff[ieff])) return 1;
         TH1 *htmp = READ_GetHist(vfile_eff[ieff].get(), seleff_items[ieff].histname);
         if(htmp == nullptr) return 1;
         vh_eff_hist[ieff] = dynamic_cast<TH1D*>(htmp);
@@ -558,8 +558,8 @@ int CALC_Flux(const FluxConf &conf){
     }
 
     for(int i_enebin=0; i_enebin<NENEBIN; i_enebin++){
-        TString fpath_num_pos = TOOL_GetNFileName(conf.datadir, "npos", i_enebin);
-        TString fpath_num_ele = TOOL_GetNFileName(conf.datadir, "nele", i_enebin);
+        TString fpath_num_pos = TOOL_GetNFileName(conf.findir, "npos", i_enebin);
+        TString fpath_num_ele = TOOL_GetNFileName(conf.findir, "nele", i_enebin);
         TString hname_num = "htime";
         double emid = 0.5 * (ENERGY_BINS[i_enebin] + ENERGY_BINS[i_enebin + 1]);
         double delta_ene = ENERGY_BINS[i_enebin + 1] - ENERGY_BINS[i_enebin];
@@ -574,7 +574,7 @@ int CALC_Flux(const FluxConf &conf){
 
         if(!READ_OpenFile(fpath_num_pos, f_num_pos)) return 1;
         if(!READ_OpenFile(fpath_num_ele, f_num_ele)) return 1;
-        if(!READ_OpenFile(TOOL_GetTRDEffTimeFileName(conf.datadir, i_enebin), f_trdeff_time)) return 1;
+        if(!READ_OpenFile(TOOL_GetTRDEffTimeFileName(conf.findir, i_enebin), f_trdeff_time)) return 1;
 
         TH1 *hnum_pos_in = READ_GetHist(f_num_pos.get(), hname_num);
         TH1 *hnum_ele_in = READ_GetHist(f_num_ele.get(), hname_num);
@@ -762,22 +762,22 @@ int CALC_Flux(const FluxConf &conf){
             <<endl;
 
         f_out->cd();
-        hnum_pos_measure->Write();
-        hnum_ele_measure->Write();
-        hnumcorr->Write();
-        hnum->Write();
-        hexps->Write();
-        htrdeff_time->Write();
-        hflux_noacc->Write();
+        // hnum_pos_measure->Write();
+        // hnum_ele_measure->Write();
+        // hnumcorr->Write();
+        // hnum->Write();
+        // hexps->Write();
+        // htrdeff_time->Write();
+        // hflux_noacc->Write();
         hflux->Write();
-        hnum_pos_measure_27d->Write();
-        hnum_ele_measure_27d->Write();
-        hnumcorr_27d->Write();
-        hnum_27d->Write();
-        hexps_27d->Write();
-        htrdeff_time_27d->Write();
-        hflux_noacc_27d->Write();
-        hflux_27d->Write();
+        // hnum_pos_measure_27d->Write();
+        // hnum_ele_measure_27d->Write();
+        // hnumcorr_27d->Write();
+        // hnum_27d->Write();
+        // hexps_27d->Write();
+        // htrdeff_time_27d->Write();
+        // hflux_noacc_27d->Write();
+        // hflux_27d->Write();
 
         if(!DRAW_FluxTime(conf, i_enebin, hflux, f_out.get())){
             delete hnum_pos_measure;
