@@ -59,7 +59,7 @@ static const double ENERGY_BINS_TDEP[NENEBIN_TDEP + 1] = {
 	13.0, 16.6, 22.8, 41.9, 45.10
 };
 //====enebin--readcut
-static const int FIRST_ENEBIN_TDEP_RAW = 1;
+static const int FIRST_ENEBIN_TDEP_RAW = 0;
 static const int NENEBIN_TDEP_RAW = NENEBIN_TDEP - FIRST_ENEBIN_TDEP_RAW;
 
 TGraphErrors *convert_TH1_to_graph(TH1* h1, double xmin=0){
@@ -339,13 +339,20 @@ void draw_flux_fit(TGraphAsymmErrors *graw_e3, TGraphAsymmErrors *gprl_e3, TF1 *
 	gprl_e3->SetLineColor(kBlue+1);
 	ffit_e3->SetLineColor(kBlack);
 	ffit_e3->SetLineWidth(2);
+	graw_e3->SetMinimum(0);
+	graw_e3->SetMaximum(30);
+	graw_e3->SetTitle("");
 	graw_e3->Draw("AP");
 	if( fitxmin>0 && fitxmax>fitxmin ) graw_e3->GetXaxis()->SetLimits(fitxmin, fitxmax);
 	graw_e3->GetXaxis()->SetTitle("Energy [GeV]");
 	graw_e3->GetYaxis()->SetTitle("E^{3} Flux");
 	gprl_e3->Draw("P SAME");
 	ffit_e3->Draw("L SAME");
-	TLegend leg(0.58,0.68,0.88,0.86);
+	TLegend leg(0.13,0.72,0.33,0.88);
+	leg.SetBorderSize(0);
+	leg.SetFillStyle(0);
+	leg.SetTextFont(62);
+	leg.SetTextSize(0.025);
 	leg.AddEntry(graw_e3, "rawflux", "P");
 	leg.AddEntry(gprl_e3, "PRL2019 E>30 GeV", "P");
 	leg.AddEntry(ffit_e3, "fit", "L");
@@ -357,7 +364,7 @@ void draw_flux_fit(TGraphAsymmErrors *graw_e3, TGraphAsymmErrors *gprl_e3, TF1 *
 		latex.SetTextFont(62);
 		latex.SetTextSize(0.035);
 		latex.SetTextAlign(22);
-		latex.DrawLatex(0.5, 0.92, time_label);
+		latex.DrawLatex(0.5, 0.95, time_label);
 	}
 	if( fout ){
 		fout->cd();
@@ -501,7 +508,8 @@ bool DRAW_UnfactorTime(int ie, TH1D *hunfactor_t, TFile *fout){
 	double eup = ENERGY_BINS_TDEP[ie+1];
 
 	gSystem->mkdir(outdir, true);
-	TCanvas *c = new TCanvas(canvas_name, canvas_name, 1000, 400);
+	// TCanvas *c = new TCanvas(canvas_name, canvas_name, 1000, 400);
+	TCanvas *c = new TCanvas(canvas_name, canvas_name, 1000, 200);
 	TAxis *xaxis = hunfactor_t->GetXaxis();
 	TAxis *yaxis = hunfactor_t->GetYaxis();
 
@@ -530,7 +538,8 @@ bool DRAW_UnfactorTime(int ie, TH1D *hunfactor_t, TFile *fout){
 	yaxis->CenterTitle();
 	yaxis->SetTitleFont(62);
 	yaxis->SetTitleSize(0.05);
-	yaxis->SetTitleOffset(0.9);
+	// yaxis->SetTitleOffset(0.9);
+	yaxis->SetTitleOffset(0.5);
 	yaxis->SetLabelOffset(0.012);
 
 	hunfactor_t->SetMarkerStyle(20);
@@ -619,7 +628,7 @@ TH1D *_calc_unacc_core(TString fnm_sel, TString fnm_gen, int icut, double emin, 
 			double elow_bin = hflux_fit->GetBinLowEdge(ibin);
 			double eup_bin = hflux_fit->GetBinLowEdge(ibin+1);
 			double flux_int = 0;
-			if( fflux_fit ) flux_int = fflux_fit->Integral(elow_bin, eup_bin);
+			if( fflux_fit ) flux_int = fflux_fit->Integral(elow_bin, eup_bin)/(eup_bin - elow_bin);
 			hflux_fit->SetBinContent(ibin, flux_int);
 			hflux_fit->SetBinError(ibin, 0);
 		}
