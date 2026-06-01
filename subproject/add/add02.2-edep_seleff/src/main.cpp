@@ -44,8 +44,8 @@ using namespace std;
 // 	56.10, 60.30, 64.80, 69.70, 74.90,
 // 	80.50, 86.50, 93, 100, 108
 // };
-const int NENEBIN = 29;
-const double *ENERGY_BINS = new double[NENEBIN+1]{
+const int nenebin = 29;
+const double *energy_bins = new double[nenebin+1]{
 	0.80, 1.00, 1.16, 1.33, 1.51,
 	1.71, 1.92, 2.15, 2.40, 2.67,
 	2.97, 3.29, 3.64, 4.02, 4.43,
@@ -169,8 +169,8 @@ bool CHECK_EMATCH(const VarDataEntry &iss, const VarDataEntry &mc){
 
 int FIND_ENEBIN_INDEX(double elow, double eup){
 	double eps = 1.0e-9;
-	for(int i_enebin=0; i_enebin<NENEBIN; i_enebin++){
-		if(fabs(ENERGY_BINS[i_enebin] - elow) < eps && fabs(ENERGY_BINS[i_enebin + 1] - eup) < eps){
+	for(int i_enebin=0; i_enebin<nenebin; i_enebin++){
+		if(fabs(energy_bins[i_enebin] - elow) < eps && fabs(energy_bins[i_enebin + 1] - eup) < eps){
 			return i_enebin;
 		}
 	}
@@ -211,16 +211,16 @@ bool BUILD_RATIO_HIST(const TH1D *hiss, const TH1D *hmc, TH1D *hratio,
 		if(mc_y == 0.0){
 			cerr<<"ERR BUILD_RATIO_HIST ===== MC bin content is zero"
 				<<" ibin="<<ibin
-				<<" elow="<<ENERGY_BINS[ibin - 1]
-				<<" eup="<<ENERGY_BINS[ibin]
+				<<" elow="<<energy_bins[ibin - 1]
+				<<" eup="<<energy_bins[ibin]
 				<<endl;
 			return false;
 		}
 		if(iss_y == 0.0){
 			cerr<<"ERR BUILD_RATIO_HIST ===== ISS bin content is zero"
 				<<" ibin="<<ibin
-				<<" elow="<<ENERGY_BINS[ibin - 1]
-				<<" eup="<<ENERGY_BINS[ibin]
+				<<" elow="<<energy_bins[ibin - 1]
+				<<" eup="<<energy_bins[ibin]
 				<<endl;
 			return false;
 		}
@@ -411,8 +411,8 @@ bool READ_TFIT(const VarConf &var, const TString &fpathname, VarDataEntry &entry
 
 bool BUILD_SERIES(const VarConf &var, VarDataSeries &iss, VarDataSeries &mc, TH1D *hiss, TH1D *hmc){
 	vector<TString> vfile_iss;
-	vector<bool> is_filled_iss(NENEBIN, false);
-	vector<bool> is_filled_mc(NENEBIN, false);
+	vector<bool> is_filled_iss(nenebin, false);
+	vector<bool> is_filled_mc(nenebin, false);
 
 	if(!GET_FILE_LIST(var.fpathname, vfile_iss)) return false;
 
@@ -466,12 +466,12 @@ bool BUILD_SERIES(const VarConf &var, VarDataSeries &iss, VarDataSeries &mc, TH1
 		}
 	}
 
-	for(int i_enebin=0; i_enebin<NENEBIN; i_enebin++){
+	for(int i_enebin=0; i_enebin<nenebin; i_enebin++){
 		if(!is_filled_iss.at(i_enebin) || (var.has_mc && !is_filled_mc.at(i_enebin))){
 			cerr<<"ERR BUILD_SERIES ===== missing energy bin"
 				<<" i_enebin="<<i_enebin
-				<<" elow="<<ENERGY_BINS[i_enebin]
-				<<" eup="<<ENERGY_BINS[i_enebin + 1]
+				<<" elow="<<energy_bins[i_enebin]
+				<<" eup="<<energy_bins[i_enebin + 1]
 				<<endl;
 			return false;
 		}
@@ -517,14 +517,14 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	else c = new TCanvas("c","c",1000,400);
 	TAxis *xaxis = hiss->GetXaxis();
 	TAxis *yaxis = hiss->GetYaxis();
-	double xdrawmin = var.has_xmin ? var.xmin : ENERGY_BINS[0];
-	double xdrawmax = var.has_xmax ? var.xmax : ENERGY_BINS[NENEBIN];
+	double xdrawmin = var.has_xmin ? var.xmin : energy_bins[0];
+	double xdrawmax = var.has_xmax ? var.xmax : energy_bins[nenebin];
 	//====canvas
 	hiss->SetStats(0);
 	if(var.has_mc) hmc->SetStats(0);
 	hiss->SetNameTitle("", "");
 	if(var.has_mc){
-		hratio = new TH1D("hratio", "hratio", NENEBIN, ENERGY_BINS);
+		hratio = new TH1D("hratio", "hratio", nenebin, energy_bins);
 		hratio->SetDirectory(nullptr);
 		hratio->SetStats(0);
 		if(!BUILD_RATIO_HIST(hiss, hmc, hratio, vx_ratio, vy_ratio, vex_ratio, ve_ratio, ratio_ymin, ratio_ymax)){
@@ -751,8 +751,8 @@ int ADD_EDEP(int argc, char *argv[]){
 	VarDataSeries mc{};
 	INIT(argc, argv, var);
 
-	TH1D *hene_iss = new TH1D("hene_iss", "hene_iss", NENEBIN, ENERGY_BINS);
-	TH1D *hene_mc = new TH1D("hene_mc", "hene_mc", NENEBIN, ENERGY_BINS);
+	TH1D *hene_iss = new TH1D("hene_iss", "hene_iss", nenebin, energy_bins);
+	TH1D *hene_mc = new TH1D("hene_mc", "hene_mc", nenebin, energy_bins);
 
 	if(!BUILD_SERIES(var, iss, mc, hene_iss, hene_mc)){
 		delete hene_iss;

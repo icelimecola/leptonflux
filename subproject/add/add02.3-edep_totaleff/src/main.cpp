@@ -42,8 +42,8 @@ using namespace std;
 // 	56.10, 60.30, 64.80, 69.70, 74.90,
 // 	80.50, 86.50, 93, 100, 108
 // };
-const int NENEBIN = 29;
-const double *ENERGY_BINS = new double[NENEBIN+1]{
+const int nenebin = 29;
+const double *energy_bins = new double[nenebin+1]{
 	0.80, 1.00, 1.16, 1.33, 1.51,
 	1.71, 1.92, 2.15, 2.40, 2.67,
 	2.97, 3.29, 3.64, 4.02, 4.43,
@@ -296,8 +296,8 @@ void INIT(int argc, char *argv[], VarConf &var){
 	var.foutname = "hene_combine";
 	var.has_xmin = false;
 	var.has_xmax = false;
-	var.xmin = ENERGY_BINS[0];
-	var.xmax = ENERGY_BINS[NENEBIN];
+	var.xmin = energy_bins[0];
+	var.xmax = energy_bins[nenebin];
 	var.has_ymin = false;
 	var.has_ymax = false;
 	var.ymin = 0.0;
@@ -482,7 +482,7 @@ bool DRAW_COMBINE(const VarConf &var, const vector<VarEffItem> &veff,
 	gPad->SetGridx();
 	gPad->SetGridy();
 
-	TH1D *hframe = new TH1D("hframe", "hframe", NENEBIN, ENERGY_BINS);
+	TH1D *hframe = new TH1D("hframe", "hframe", nenebin, energy_bins);
 	hframe->SetStats(0);
 	hframe->SetNameTitle("", "");
 	hframe->GetXaxis()->SetRangeUser(xdrawmin, xdrawmax);

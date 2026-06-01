@@ -33,8 +33,8 @@ using namespace std;
 //     56.10, 60.30, 64.80, 69.70, 74.90,
 //     80.50, 86.50, 93, 100, 108
 // };
-static const int NENEBIN = 29;
-static const double ENERGY_BINS[NENEBIN + 1] = {
+static const int nenebin = 29;
+static const double energy_bins[nenebin + 1] = {
     0.80, 1.00, 1.16, 1.33, 1.51,
     1.71, 1.92, 2.15, 2.40, 2.67,
     2.97, 3.29, 3.64, 4.02, 4.43,
@@ -43,7 +43,7 @@ static const double ENERGY_BINS[NENEBIN + 1] = {
     13.0, 16.6, 22.8, 41.9, 45.10
 };
 
-struct FluxConf{
+struct fluxconf{
     TString findir;
     TString particle;
     TString foutname;
@@ -100,7 +100,7 @@ TString TOOL_GetNFileName(const TString &datadir, const TString &species, int i_
         datadir.Data(),
         species.Data(),
         i_enebin,
-        TOOL_FormatE(ENERGY_BINS[i_enebin]).Data(),
+        TOOL_FormatE(energy_bins[i_enebin]).Data(),
         species.Data()
     );
 }
@@ -110,11 +110,11 @@ TString TOOL_GetTRDEffTimeFileName(const TString &datadir, int i_enebin){
         "%s/trdeff/htime_tfit%02d_%sGeV_trdeff.root",
         datadir.Data(),
         i_enebin,
-        TOOL_FormatE(ENERGY_BINS[i_enebin]).Data()
+        TOOL_FormatE(energy_bins[i_enebin]).Data()
     );
 }
 
-TString TOOL_GetExpsHistName(const FluxConf &conf){
+TString TOOL_GetExpsHistName(const fluxconf &conf){
     return Form(
         "h2/h2exp_%s_TvE_sf%s",
         conf.exps_geomagmode.Data(),
@@ -199,7 +199,7 @@ TH1D *TOOL_Build27DayStatHist(TH1 *hin, const TString &hname, const TString &hti
 }
 
 FluxBin TOOL_CalcFluxBin(
-    const FluxConf &conf,
+    const fluxconf &conf,
     double npos_measure,
     double npos_measure_err,
     double nele_measure,
@@ -316,13 +316,13 @@ bool READ_GetEneValue(TFile *f, const TString &hname, double energy, EneValue &o
     return true;
 }
 
-TH1D *READ_BuildExpsTimeHist(TFile *f, const FluxConf &conf, int i_enebin){
+TH1D *READ_BuildExpsTimeHist(TFile *f, const fluxconf &conf, int i_enebin){
     TString hname = TOOL_GetExpsHistName(conf);
     TH2 *h2 = dynamic_cast<TH2*>(READ_GetHist(f, hname));
     if(h2 == nullptr) return nullptr;
 
-    double elow = ENERGY_BINS[i_enebin];
-    double eup = ENERGY_BINS[i_enebin + 1];
+    double elow = energy_bins[i_enebin];
+    double eup = energy_bins[i_enebin + 1];
     int iy1 = h2->GetYaxis()->FindBin(elow + 1.0e-9);
     int iy2 = h2->GetYaxis()->FindBin(eup - 1.0e-9);
     if(iy1 < 1 || iy2 > h2->GetNbinsY() || iy2 < iy1){
@@ -368,7 +368,7 @@ bool READ_CheckTimeShape(TH1 *h_num, TH1 *h_exps, int i_enebin){
 
 
 //==================================================== DRAW_
-bool DRAW_FluxTime(const FluxConf &conf, int i_enebin, TH1D *hflux, TFile *fout){
+bool DRAW_FluxTime(const fluxconf &conf, int i_enebin, TH1D *hflux, TFile *fout){
     if(hflux == nullptr) return false;
     if(fout == nullptr) return false;
 
@@ -376,8 +376,8 @@ bool DRAW_FluxTime(const FluxConf &conf, int i_enebin, TH1D *hflux, TFile *fout)
     TString outdir = outbase + "_pdf";
     TString fout_pdf = Form("%s/hflux_t_ene%02d.pdf", outdir.Data(), i_enebin);
     TString canvas_name = Form("cflux_t_ene%02d", i_enebin);
-    double elow = ENERGY_BINS[i_enebin];
-    double eup = ENERGY_BINS[i_enebin + 1];
+    double elow = energy_bins[i_enebin];
+    double eup = energy_bins[i_enebin + 1];
 
     gSystem->mkdir(outdir, true);
 
@@ -450,7 +450,7 @@ bool DRAW_FluxTime(const FluxConf &conf, int i_enebin, TH1D *hflux, TFile *fout)
 
 
 //==================================================== INIT_
-void INIT(int argc, char *argv[], FluxConf &conf){
+void init(int argc, char *argv[], fluxconf &conf){
     conf.findir = "datain";
     conf.particle = "npos";
     conf.foutname = "hflux_t_igrf.root";
@@ -518,7 +518,7 @@ void INIT(int argc, char *argv[], FluxConf &conf){
 
 
 //==================================================== CALC_
-int CALC_Flux(const FluxConf &conf){
+int CALC_Flux(const fluxconf &conf){
     unique_ptr<TFile> f_acc;
     unique_ptr<TFile> f_cc;
     unique_ptr<TFile> f_trig;
@@ -560,10 +560,10 @@ int CALC_Flux(const FluxConf &conf){
     if(READ_GetHist(f_eff_total_input.get(), "hratio") == nullptr) return 1;
 
     TH1D *hseleff_total_input = dynamic_cast<TH1D*>(READ_GetHist(f_eff_total_input.get(), "hratio")->Clone("hseleff_total_input_ene"));
-    TH1D *hseleff_total_manual = new TH1D("hseleff_total_manual_ene", "hseleff_total_manual_ene", NENEBIN, ENERGY_BINS);
+    TH1D *hseleff_total_manual = new TH1D("hseleff_total_manual_ene", "hseleff_total_manual_ene", nenebin, energy_bins);
     vector<TH1D*> vhseleff_out(seleff_items.size(), nullptr);
     for(size_t ieff=0; ieff<seleff_items.size(); ieff++){
-        vhseleff_out[ieff] = new TH1D(seleff_items[ieff].outname, seleff_items[ieff].outname, NENEBIN, ENERGY_BINS);
+        vhseleff_out[ieff] = new TH1D(seleff_items[ieff].outname, seleff_items[ieff].outname, nenebin, energy_bins);
     }
     hseleff_total_input->SetDirectory(nullptr);
     hseleff_total_manual->SetDirectory(nullptr);
@@ -571,12 +571,12 @@ int CALC_Flux(const FluxConf &conf){
         vhseleff_out[ieff]->SetDirectory(nullptr);
     }
 
-    for(int i_enebin=0; i_enebin<NENEBIN; i_enebin++){
+    for(int i_enebin=0; i_enebin<nenebin; i_enebin++){
         TString fpath_num_pos = TOOL_GetNFileName(conf.findir, "npos", i_enebin);
         TString fpath_num_ele = TOOL_GetNFileName(conf.findir, "nele", i_enebin);
         TString hname_num = "htime";
-        double emid = 0.5 * (ENERGY_BINS[i_enebin] + ENERGY_BINS[i_enebin + 1]);
-        double delta_ene = ENERGY_BINS[i_enebin + 1] - ENERGY_BINS[i_enebin];
+        double emid = 0.5 * (energy_bins[i_enebin] + energy_bins[i_enebin + 1]);
+        double delta_ene = energy_bins[i_enebin + 1] - energy_bins[i_enebin];
         EneValue acc{};
         EneValue cc{};
         EneValue trig{};
@@ -638,9 +638,9 @@ int CALC_Flux(const FluxConf &conf){
         TH1D *unfactor = dynamic_cast<TH1D*>(hunfactor_in->Clone(Form("unfactor_t_ene%02d", i_enebin)));
         TH1D *hflux_noacc = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hflux_noacc_t_ene%02d", i_enebin)));
         TH1D *hflux = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hflux_t_ene%02d", i_enebin)));
-        TH1D *hnum_pos_measure_27d = TOOL_Build27DayStatHist(hnum_pos_in, Form("hnum_pos_measure_27d_t_ene%02d", i_enebin), Form("npos measure 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        TH1D *hnum_ele_measure_27d = TOOL_Build27DayStatHist(hnum_ele_in, Form("hnum_ele_measure_27d_t_ene%02d", i_enebin), Form("nele measure 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        TH1D *hexps_27d = TOOL_Build27DayStatHist(hexps_in, Form("hexps_27d_t_ene%02d", i_enebin), Form("exps 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        TH1D *hnum_pos_measure_27d = TOOL_Build27DayStatHist(hnum_pos_in, Form("hnum_pos_measure_27d_t_ene%02d", i_enebin), Form("npos measure 27day time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        TH1D *hnum_ele_measure_27d = TOOL_Build27DayStatHist(hnum_ele_in, Form("hnum_ele_measure_27d_t_ene%02d", i_enebin), Form("nele measure 27day time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        TH1D *hexps_27d = TOOL_Build27DayStatHist(hexps_in, Form("hexps_27d_t_ene%02d", i_enebin), Form("exps 27day time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
         TH1D *htrdeff_time_27d = dynamic_cast<TH1D*>(htrdeff_time_27d_in->Clone(Form("htrdeff_27d_t_ene%02d", i_enebin)));
         TH1D *hnumcorr_27d = hnum_pos_measure_27d == nullptr ? nullptr : dynamic_cast<TH1D*>(hnum_pos_measure_27d->Clone(Form("hnumcorr_27d_t_ene%02d", i_enebin)));
         TH1D *hnum_27d = hnum_pos_measure_27d == nullptr ? nullptr : dynamic_cast<TH1D*>(hnum_pos_measure_27d->Clone(Form("hnum_27d_t_ene%02d", i_enebin)));
@@ -671,20 +671,20 @@ int CALC_Flux(const FluxConf &conf){
         hflux_noacc_27d->SetDirectory(nullptr);
         hflux_27d->SetDirectory(nullptr);
 
-        hnum_pos_measure->SetTitle(Form("npos measure time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        hnum_ele_measure->SetTitle(Form("nele measure time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        hnumcorr->SetTitle(Form("ncorr time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        hnum->SetTitle(Form("num corr time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        hexps->SetTitle(Form("exps time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        htrdeff_time->SetTitle(Form("trdeff time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        unfactor->SetTitle(Form("unfactor 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        hflux_noacc->SetTitle(Form("flux noacc time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        hflux->SetTitle(Form("flux time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        hnumcorr_27d->SetTitle(Form("ncorr 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        hnum_27d->SetTitle(Form("num corr 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        htrdeff_time_27d->SetTitle(Form("trdeff 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        hflux_noacc_27d->SetTitle(Form("flux noacc 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
-        hflux_27d->SetTitle(Form("flux 27day time, %g to %g GeV", ENERGY_BINS[i_enebin], ENERGY_BINS[i_enebin + 1]));
+        hnum_pos_measure->SetTitle(Form("npos measure time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        hnum_ele_measure->SetTitle(Form("nele measure time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        hnumcorr->SetTitle(Form("ncorr time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        hnum->SetTitle(Form("num corr time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        hexps->SetTitle(Form("exps time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        htrdeff_time->SetTitle(Form("trdeff time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        unfactor->SetTitle(Form("unfactor 27day time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        hflux_noacc->SetTitle(Form("flux noacc time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        hflux->SetTitle(Form("flux time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        hnumcorr_27d->SetTitle(Form("ncorr 27day time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        hnum_27d->SetTitle(Form("num corr 27day time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        htrdeff_time_27d->SetTitle(Form("trdeff 27day time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        hflux_noacc_27d->SetTitle(Form("flux noacc 27day time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
+        hflux_27d->SetTitle(Form("flux 27day time, %g to %g GeV", energy_bins[i_enebin], energy_bins[i_enebin + 1]));
         hnumcorr_27d->Reset();
         hnum_27d->Reset();
         hflux_noacc_27d->Reset();
@@ -703,8 +703,8 @@ int CALC_Flux(const FluxConf &conf){
         int n_bad_cc_27d = 0;
 
         cout<<"IN CALC_Flux ===== i_enebin="<<i_enebin
-            <<" elow="<<ENERGY_BINS[i_enebin]
-            <<" eup="<<ENERGY_BINS[i_enebin + 1]
+            <<" elow="<<energy_bins[i_enebin]
+            <<" eup="<<energy_bins[i_enebin + 1]
             <<" acc="<<acc.value<<" +/- "<<acc.error
             <<" cc="<<cc.value<<" +/- "<<cc.error
             <<" trig="<<trig.value<<" +/- "<<trig.error
@@ -873,7 +873,7 @@ int CALC_Flux(const FluxConf &conf){
 
 //==================================================== main
 int main(int argc, char *argv[]){
-    FluxConf conf{};
-    INIT(argc, argv, conf);
+    fluxconf conf{};
+    init(argc, argv, conf);
     return CALC_Flux(conf);
 }
