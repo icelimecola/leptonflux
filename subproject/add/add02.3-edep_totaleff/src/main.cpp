@@ -147,7 +147,7 @@ TString GET_EFFLABEL(const TString &effname){
 		{"matcheff", "Match Eff."},
 		{"ntrkeff", "Ntrk Eff."},
 		{"pateff", "Pattern Eff."},
-		{"qineff", "Charge-Iso Eff."},
+		{"qineff", "InnerQ Eff."},
 		{"tofeff", "TOF Eff."},
 		{"totaleff", "Total Eff."},
 		{"trdeff", "TRD Eff."},

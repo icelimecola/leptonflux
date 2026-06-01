@@ -382,7 +382,8 @@ void ExpsHist::EXPSHIST_DrawHist_dayVSene(){
 	nfov=1;
 	// int nsf=1;
 	nsf=5;
-	int target_isf = 1;   //---- sf = 1.1
+	int target_isf = 0;   //---- sf = 1.1
+	// int target_isf = 1;   //---- sf = 1.1
 	const double xmin = 1305849600;
 	const double xmax = 1761955200;
     //==================================================== temp var

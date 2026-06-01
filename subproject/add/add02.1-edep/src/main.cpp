@@ -413,7 +413,8 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	hiss->Write();
 	if(var.has_mc) hmc->Write();
 	//====init--canvas
-	TCanvas *c = new TCanvas("c","c",1000,400);
+	// TCanvas *c = new TCanvas("c","c",1000,400);
+	TCanvas *c = new TCanvas("c","c",1000,600);
 	TAxis *xaxis = hiss->GetXaxis();
 	TAxis *yaxis = hiss->GetYaxis();
 	//====canvas
