@@ -115,14 +115,6 @@ TString TOOL_GetTRDEffTimeFileName(const TString &datadir, int i_enebin){
     );
 }
 
-TString TOOL_GetExpsHistName(const fluxconf &conf){
-    return Form(
-        "h2/h2exp_%s_TvE_sf%s",
-        conf.exps_geomagmode.Data(),
-        conf.exps_sf.Data()
-    );
-}
-
 bool TOOL_IsSupportedSpecies(const TString &species){
     return species == "npos" || species == "nele";
 }
@@ -273,33 +265,6 @@ bool READ_GetEneValue(TFile *f, const TString &hname, double energy, EneValue &o
     out.value = h->GetBinContent(ibin);
     out.error = h->GetBinError(ibin);
     return true;
-}
-
-TH1D *READ_BuildExpsTimeHist(TFile *f, const fluxconf &conf, int i_enebin){
-    TString hname = TOOL_GetExpsHistName(conf);
-    TH2 *h2 = dynamic_cast<TH2*>(f->Get(hname));
-    if(h2 == nullptr) return nullptr;
-
-    double elow = energy_bins[i_enebin];
-    double eup = energy_bins[i_enebin + 1];
-    int iy1 = h2->GetYaxis()->FindBin(elow + 1.0e-9);
-    int iy2 = h2->GetYaxis()->FindBin(eup - 1.0e-9);
-    if(iy1 < 1 || iy2 > h2->GetNbinsY() || iy2 < iy1){
-        cerr<<"ERR READ_BuildExpsTimeHist ===== bad energy range"
-            <<" i_enebin="<<i_enebin
-            <<" elow="<<elow
-            <<" eup="<<eup
-            <<" iy1="<<iy1
-            <<" iy2="<<iy2
-            <<endl;
-        return nullptr;
-    }
-
-    TH1D *hout = h2->ProjectionX(Form("hexps_in_t_ene%02d", i_enebin), iy1, iy2, "e");
-    if(hout == nullptr) return nullptr;
-    hout->SetDirectory(nullptr);
-    hout->SetTitle(Form("exps time, %g to %g GeV", elow, eup));
-    return hout;
 }
 
 bool READ_CheckTimeShape(TH1 *h_num, TH1 *h_exps, int i_enebin){
@@ -533,22 +498,33 @@ int CALC_Flux(const fluxconf &conf){
         EneValue eff_total_input{};
         EneValue eff_total_manual{};
         //====read--exps
-        TH1D *hexps_in = READ_BuildExpsTimeHist(f_exps, conf, ie);
+        TString hname_exps = Form(
+            "h1t/sf%s/h1exp_%s_T_fov25_sf%s_ene%sto%sGeV",
+            conf.exps_sf.Data(),
+            conf.exps_geomagmode.Data(),
+            conf.exps_sf.Data(),
+            TOOL_FormatE(energy_bins[ie]).Data(),
+            TOOL_FormatE(energy_bins[ie + 1]).Data()
+        );
+        TH1D *h_exps = dynamic_cast<TH1D*>(f_exps->Get(hname_exps));
+        if(h_exps != nullptr) h_exps->SetDirectory(nullptr);
         //====read--num
-        TFile *f_num_pos = new TFile(TOOL_GetNFileName(conf.findir, "npos", ie), "read");
-        TFile *f_num_ele = new TFile(TOOL_GetNFileName(conf.findir, "nele", ie), "read");
-        TH1 *hnum_pos_in = dynamic_cast<TH1*>(f_num_pos->Get(hname_num));
-        TH1 *hnum_ele_in = dynamic_cast<TH1*>(f_num_ele->Get(hname_num));
+        TFile *f_npos = new TFile(TOOL_GetNFileName(conf.findir, "npos", ie), "read");
+        TFile *f_nele = new TFile(TOOL_GetNFileName(conf.findir, "nele", ie), "read");
+        TH1 *h_npos = dynamic_cast<TH1*>(f_npos->Get(hname_num));
+        TH1 *h_nele = dynamic_cast<TH1*>(f_nele->Get(hname_num));
         //====read--trdlkhd
-        TFile *f_trdeff_time = new TFile(TOOL_GetTRDEffTimeFileName(conf.findir, ie), "read");
-        TH1 *htrdeff_1d = dynamic_cast<TH1*>(f_trdeff_time->Get("hratio1"));
-        TH1 *htrdeff_27d = dynamic_cast<TH1*>(f_trdeff_time->Get("hratio27"));
-        if(hnum_pos_in == nullptr || hnum_ele_in == nullptr || hexps_in == nullptr || htrdeff_1d == nullptr || htrdeff_27d == nullptr) return 1;
-        if(!READ_CheckTimeShape(hnum_pos_in, hexps_in, ie)) return 1;
-        if(!READ_CheckTimeShape(hnum_ele_in, hexps_in, ie)) return 1;
-        if(!READ_CheckTimeShape(hnum_pos_in, hnum_ele_in, ie)) return 1;
-        if(!READ_CheckTimeShape(htrdeff_1d, hexps_in, ie)) return 1;
-
+        TFile *f_trdeff = new TFile(TOOL_GetTRDEffTimeFileName(conf.findir, ie), "read");
+        TH1 *h_trdeff_1d = dynamic_cast<TH1*>(f_trdeff->Get("hratio1"));
+        TH1 *h_trdeff_27d = dynamic_cast<TH1*>(f_trdeff->Get("hratio27"));
+        //====check--read
+        if(h_npos == nullptr || h_nele == nullptr || h_exps == nullptr || h_trdeff_1d == nullptr || h_trdeff_27d == nullptr) return 1;
+        //====check--tbin
+        if(!READ_CheckTimeShape(h_npos, h_exps, ie)) return 1;
+        if(!READ_CheckTimeShape(h_nele, h_exps, ie)) return 1;
+        if(!READ_CheckTimeShape(h_npos, h_nele, ie)) return 1;
+        if(!READ_CheckTimeShape(h_trdeff_1d, h_exps, ie)) return 1;
+        //====getvalue
         if(!READ_GetEneValue(f_acc, "hacc_cut15", emid, acc)) return 1;
         if(!READ_GetEneValue(f_cc, "cc_ene", emid, cc)) return 1;
         if(!READ_GetEneValue(f_trig, "hene_iss", emid, trig)) return 1;
@@ -576,19 +552,19 @@ int CALC_Flux(const fluxconf &conf){
         acc.value /= 1.0e4;
         acc.error /= 1.0e4;
 
-        TH1D *hnum_pos_measure = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hnum_pos_measure_t_ene%02d", ie)));
-        TH1D *hnum_ele_measure = dynamic_cast<TH1D*>(hnum_ele_in->Clone(Form("hnum_ele_measure_t_ene%02d", ie)));
-        TH1D *hnumcorr = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hnumcorr_t_ene%02d", ie)));
-        TH1D *hnum = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hnum_t_ene%02d", ie)));
-        TH1D *hexps = dynamic_cast<TH1D*>(hexps_in->Clone(Form("hexps_t_ene%02d", ie)));
-        TH1D *htrdeff_time = dynamic_cast<TH1D*>(htrdeff_1d->Clone(Form("htrdeff_t_ene%02d", ie)));
-        TH1D *hflux_noacc = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hflux_noacc_t_ene%02d", ie)));
-        TH1D *hcnt_rate = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hcnt_rate_t_ene%02d", ie)));
-        TH1D *hflux = dynamic_cast<TH1D*>(hnum_pos_in->Clone(Form("hflux_t_ene%02d", ie)));
-        TH1D *hnum_pos_measure_27d = TOOL_Build27DayStatHist(hnum_pos_in, Form("hnum_pos_measure_27d_t_ene%02d", ie), Form("npos measure 27day time, %g to %g GeV", energy_bins[ie], energy_bins[ie + 1]));
-        TH1D *hnum_ele_measure_27d = TOOL_Build27DayStatHist(hnum_ele_in, Form("hnum_ele_measure_27d_t_ene%02d", ie), Form("nele measure 27day time, %g to %g GeV", energy_bins[ie], energy_bins[ie + 1]));
-        TH1D *hexps_27d = TOOL_Build27DayStatHist(hexps_in, Form("hexps_27d_t_ene%02d", ie), Form("exps 27day time, %g to %g GeV", energy_bins[ie], energy_bins[ie + 1]));
-        TH1D *htrdeff_time_27d = dynamic_cast<TH1D*>(htrdeff_27d->Clone(Form("htrdeff_27d_t_ene%02d", ie)));
+        TH1D *hnum_pos_measure = dynamic_cast<TH1D*>(h_npos->Clone(Form("hnum_pos_measure_t_ene%02d", ie)));
+        TH1D *hnum_ele_measure = dynamic_cast<TH1D*>(h_nele->Clone(Form("hnum_ele_measure_t_ene%02d", ie)));
+        TH1D *hnumcorr = dynamic_cast<TH1D*>(h_npos->Clone(Form("hnumcorr_t_ene%02d", ie)));
+        TH1D *hnum = dynamic_cast<TH1D*>(h_npos->Clone(Form("hnum_t_ene%02d", ie)));
+        TH1D *hexps = dynamic_cast<TH1D*>(h_exps->Clone(Form("hexps_t_ene%02d", ie)));
+        TH1D *htrdeff_time = dynamic_cast<TH1D*>(h_trdeff_1d->Clone(Form("htrdeff_t_ene%02d", ie)));
+        TH1D *hflux_noacc = dynamic_cast<TH1D*>(h_npos->Clone(Form("hflux_noacc_t_ene%02d", ie)));
+        TH1D *hcnt_rate = dynamic_cast<TH1D*>(h_npos->Clone(Form("hcnt_rate_t_ene%02d", ie)));
+        TH1D *hflux = dynamic_cast<TH1D*>(h_npos->Clone(Form("hflux_t_ene%02d", ie)));
+        TH1D *hnum_pos_measure_27d = TOOL_Build27DayStatHist(h_npos, Form("hnum_pos_measure_27d_t_ene%02d", ie), Form("npos measure 27day time, %g to %g GeV", energy_bins[ie], energy_bins[ie + 1]));
+        TH1D *hnum_ele_measure_27d = TOOL_Build27DayStatHist(h_nele, Form("hnum_ele_measure_27d_t_ene%02d", ie), Form("nele measure 27day time, %g to %g GeV", energy_bins[ie], energy_bins[ie + 1]));
+        TH1D *hexps_27d = TOOL_Build27DayStatHist(h_exps, Form("hexps_27d_t_ene%02d", ie), Form("exps 27day time, %g to %g GeV", energy_bins[ie], energy_bins[ie + 1]));
+        TH1D *htrdeff_time_27d = dynamic_cast<TH1D*>(h_trdeff_27d->Clone(Form("htrdeff_27d_t_ene%02d", ie)));
         TH1D *hnumcorr_27d = hnum_pos_measure_27d == nullptr ? nullptr : dynamic_cast<TH1D*>(hnum_pos_measure_27d->Clone(Form("hnumcorr_27d_t_ene%02d", ie)));
         TH1D *hnum_27d = hnum_pos_measure_27d == nullptr ? nullptr : dynamic_cast<TH1D*>(hnum_pos_measure_27d->Clone(Form("hnum_27d_t_ene%02d", ie)));
         TH1D *hflux_noacc_27d = hnum_pos_measure_27d == nullptr ? nullptr : dynamic_cast<TH1D*>(hnum_pos_measure_27d->Clone(Form("hflux_noacc_27d_t_ene%02d", ie)));
