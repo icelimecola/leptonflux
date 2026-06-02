@@ -210,10 +210,14 @@ FluxBin TOOL_CalcFluxBin(
     }
 
     if(conf.particle == "npos"){
+        // out.num = npos_measure;
+        // out.num_err = npos_measure_err;
         out.num = TOOL_CalcNCorrPos(npos_measure, nele_measure, cc.value);
         out.num_err = TOOL_CalcNCorrPosErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
     }
     else{
+        // out.num = nele_measure;
+        // out.num_err = nele_measure_err;
         out.num = TOOL_CalcNCorrEle(npos_measure, nele_measure, cc.value);
         out.num_err = TOOL_CalcNCorrEleErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
     }
@@ -723,7 +727,8 @@ int CALC_Flux(const fluxconf &conf){
         // hflux_noacc_27d->Write();
         // hflux_27d->Write();
 
-        // if(!DRAW_FluxTime(conf, i_enebin, hflux, f_out)){
+        // if(!DRAW_FluxTime(conf, ie, hflux, f_out)){
+        // if(!DRAW_FluxTime(conf, ie, hcnt_rate, f_out)){
         //     delete hnum_pos_measure;
         //     delete hnum_ele_measure;
         //     delete hnumcorr;

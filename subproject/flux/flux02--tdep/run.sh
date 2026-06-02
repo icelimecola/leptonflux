@@ -5,7 +5,7 @@ set -euo pipefail
 # ==== for main.cpp
 SPECIES="npos"
 DATADIR="datain"
-FOUTNAME="hflux_t_igrf.root"
+FOUTNAME="hflux_gcx.root"
 EXPS_MODE="igrf"
 EXPS_SF="1"
 XMIN="1305849600"
