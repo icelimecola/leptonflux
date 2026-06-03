@@ -89,7 +89,7 @@ RUN_ONE(){
     echo "IN RUN_ROOT ===== time-bin default in source = 1day"
     echo "IN RUN_ROOT ===== 27day option kept commented in src/main.cpp"
 
-    root -l -b -q -e "gROOT->LoadMacro(\"${SRCFILE}\"); RUN_Flux02_2(\"${foutname_now}\",\"${datadir_now}\",\"${species_now}\",\"${exps_mode_now}\",\"${exps_sf_now}\",\"${xmin_now}\",\"${xmax_now}\",\"${ymin_now}\",\"${ymax_now}\");"
+    root -l -b -q -e "gROOT->LoadMacro(\"${SRCFILE}\"); main02(\"${foutname_now}\",\"${datadir_now}\",\"${species_now}\",\"${exps_mode_now}\",\"${exps_sf_now}\",\"${xmin_now}\",\"${xmax_now}\",\"${ymin_now}\",\"${ymax_now}\");"
 }
 
 #====================================================

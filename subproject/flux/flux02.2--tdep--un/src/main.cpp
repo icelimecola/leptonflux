@@ -252,15 +252,19 @@ FluxBin TOOL_CalcFluxBin(
         + TOOL_CalcRelErr2(trdeff_time, trdeff_time_err)
         + TOOL_CalcRelErr2(unfactor.value, unfactor.error)
     );
-    out.flux = out.num / exps / acc.value / trig.value / eff_total_manual.value / trdeff_time / unfactor.value / delta_ene;
+    // out.flux = out.num / exps / acc.value / delta_ene;
+    // out.flux = out.num / exps / acc.value / trig.value / delta_ene;
+    out.flux = out.num / exps / acc.value / trig.value / eff_total_manual.value / delta_ene;
+    // out.flux = out.num / exps / acc.value / trig.value / eff_total_manual.value / trdeff_time  / delta_ene;
+    // out.flux = out.num / exps / acc.value / trig.value / eff_total_manual.value / trdeff_time / unfactor.value / delta_ene;
     out.flux_err = out.flux * sqrt(
         TOOL_CalcRelErr2(out.num, out.num_err)
         + TOOL_CalcRelErr2(exps, exps_err)
         + TOOL_CalcRelErr2(acc.value, acc.error)
         + TOOL_CalcRelErr2(trig.value, trig.error)
         + TOOL_CalcRelErr2(eff_total_manual.value, eff_total_manual.error)
-        + TOOL_CalcRelErr2(trdeff_time, trdeff_time_err)
-        + TOOL_CalcRelErr2(unfactor.value, unfactor.error)
+        // + TOOL_CalcRelErr2(trdeff_time, trdeff_time_err)
+        // + TOOL_CalcRelErr2(unfactor.value, unfactor.error)
     );
     return out;
 }
@@ -823,7 +827,13 @@ int CALC_Flux(const fluxconf &conf){
 
 
 //==================================================== main
-int RUN_Flux02_2(
+int main(int argc, char *argv[]){
+    fluxconf conf{};
+    init(argc, argv, conf);
+    return CALC_Flux(conf);
+}
+
+int main02(
     const char *foutname = "hflux_t_igrf.root",
     const char *findir = "datain",
     const char *particle = "npos",
@@ -834,6 +844,7 @@ int RUN_Flux02_2(
     const char *ymin = "0",
     const char *ymax = "15"
 ){
+    //======== init pass var ========
     char arg0[] = "main.cpp";
     char *argv[] = {
         arg0,
@@ -847,14 +858,8 @@ int RUN_Flux02_2(
         const_cast<char*>(ymin),
         const_cast<char*>(ymax)
     };
-
+    //======== main ========
     fluxconf conf{};
     init(sizeof(argv) / sizeof(argv[0]), argv, conf);
-    return CALC_Flux(conf);
-}
-
-int main(int argc, char *argv[]){
-    fluxconf conf{};
-    init(argc, argv, conf);
     return CALC_Flux(conf);
 }
