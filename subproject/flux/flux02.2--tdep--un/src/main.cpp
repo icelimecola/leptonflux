@@ -216,16 +216,16 @@ FluxBin TOOL_CalcFluxBin(
     }
 
     if(conf.particle == "npos"){
-        out.num = npos_measure;
-        out.num_err = npos_measure_err;
-        // out.num = TOOL_CalcNCorrPos(npos_measure, nele_measure, cc.value);
-        // out.num_err = TOOL_CalcNCorrPosErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
+        // out.num = npos_measure;
+        // out.num_err = npos_measure_err;
+        out.num = TOOL_CalcNCorrPos(npos_measure, nele_measure, cc.value);
+        out.num_err = TOOL_CalcNCorrPosErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
     }
     else{
-        out.num = nele_measure;
-        out.num_err = nele_measure_err;
-        // out.num = TOOL_CalcNCorrEle(npos_measure, nele_measure, cc.value);
-        // out.num_err = TOOL_CalcNCorrEleErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
+        // out.num = nele_measure;
+        // out.num_err = nele_measure_err;
+        out.num = TOOL_CalcNCorrEle(npos_measure, nele_measure, cc.value);
+        out.num_err = TOOL_CalcNCorrEleErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
     }
 
     out.good = TOOL_IsPositive(out.num)
@@ -823,6 +823,36 @@ int CALC_Flux(const fluxconf &conf){
 
 
 //==================================================== main
+int RUN_Flux02_2(
+    const char *foutname = "hflux_t_igrf.root",
+    const char *findir = "datain",
+    const char *particle = "npos",
+    const char *exps_geomagmode = "igrf",
+    const char *exps_sf = "1",
+    const char *xmin = "",
+    const char *xmax = "",
+    const char *ymin = "0",
+    const char *ymax = "15"
+){
+    char arg0[] = "main.cpp";
+    char *argv[] = {
+        arg0,
+        const_cast<char*>(foutname),
+        const_cast<char*>(findir),
+        const_cast<char*>(particle),
+        const_cast<char*>(exps_geomagmode),
+        const_cast<char*>(exps_sf),
+        const_cast<char*>(xmin),
+        const_cast<char*>(xmax),
+        const_cast<char*>(ymin),
+        const_cast<char*>(ymax)
+    };
+
+    fluxconf conf{};
+    init(sizeof(argv) / sizeof(argv[0]), argv, conf);
+    return CALC_Flux(conf);
+}
+
 int main(int argc, char *argv[]){
     fluxconf conf{};
     init(argc, argv, conf);
