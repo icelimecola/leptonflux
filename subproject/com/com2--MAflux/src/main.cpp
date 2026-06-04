@@ -99,7 +99,8 @@ TH1D *BUILD_MOVING_AVERAGE(TH1 *h, const TString &hname, double xmin, double xma
 		if(sumw <= 0.0) continue;
 		//====calc ma
 		hma->SetBinContent(ibin, sumwy / sumw);
-		hma->SetBinError(ibin, 1.0 / sqrt(sumw));
+		// hma->SetBinError(ibin, 1.0 / sqrt(sumw));
+		hma->SetBinError(ibin, 0);
 	}
 	cout<<"======== clac ma ======== "<<endl
 		<<"hname="<<hname<<endl
@@ -130,16 +131,23 @@ TH1D *BUILD_EWIDTH_AVERAGE(vector<TH1D*> vh, vector<int> vitag, const TString &h
 	for(int ibin=1; ibin<=nbin; ibin++){
 		double sumwy = 0.0;
 		double sumwe2 = 0.0;
+		// bool is_good = true;
 		for(size_t ih=0; ih<vh.size(); ih++){
 			double width = energy_bins[vitag.at(ih) + 1] - energy_bins[vitag.at(ih)];
 			double y = vh.at(ih)->GetBinContent(ibin);
 			double ye = vh.at(ih)->GetBinError(ibin);
+			// if(y == 0.0 || ye <= 0.0){
+			// 	is_good = false;
+			// 	break;
+			// }
 			sumwy += width * y;
 			sumwe2 += pow(width * ye, 2);
 		}
+		// if(!is_good) continue;
 		if(width_total <= 0.0) continue;
 		hout->SetBinContent(ibin, sumwy / width_total);
-		hout->SetBinError(ibin, sqrt(sumwe2) / width_total);
+		// hout->SetBinError(ibin, sqrt(sumwe2) / width_total);
+		hout->SetBinError(ibin, 0);
 	}
 
 	cout<<"======== clac ewidth avg ======== "<<endl
@@ -281,8 +289,12 @@ bool DRAW_COMPARE(TFile *fout, TH1 *h_gcx, TH1 *h_prl, const TString &tag, const
 	hratio->GetYaxis()->SetLabelSize(0.085);
 	hratio->GetYaxis()->SetLabelOffset(0.012);
 	hratio->GetYaxis()->SetNdivisions(505);
-	hratio->SetMinimum(0.8);
-	hratio->SetMaximum(1.2);
+	hratio->SetMinimum(0.9);
+	hratio->SetMaximum(1.1);
+	// hratio->SetMinimum(0.8);
+	// hratio->SetMaximum(1.2);
+	// hratio->SetMinimum(0.6);
+	// hratio->SetMaximum(1.2);
 	STYLE_HIST(hratio, kBlack, 20);
 
 	TBox *box5 = new TBox(xmin, 0.95, xmax, 1.05);
