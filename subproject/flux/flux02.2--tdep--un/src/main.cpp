@@ -254,16 +254,16 @@ FluxBin TOOL_CalcFluxBin(
     );
     // out.flux = out.num / exps / acc.value / delta_ene;
     // out.flux = out.num / exps / acc.value / trig.value / delta_ene;
-    out.flux = out.num / exps / acc.value / trig.value / eff_total_manual.value / delta_ene;
+    // out.flux = out.num / exps / acc.value / trig.value / eff_total_manual.value / delta_ene;
     // out.flux = out.num / exps / acc.value / trig.value / eff_total_manual.value / trdeff_time  / delta_ene;
-    // out.flux = out.num / exps / acc.value / trig.value / eff_total_manual.value / trdeff_time / unfactor.value / delta_ene;
+    out.flux = out.num / exps / acc.value / trig.value / eff_total_manual.value / trdeff_time / unfactor.value / delta_ene;
     out.flux_err = out.flux * sqrt(
         TOOL_CalcRelErr2(out.num, out.num_err)
         + TOOL_CalcRelErr2(exps, exps_err)
         + TOOL_CalcRelErr2(acc.value, acc.error)
         + TOOL_CalcRelErr2(trig.value, trig.error)
         + TOOL_CalcRelErr2(eff_total_manual.value, eff_total_manual.error)
-        // + TOOL_CalcRelErr2(trdeff_time, trdeff_time_err)
+        + TOOL_CalcRelErr2(trdeff_time, trdeff_time_err)
         // + TOOL_CalcRelErr2(unfactor.value, unfactor.error)
     );
     return out;
@@ -477,7 +477,7 @@ int CALC_Flux(const fluxconf &conf){
     vector<SeleffItem> seleff_items;
     seleff_items.push_back({"tof",   "seleff/hene_tofeff.root",   "hratio", "hseleff_tof_ene",   true });
     seleff_items.push_back({"trd",   "seleff/hene_trdeff.root",   "hratio", "hseleff_trd_ene",   false});
-    seleff_items.push_back({"trk",   "seleff/hene_trkeff.root",   "hratio", "hseleff_trk_ene",   true });
+    seleff_items.push_back({"trk",   "seleff/hene_trkeff.root",   "hratio", "hseleff_trk_ene",   false });
     seleff_items.push_back({"ecal",  "seleff/hene_ecaleff.root",  "hratio", "hseleff_ecal_ene",  true });
     seleff_items.push_back({"pat",   "seleff/hene_pateff.root",   "hratio", "hseleff_pat_ene",   true });
     seleff_items.push_back({"match", "seleff/hene_matcheff.root", "hratio", "hseleff_match_ene", true });
@@ -652,15 +652,16 @@ int CALC_Flux(const fluxconf &conf){
         int n_zero_exps_27d = 0;
         int n_bad_cc_27d = 0;
 
-        cout<<"IN CALC_Flux ===== i_enebin="<<i_enebin
-            <<" elow="<<energy_bins[i_enebin]
-            <<" eup="<<energy_bins[i_enebin + 1]
-            <<" acc="<<acc.value<<" +/- "<<acc.error
-            <<" cc="<<cc.value<<" +/- "<<cc.error
-            <<" trig="<<trig.value<<" +/- "<<trig.error
-            <<" eff_total_input="<<eff_total_input.value<<" +/- "<<eff_total_input.error
-            <<" eff_total_manual="<<eff_total_manual.value<<" +/- "<<eff_total_manual.error
-            <<" delta_ene="<<delta_ene
+        if(i_enebin==1) cout<<"======== calc flux for enebin "<<i_enebin<<" ======== "<<endl
+            <<"i_enebin="<<i_enebin<<endl
+            <<"elow="<<energy_bins[i_enebin]<<endl
+            <<"eup="<<energy_bins[i_enebin + 1]<<endl
+            <<"acc="<<acc.value<<" +/- "<<acc.error<<endl
+            <<"cc="<<cc.value<<" +/- "<<cc.error<<endl
+            <<"trig="<<trig.value<<" +/- "<<trig.error<<endl
+            <<"eff_total_input="<<eff_total_input.value<<" +/- "<<eff_total_input.error<<endl
+            <<"eff_total_manual="<<eff_total_manual.value<<" +/- "<<eff_total_manual.error<<endl
+            <<"delta_ene="<<delta_ene<<endl
             <<endl;
 
         for(int ibin=1; ibin<=hflux->GetNbinsX(); ibin++){
@@ -672,9 +673,25 @@ int CALC_Flux(const fluxconf &conf){
             double exps_err = hexps->GetBinError(ibin);
             double trdeff_time = htrdeff_time->GetBinContent(ibin);
             double trdeff_time_err = htrdeff_time->GetBinError(ibin);
-            EneValue unfactor{1.0, 0.0};
-            FluxBin out = TOOL_CalcFluxBin(conf, npos_measure, npos_measure_err, nele_measure, nele_measure_err, exps, exps_err, trdeff_time, trdeff_time_err, cc, acc, trig, eff_total_manual, unfactor, delta_ene);
-
+            //====read unfactor
+            double x_unix = hflux->GetBinCenter(ibin);
+            int ibin_unfactor = unfactor->FindBin(x_unix);
+            EneValue unfactor_now{};
+            unfactor_now.value = unfactor->GetBinContent(ibin_unfactor);
+            unfactor_now.error = unfactor->GetBinError(ibin_unfactor);
+            //====clac flux
+            FluxBin out = TOOL_CalcFluxBin(conf, npos_measure, npos_measure_err, nele_measure, nele_measure_err, exps, exps_err, trdeff_time, trdeff_time_err, cc, acc, trig, eff_total_manual, unfactor_now, delta_ene);
+            //====print
+            if(i_enebin==1 && ibin==100) cout<<"======== calc flux for tbin "<<ibin<<" ======== "<<endl
+                <<"bin "<<ibin<<endl
+                <<"center="<<x_unix<<endl
+                <<"npos_measure="<<npos_measure<<" +/- "<<npos_measure_err<<endl
+                <<"nele_measure="<<nele_measure<<" +/- "<<nele_measure_err<<endl
+                <<"exps="<<exps<<" +/- "<<exps_err<<endl
+                <<"trdeff_time="<<trdeff_time<<" +/- "<<trdeff_time_err<<endl
+                <<"unfactor_now="<<unfactor_now.value<<" +/- "<<unfactor_now.error<<endl
+                <<"flux="<<out.flux<<" +/- "<<out.flux_err<<endl
+                <<endl;
             if(out.bad_cc) n_bad_cc++;
             if(!out.good){
                 n_bad_bin++;
