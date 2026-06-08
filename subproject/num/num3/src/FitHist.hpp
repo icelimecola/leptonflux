@@ -114,6 +114,7 @@ bool FitHist::FITHIST_cut_PreSelect(int SelEffType = 0, int passcut = 0){
         if(passcut) cut_trd =  
             trdnhits2 >= 12
             && trdlkhde2 < 1.5
+            // && trdlkhde2_ehe < 0.5
             && trdlkhde2_ehe < 0.8
             // && trdlkhdnew < 0.6;
             && trdlkhdnew < 0.7;
@@ -146,6 +147,7 @@ bool FitHist::FITHIST_cut_PreSelect(int SelEffType = 0, int passcut = 0){
             && chi2x < 20 && chi2y < 20
             && qin > 0. && qin < 1.5    //----260530
             // && qin > 0.7 && qin < 1.5
+            // && ntrk <= 2;
             && ntrk == 1;
     }
     //====trk--eff_trk
@@ -255,7 +257,9 @@ bool FitHist::FITHIST_cut_PreSelect(int SelEffType = 0, int passcut = 0){
     }
 
 	//============ BDT ============
-    bool cut_bdt = EmBDT>-0.995;
+    bool cut_bdt = 
+            EmBDT>-0.995;
+            // EmBDT>-0.995 && ccbdt>-0.5;
     //====bdt--eff_ecal
     if(SelEffType == 4 ){
         if(passcut) cut_bdt = 
@@ -367,7 +371,7 @@ void FitHist::FITHIST_FillH(int iene,int ilat,int it,int entry){
     //======== trigsamplecut
     bool trigsamplecut = 
         //====rig+trdlkhd
-        rig<0 && trdlkhdnew<0.8;
+        // rig<0 && trdlkhdnew<0.8;
         //====rig+eop
         // rig<0 && Ene/TMath::Abs(rig)>0.65;
         //====rig+trdlkhd+eop01
@@ -375,6 +379,7 @@ void FitHist::FITHIST_FillH(int iene,int ilat,int it,int entry){
         // rig<0 && trdlkhdnew<0.7 && Ene/TMath::Abs(rig)>0.65;
         //====rig+trdlkhd+eop02
         // rig>0 && trdlkhdnew<0.6 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00; //----260401
+        rig>0 && trdlkhdnew<0.7 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00; //----260607
         // rig<0 && trdlkhdnew<0.8 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00;
     //======== fillhist01
     if(FITHIST_cut_PreSelect(0,1)){
