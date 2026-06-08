@@ -1,3 +1,6 @@
 # yname|yerrname|ytitle|ymin|ymax
 #---- one line = one output group
-trdeff|trdeff_err|TRD Efficiency|0.88|0.97
+#trdeff|trdeff_err|TRD Efficiency|0.88|0.97
+ntrkeff|ntrkeff_err|nTrk Efficiency|0.8|1.05
+#ecaleff|ecaleff_err|ECAL Efficiency|0.89|1.030
+#matcheff|matcheff_err|TrkECALMatch Efficiency|0.8|1.05

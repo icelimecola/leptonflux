@@ -2,6 +2,15 @@
 rm -r dataiss 
 # ============================================================ mkdir
 mkdir -p ./dataiss/trdeff/root
+mkdir -p ./dataiss/ntrkeff/root
+mkdir -p ./dataiss/ecaleff/root
+mkdir -p ./dataiss/matcheff/root
 # ============================================================ mv
 mv ./*trdeff.pdf ./dataiss/trdeff/
 mv ./*trdeff.root ./dataiss/trdeff/root/
+mv ./*ntrkeff.pdf ./dataiss/ntrkeff/
+mv ./*ntrkeff.root ./dataiss/ntrkeff/root/
+mv ./*ecaleff.pdf ./dataiss/ecaleff/
+mv ./*ecaleff.root ./dataiss/ecaleff/root/
+mv ./*matcheff.pdf ./dataiss/matcheff/
+mv ./*matcheff.root ./dataiss/matcheff/root/
