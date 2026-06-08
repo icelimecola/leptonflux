@@ -317,6 +317,43 @@ bool BUILD_RATIO_HIST(const SplineFit *spfit_iss, const TGraphErrors *giss_conf,
 	return true;
 }
 
+bool BUILD_RATIO_HIST_ISS(const TH1D *hiss, const VarDataSeries &mc,
+		const double xdrawmin, const double xdrawmax, TH1D *hratio){
+	if(hiss == nullptr || hratio == nullptr){
+		cerr<<"ERR BUILD_RATIO_HIST_ISS ===== ISS/ratio hist is null"<<endl;
+		return false;
+	}
+	if(mc.n_entry <= 0){
+		cerr<<"ERR BUILD_RATIO_HIST_ISS ===== MC entry is empty"<<endl;
+		return false;
+	}
+	double mc_y = mc.vdata.at(0).y;
+	double mc_err = mc.vdata.at(0).yerr;
+	if(mc_y == 0.0){
+		cerr<<"ERR BUILD_RATIO_HIST_ISS ===== MC value is zero"<<endl;
+		return false;
+	}
+	hratio->Reset("ICES");
+	hratio->SetNameTitle("hratio", "hratio");
+	hratio->SetStats(0);
+	for(int ibin=1; ibin<=hratio->GetNbinsX(); ibin++){
+		double xcenter = hratio->GetBinCenter(ibin);
+		if(xcenter < xdrawmin || xcenter > xdrawmax) continue;
+
+		double iss_y = hiss->GetBinContent(ibin);
+		double iss_err = hiss->GetBinError(ibin);
+		if(!std::isfinite(iss_y) || iss_y == 0.0) continue;
+		double ratio = iss_y / mc_y;
+		double ratio_err = fabs(ratio) * sqrt(pow(iss_err / iss_y, 2) + pow(mc_err / mc_y, 2));
+		hratio->SetBinContent(ibin, ratio);
+		hratio->SetBinError(ibin, ratio_err);
+	}
+	cout<<"IN BUILD_RATIO_HIST_ISS ===== hratio built with mc_y="<<mc_y
+		<<" mc_err="<<mc_err
+		<<endl;
+	return true;
+}
+
 //==================================================== FITDRAW_
 bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc, TH1D *h){
 	//====init--output
@@ -335,6 +372,7 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	SplineFit *spfit_iss = nullptr;
 	TGraphErrors *giss_conf = nullptr;
 	TGraph *giss_conf_band = nullptr;
+	TH1D *hratio = nullptr;
 	TH1D *hratio27 = nullptr;
 	TH1D *hratio1 = nullptr;
 	//====init--canvas
@@ -390,17 +428,37 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	}
 	giss = new TGraphErrors(vx_iss.size(), &vx_iss[0], &vy_iss[0], &vex_iss[0], &vey_iss[0]);
 	giss->SetName("giss");
-	// spfit_iss = new SplineFit(4, "b1e1",
-	spfit_iss = new SplineFit(7, "b2e1",
+	//----trd
+	// // spfit_iss = new SplineFit(4, "b1e1",
+	// spfit_iss = new SplineFit(7, "b2e1",
+	// 		SplineFit::LinearXY | SplineFit::ExtrapolateLB | SplineFit::ExtrapolateLE);
+	// spfit_iss->SetRange(xdrawmin, xdrawmax);
+	// spfit_iss->BuildTF1("spfit_iss");
+	// spfit_iss->SetGraph(giss);
+	// // double xnode_iss[8] = {1308916800, 1318248000, 1325246400, 1332244800, 1336910400, 1343908800, 1514203200, 1759147200};
+	// // double xnode_iss[7] = {1308916800, 1318248000, 1325246400, 1332244800, 1343908800, 1514203200, 1759147200};
+	// double xnode_iss[7] = {1308916800, 1318248000, 1325246400, 1334577600, 1367236800, 1514203200, 1759147200};
+	// double ynode_iss[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	// if(!GET_NEAREST_ISS_YNODE(iss, xnode_iss, ynode_iss, 7)){
+	// 	delete spfit_iss;
+	// 	delete giss;
+	// 	delete c;
+	// 	fout->Close();
+	// 	delete fout;
+	// 	return false;
+	// }
+	//----ntrk
+	spfit_iss = new SplineFit(4, "b1e1",
+	// spfit_iss = new SplineFit(7, "b2e1",
 			SplineFit::LinearXY | SplineFit::ExtrapolateLB | SplineFit::ExtrapolateLE);
 	spfit_iss->SetRange(xdrawmin, xdrawmax);
 	spfit_iss->BuildTF1("spfit_iss");
 	spfit_iss->SetGraph(giss);
-	// double xnode_iss[8] = {1308916800, 1318248000, 1325246400, 1332244800, 1336910400, 1343908800, 1514203200, 1759147200};
-	// double xnode_iss[7] = {1308916800, 1318248000, 1325246400, 1332244800, 1343908800, 1514203200, 1759147200};
-	double xnode_iss[7] = {1308916800, 1318248000, 1325246400, 1334577600, 1367236800, 1514203200, 1759147200};
-	double ynode_iss[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-	if(!GET_NEAREST_ISS_YNODE(iss, xnode_iss, ynode_iss, 7)){
+	// double xnode_iss[7] = {1308916800, 1318248000, 1325246400, 1334577600, 1367236800, 1514203200, 1759147200};
+	// double ynode_iss[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	double xnode_iss[4] = {1308916800, 1396400000, 1618000000, 1759147200};
+	double ynode_iss[4] = {0.0, 0.0, 0.0, 0.0};
+	if(!GET_NEAREST_ISS_YNODE(iss, xnode_iss, ynode_iss, 4)){
 		delete spfit_iss;
 		delete giss;
 		delete c;
@@ -417,6 +475,8 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	// spfit_iss->f1SplineFit->SetParLimits(ipar_valley, ynode_iss[inode_valley], ynode_iss[inode_valley]);
 	spfit_iss->doFit(xdrawmin, xdrawmax, "FQ");
 	//====ratio histograms
+	hratio = (TH1D*)h->Clone("hratio");
+	hratio->SetDirectory(nullptr);
 	hratio27 = (TH1D*)h->Clone("hratio27");
 	hratio27->SetDirectory(nullptr);
 	//---- 1day
@@ -446,6 +506,18 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 		cerr<<"ERR DRAW ===== failed to build ISS spline confidence interval"<<endl;
 		delete hratio1;
 		delete hratio27;
+		delete hratio;
+		delete spfit_iss;
+		delete giss;
+		delete c;
+		fout->Close();
+		delete fout;
+		return false;
+	}
+	if(!BUILD_RATIO_HIST_ISS(h, mc, xdrawmin, xdrawmax, hratio)){
+		delete hratio1;
+		delete hratio27;
+		delete hratio;
 		delete spfit_iss;
 		delete giss;
 		delete c;
@@ -456,6 +528,7 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	if(!BUILD_RATIO_HIST(spfit_iss, giss_conf, mc, xdrawmin, xdrawmax, hratio27)){
 		delete hratio1;
 		delete hratio27;
+		delete hratio;
 		delete spfit_iss;
 		delete giss;
 		delete c;
@@ -466,6 +539,7 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	if(!BUILD_RATIO_HIST(spfit_iss, giss_conf, mc, xdrawmin, xdrawmax, hratio1)){
 		delete hratio1;
 		delete hratio27;
+		delete hratio;
 		delete spfit_iss;
 		delete giss;
 		delete c;
@@ -595,6 +669,7 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	//====write
 	c->SaveAs(var.foutname_pdf);
 	fout->cd();
+	hratio->Write("hratio");
 	hratio27->Write("hratio27");
 	hratio1->Write("hratio1");
 	giss->Write("giss");
@@ -610,6 +685,7 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	delete line_mc;
 	delete hratio1;
 	delete hratio27;
+	delete hratio;
 	delete spfit_iss;
 	delete giss;
 	delete c;
