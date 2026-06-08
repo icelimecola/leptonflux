@@ -499,11 +499,19 @@ TH1D *unacct_init_ht(const TString &hname, const TString &htitle){
 	return hout;
 }
 
-bool DRAW_UnfactorTime(int ie, TH1D *hunfactor_t, TFile *fout){
+TDirectory *get_or_make_dir(TFile *fout, const TString &dirname){
+	if( fout==0 ) return 0;
+	fout->cd();
+	TDirectory *dir = fout->GetDirectory(dirname);
+	if( dir==0 ) dir = fout->mkdir(dirname);
+	return dir;
+}
+
+bool DRAW_UnfactorTime(int ie, TH1D *hunfactor_t, TFile *fout, TString htag="unfactor", TString ytitle="unacc/mcacc"){
 	if( hunfactor_t==0 || fout==0 ) return false;
-	TString outdir = "unfactor_tdep_canvas";
-	TString canvas_name = Form("cunfactor_t_ene%02d", ie);
-	TString fout_pdf = Form("%s/hunfactor_t%02d.pdf", outdir.Data(), ie);
+	TString outdir = Form("%s_tdep_canvas", htag.Data());
+	TString canvas_name = Form("c%s_e%02d", htag.Data(), ie);
+	TString fout_pdf = Form("%s/h%s_e%02d.pdf", outdir.Data(), htag.Data(), ie);
 	double elow = ENERGY_BINS_TDEP[ie];
 	double eup = ENERGY_BINS_TDEP[ie+1];
 
@@ -534,7 +542,7 @@ bool DRAW_UnfactorTime(int ie, TH1D *hunfactor_t, TFile *fout){
 	xaxis->SetNdivisions(-505);
 	xaxis->SetRangeUser(TDRAW_XMIN, TDRAW_XMAX);
 
-	yaxis->SetNameTitle("unacc/mcacc", "unacc/mcacc");
+	yaxis->SetNameTitle(ytitle, ytitle);
 	yaxis->CenterTitle();
 	yaxis->SetTitleFont(62);
 	yaxis->SetTitleSize(0.05);
@@ -560,13 +568,51 @@ bool DRAW_UnfactorTime(int ie, TH1D *hunfactor_t, TFile *fout){
 
 	c->SaveAs(fout_pdf);
 	fout->cd();
-	TDirectory *dir = fout->GetDirectory("unfactor_tdep_canvas");
-	if( dir==0 ) dir = fout->mkdir("unfactor_tdep_canvas");
+	TDirectory *dir = get_or_make_dir(fout, outdir);
 	dir->cd();
 	c->Write("", TObject::kOverwrite);
 	fout->cd();
 	delete c;
 	return true;
+}
+
+TH1D *BUILD_CorrUnfactorTime(TH1D *hunfactor_t, TH1D *hexps_t, int ie){
+	if( hunfactor_t==0 ) return 0;
+	TH1D *hcorrunfactor_t = (TH1D*)hunfactor_t->Clone(Form("hcorrunfactor_e%02d", ie));
+	double elow = ENERGY_BINS_TDEP[ie];
+	double eup = ENERGY_BINS_TDEP[ie+1];
+	hcorrunfactor_t->SetTitle(Form("corrunfactor %.2f-%.2f GeV;time;unfactor/#LTunfactor#GT", elow, eup));
+	hcorrunfactor_t->GetYaxis()->SetTitle("unfactor/#LTunfactor#GT");
+	hcorrunfactor_t->Reset();
+	//==== exps-weighted average over valid time bins
+	double unfactor_wsum = 0;
+	double exps_sum = 0;
+	int nsum = 0;
+	for(int it=1; it<=hunfactor_t->GetNbinsX(); it++){
+		double unfactor = hunfactor_t->GetBinContent(it);
+		if( unfactor<=0 ) continue;
+		double exps = 1.0;
+		if( hexps_t ){
+			double tcenter = hunfactor_t->GetBinCenter(it);
+			int ibin_exps = hexps_t->GetXaxis()->FindFixBin(tcenter);
+			if( ibin_exps<1 || ibin_exps>hexps_t->GetNbinsX() ) continue;
+			exps = hexps_t->GetBinContent(ibin_exps);
+		}
+		if( exps<=0 ) continue;
+		unfactor_wsum += unfactor*exps;
+		exps_sum += exps;
+		nsum++;
+	}
+	if( nsum<1 || exps_sum<=0 ) return hcorrunfactor_t;
+	double unfactor_avg = unfactor_wsum/exps_sum;
+	if( unfactor_avg<=0 ) return hcorrunfactor_t;
+	for(int it=1; it<=hunfactor_t->GetNbinsX(); it++){
+		double unfactor = hunfactor_t->GetBinContent(it);
+		if( unfactor<=0 ) continue;
+		hcorrunfactor_t->SetBinContent(it, unfactor/unfactor_avg);
+		hcorrunfactor_t->SetBinError(it, 0);
+	}
+	return hcorrunfactor_t;
 }
 
 TH1D *_calc_unacc_core(TString fnm_sel, TString fnm_gen, int icut, double emin, double emax, TFile *fout, TH1D *hrawflux, TH1D *hrawflux_noacc, TString htag="", int is_save_detail=1, double nplane=1.0){
@@ -628,7 +674,9 @@ TH1D *_calc_unacc_core(TString fnm_sel, TString fnm_gen, int icut, double emin, 
 			double elow_bin = hflux_fit->GetBinLowEdge(ibin);
 			double eup_bin = hflux_fit->GetBinLowEdge(ibin+1);
 			double flux_int = 0;
-			if( fflux_fit ) flux_int = fflux_fit->Integral(elow_bin, eup_bin)/(eup_bin - elow_bin);
+			double ecenter_bin = get_lw_center(elow_bin, eup_bin);
+			// if( fflux_fit ) flux_int = fflux_fit->Integral(elow_bin, eup_bin)/(eup_bin - elow_bin);
+			if( fflux_fit ) flux_int = fflux_fit->Eval(ecenter_bin);
 			hflux_fit->SetBinContent(ibin, flux_int);
 			hflux_fit->SetBinError(ibin, 0);
 		}
@@ -713,6 +761,8 @@ TH1D *_calc_unacc_core(TString fnm_sel, TString fnm_gen, int icut, double emin, 
 	//============ save ============
 	if(icut==15 && is_save_detail && fout!=0){
 		fout->cd();
+		TDirectory *dir_edep = get_or_make_dir(fout, "edep");
+		if( dir_edep ) dir_edep->cd();
 		hmatrix->Write();
 		hrec_bfre->Write();
 		hgen->Write();
@@ -723,6 +773,7 @@ TH1D *_calc_unacc_core(TString fnm_sel, TString fnm_gen, int icut, double emin, 
 		if( fflux_fit ) fflux_fit->Write();
 		hflux_fit->Write();
 		hunacc->Write();
+		fout->cd();
 	}
 	//============ return ============
 	hunacc->SetDirectory(0);
@@ -802,6 +853,8 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 	}
 	//============ edep-save ============
 	fout->cd();
+	TDirectory *dir_edep = get_or_make_dir(fout, "edep");
+	if( dir_edep ) dir_edep->cd();
 	for(int it=0; it<NTBIN_27D; it++){
 		if( vrawflux_noacc[it] ) vrawflux_noacc[it]->Write();
 		if( vrawflux[it] ) vrawflux[it]->Write();
@@ -809,6 +862,7 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 		vunacc[it]->Write();
 		vunfactor[it]->Write();
 	}
+	fout->cd();
 
 
 	//============ tdep ============
@@ -822,9 +876,14 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 			Form("Acceptance %.2f-%.2f GeV;time;Acceptance[cm^{2}sr]", elow, eup)
 		);
 		TH1D *hunfactor_t = unacct_init_ht(
-			Form("hunfactor_t%02d", ie),
+			Form("hunfactor_e%02d", ie),
 			Form("unacc/mcacc %.2f-%.2f GeV;time;unacc/mcacc", elow, eup)
 		);
+		TH1D *hexps_t = dynamic_cast<TH1D*>( file_flux->Get(Form("hexps_27d_t_ene%02d", ie)) );
+		if( hexps_t==0 ){
+			cerr << "WARN _calc_unacc_tdep ===== missing exps hist for enebin " << ie
+				<< ", use equal weight for corrunfactor" << endl;
+		}
 		//====fill
 		double ecenter = 0.5*(elow+eup);
 		for(int it=0; it<NTBIN_27D; it++){
@@ -839,10 +898,14 @@ void _calc_unacc_tdep(TString fnm_sel, TString fnm_gen, int icut, double emin, d
 				hunfactor_t->SetBinError(it+1, 0);
 			}
 		}
+		TH1D *hcorrunfactor_t = BUILD_CorrUnfactorTime(hunfactor_t, hexps_t, ie);
 		//====save
 		hunacc_t->Write();
 		hunfactor_t->Write();
-		DRAW_UnfactorTime(ie, hunfactor_t, fout);
+		if( hcorrunfactor_t ) hcorrunfactor_t->Write();
+		if( hexps_t ) hexps_t->Write("", TObject::kOverwrite);
+		DRAW_UnfactorTime(ie, hunfactor_t, fout, "unfactor", "unacc/mcacc");
+		DRAW_UnfactorTime(ie, hcorrunfactor_t, fout, "corrunfactor", "unfactor/#LTunfactor#GT");
 	}
 
 
