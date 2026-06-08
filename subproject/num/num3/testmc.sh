@@ -42,7 +42,8 @@ LISTNAME=tbinmc-seleff.txt
 LIST=$LISTDIR/$LISTNAME
 # ==============================================
 # for ENEBIN in $(seq 40 40); do
-for ENEBIN in $(seq 28 28); do
+# for ENEBIN in $(seq 28 28); do
+for ENEBIN in $(seq 1 1); do
     echo "===== TEST START ====="
     echo "Transferring ENEBIN=$ENEBIN ..."
     echo "----------------------"
