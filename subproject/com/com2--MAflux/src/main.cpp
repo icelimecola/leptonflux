@@ -112,6 +112,66 @@ TH1D *BUILD_MOVING_AVERAGE(TH1 *h, const TString &hname, double xmin, double xma
 	return hma;
 }
 
+void BUILD_PAIR_MOVING_AVERAGE_EQUAL(TH1 *h_gcx, TH1 *h_prl,
+		TH1D *&h_gcx_ma, TH1D *&h_prl_ma,
+		const TString &hname_gcx, const TString &hname_prl,
+		double xmin, double xmax){
+	int nbin = h_gcx->GetNbinsX();
+	int nside = 7 * 27;
+	//====xbins
+	vector<double> xbins;
+	for(int ibin=1; ibin<=nbin + 1; ibin++){
+		xbins.push_back(h_gcx->GetXaxis()->GetBinLowEdge(ibin));
+	}
+	//====init hma
+	h_gcx_ma = new TH1D(hname_gcx, h_gcx->GetTitle(), nbin, &xbins[0]);
+	h_prl_ma = new TH1D(hname_prl, h_prl->GetTitle(), nbin, &xbins[0]);
+	h_gcx_ma->SetDirectory(nullptr);
+	h_prl_ma->SetDirectory(nullptr);
+	h_gcx_ma->SetStats(0);
+	h_prl_ma->SetStats(0);
+	//====ma
+	for(int ibin=1; ibin<=nbin; ibin++){
+		double x = h_gcx->GetBinCenter(ibin);
+		if(x < xmin || x > xmax) continue;
+		//====init jmin&jmax
+		int jmin = ibin - nside;
+		int jmax = ibin + nside;
+		if(jmin < 1) jmin = 1;
+		if(jmax > nbin) jmax = nbin;
+		//====calc avg with common time samples
+		double sum_gcx = 0.0;
+		double sum_prl = 0.0;
+		int nsum = 0;
+		for(int jbin=jmin; jbin<=jmax; jbin++){
+			double xj = h_gcx->GetBinCenter(jbin);
+			if(xj < xmin || xj > xmax) continue;
+			int kbin = h_prl->GetXaxis()->FindFixBin(xj);
+			if(kbin < 1 || kbin > h_prl->GetNbinsX()) continue;
+			double y_gcx = h_gcx->GetBinContent(jbin);
+			double y_prl = h_prl->GetBinContent(kbin);
+			if(y_gcx == 0.0 || y_prl == 0.0) continue;
+			sum_gcx += y_gcx;
+			sum_prl += y_prl;
+			nsum++;
+		}
+		if(nsum <= 0) continue;
+		//====calc ma
+		h_gcx_ma->SetBinContent(ibin, sum_gcx / nsum);
+		h_prl_ma->SetBinContent(ibin, sum_prl / nsum);
+		h_gcx_ma->SetBinError(ibin, 0);
+		h_prl_ma->SetBinError(ibin, 0);
+	}
+	cout<<"======== clac pair ma equal ======== "<<endl
+		<<"hname_gcx="<<hname_gcx<<endl
+		<<"hname_prl="<<hname_prl<<endl
+		<<"nside="<<nside<<endl
+		<<"nbin="<<nbin<<endl
+		<<"xmin="<<xmin<<endl
+		<<"xmax="<<xmax<<endl
+		<<endl;
+}
+
 TH1D *BUILD_EWIDTH_AVERAGE(vector<TH1D*> vh, vector<int> vitag, const TString &hname, const TString &htitle){
 	int nbin = vh.at(0)->GetNbinsX();
 	vector<double> xbins;
@@ -197,6 +257,55 @@ TH1D *BUILD_RATIO(TH1 *h_gcx, TH1 *h_prl, const TString &hname, double xmin, dou
 	return hratio;
 }
 
+TH1D *BUILD_RATIO_MOVING_AVERAGE(TH1 *h_gcx, TH1 *h_prl, const TString &hname, double xmin, double xmax){
+	TAxis *xaxis = h_gcx->GetXaxis();
+	int ibin_min = xaxis->FindFixBin(xmin);
+	int ibin_max = xaxis->FindFixBin(xmax);
+	if(ibin_min < 1) ibin_min = 1;
+	if(ibin_max > h_gcx->GetNbinsX()) ibin_max = h_gcx->GetNbinsX();
+
+	vector<double> xbins;
+	for(int ibin=ibin_min; ibin<=ibin_max + 1; ibin++){
+		xbins.push_back(xaxis->GetBinLowEdge(ibin));
+	}
+
+	TH1D *hratio_raw = new TH1D(hname + "_raw", hname + "_raw", xbins.size() - 1, &xbins[0]);
+	hratio_raw->SetDirectory(nullptr);
+	hratio_raw->SetStats(0);
+	hratio_raw->SetTitle("");
+
+	for(int ibin=ibin_min; ibin<=ibin_max; ibin++){
+		double x = h_gcx->GetBinCenter(ibin);
+		int jbin = h_prl->GetXaxis()->FindFixBin(x);
+		if(jbin < 1 || jbin > h_prl->GetNbinsX()) continue;
+
+		double y_gcx = h_gcx->GetBinContent(ibin);
+		double e_gcx = h_gcx->GetBinError(ibin);
+		double y_prl = h_prl->GetBinContent(jbin);
+		double e_prl = h_prl->GetBinError(jbin);
+		if(y_gcx == 0.0 || y_prl == 0.0) continue;
+
+		int rbin = ibin - ibin_min + 1;
+		double ratio = y_gcx / y_prl;
+		double eratio = ratio * sqrt(pow(e_gcx / y_gcx, 2) + pow(e_prl / y_prl, 2));
+		hratio_raw->SetBinContent(rbin, ratio);
+		// hratio_raw->SetBinError(rbin, eratio);
+		hratio_raw->SetBinError(rbin, 1.0);
+	}
+
+	TH1D *hratio_ma = BUILD_MOVING_AVERAGE(hratio_raw, hname, xmin, xmax);
+	hratio_ma->SetTitle("");
+
+	delete hratio_raw;
+
+	cout<<"======== clac ratio ma ======== "<<endl
+		<<"hname="<<hname<<endl
+		<<"xmin="<<xmin<<endl
+		<<"xmax="<<xmax<<endl
+		<<endl;
+	return hratio_ma;
+}
+
 void STYLE_HIST(TH1 *h, int color, int mstyle){
 	h->SetStats(0);
 	h->SetMarkerStyle(mstyle);
@@ -219,8 +328,11 @@ void STYLE_TIME_AXIS(TAxis *xaxis, double title_size, double label_size, double 
 	xaxis->SetNdivisions(-505);
 }
 
-bool DRAW_COMPARE(TFile *fout, TH1 *h_gcx, TH1 *h_prl, const TString &tag, const TString &foutbase, double xmin, double xmax, const TString &outdir){
-	TH1D *hratio = BUILD_RATIO(h_gcx, h_prl, "hratio_" + tag, xmin, xmax);
+// old method:
+// bool DRAW_COMPARE(TFile *fout, TH1 *h_gcx, TH1 *h_prl, const TString &tag, const TString &foutbase, double xmin, double xmax, const TString &outdir){
+// 	TH1D *hratio = BUILD_RATIO(h_gcx, h_prl, "hratio_" + tag, xmin, xmax);
+bool DRAW_COMPARE(TFile *fout, TH1 *h_gcx, TH1 *h_prl, TH1D *hratio, const TString &tag, const TString &foutbase, double xmin, double xmax, const TString &outdir){
+	// TH1D *hratio = BUILD_RATIO(h_gcx, h_prl, "hratio_" + tag, xmin, xmax);
 	TCanvas *c = new TCanvas("c_" + tag, "c_" + tag, 1100, 720);
 	TPad *pad_top = new TPad("pad_top_" + tag, "", 0.0, 0.32, 1.0, 1.0);
 	TPad *pad_ratio = new TPad("pad_ratio_" + tag, "", 0.0, 0.0, 1.0, 0.32);
@@ -379,14 +491,23 @@ bool DRAW_PAIR(TFile *fout, TH1 *h_gcx_in, TH1 *h_prl_in, int itag, const TStrin
 		return false;
 	}
 
-	TH1D *h_gcx = BUILD_MOVING_AVERAGE(h_gcx_in, Form("hgcx_ma_ene%02d", itag), xmin, xmax);
-	TH1D *h_prl = BUILD_MOVING_AVERAGE(h_prl_in, Form("hprl_ma_ene%02d", itag), xmin, xmax);
-	h_gcx->SetDirectory(nullptr);
-	h_prl->SetDirectory(nullptr);
+	// previous method:
+	// TH1D *h_gcx = BUILD_MOVING_AVERAGE(h_gcx_in, Form("hgcx_ma_ene%02d", itag), xmin, xmax);
+	// TH1D *h_prl = BUILD_MOVING_AVERAGE(h_prl_in, Form("hprl_ma_ene%02d", itag), xmin, xmax);
+	// TH1D *hratio = BUILD_RATIO_MOVING_AVERAGE(h_gcx_in, h_prl_in, Form("hratio_ene%02d", itag), xmin, xmax);
+	TH1D *h_gcx = nullptr;
+	TH1D *h_prl = nullptr;
+	BUILD_PAIR_MOVING_AVERAGE_EQUAL(h_gcx_in, h_prl_in, h_gcx, h_prl,
+			Form("hgcx_ma_ene%02d", itag), Form("hprl_ma_ene%02d", itag),
+			xmin, xmax);
+	TH1D *hratio = BUILD_RATIO(h_gcx, h_prl, Form("hratio_ene%02d", itag), xmin, xmax);
 
-	if(!DRAW_COMPARE(fout, h_gcx, h_prl, Form("ene%02d", itag), Form("flux_compare_ene%02d", itag), xmin, xmax, outdir)){
+	// old method:
+	// if(!DRAW_COMPARE(fout, h_gcx, h_prl, Form("ene%02d", itag), Form("flux_compare_ene%02d", itag), xmin, xmax, outdir)){
+	if(!DRAW_COMPARE(fout, h_gcx, h_prl, hratio, Form("ene%02d", itag), Form("flux_compare_ene%02d", itag), xmin, xmax, outdir)){
 		delete h_gcx;
 		delete h_prl;
+		delete hratio;
 		return false;
 	}
 
@@ -444,6 +565,9 @@ int main(){
 		vector<int> vitag = vmerge_itag.at(imerge);
 		vector<TH1D*> vh_gcx_ma;
 		vector<TH1D*> vh_prl_ma;
+		// previous method:
+		// vector<TH1D*> vh_gcx_raw;
+		// vector<TH1D*> vh_prl_raw;
 		double xmin = 0.0;
 		double xmax = 0.0;
 		bool is_first = true;
@@ -515,14 +639,24 @@ int main(){
 			int itag = vitag.at(i);
 			TH1 *h_gcx = dynamic_cast<TH1*>(f_gcx->Get(Form("hflux_t_ene%02d", itag)));
 			TH1 *h_prl = dynamic_cast<TH1*>(f_prl->Get(Form("hfluxt_ene%02d", itag)));
-			TH1D *h_gcx_ma = BUILD_MOVING_AVERAGE(h_gcx,
+			// previous method:
+			// TH1D *h_gcx_ma = BUILD_MOVING_AVERAGE(h_gcx,
+			// 		Form("hgcx_ma_%s_src%02d", vmerge_tag.at(imerge).Data(), itag),
+			// 		xmin, xmax);
+			// TH1D *h_prl_ma = BUILD_MOVING_AVERAGE(h_prl,
+			// 		Form("hprl_ma_%s_src%02d", vmerge_tag.at(imerge).Data(), itag),
+			// 		xmin, xmax);
+			TH1D *h_gcx_ma = nullptr;
+			TH1D *h_prl_ma = nullptr;
+			BUILD_PAIR_MOVING_AVERAGE_EQUAL(h_gcx, h_prl, h_gcx_ma, h_prl_ma,
 					Form("hgcx_ma_%s_src%02d", vmerge_tag.at(imerge).Data(), itag),
-					xmin, xmax);
-			TH1D *h_prl_ma = BUILD_MOVING_AVERAGE(h_prl,
 					Form("hprl_ma_%s_src%02d", vmerge_tag.at(imerge).Data(), itag),
 					xmin, xmax);
 			vh_gcx_ma.push_back(h_gcx_ma);
 			vh_prl_ma.push_back(h_prl_ma);
+			// previous method:
+			// vh_gcx_raw.push_back(dynamic_cast<TH1D*>(h_gcx));
+			// vh_prl_raw.push_back(dynamic_cast<TH1D*>(h_prl));
 		}
 
 		TString htitle = Form("flux time, %g to %g GeV",
@@ -532,9 +666,25 @@ int main(){
 				"hgcx_ma_" + vmerge_tag.at(imerge), htitle);
 		TH1D *h_prl_merge = BUILD_EWIDTH_AVERAGE(vh_prl_ma, vitag,
 				"hprl_ma_" + vmerge_tag.at(imerge), htitle);
+		// previous method:
+		// TH1D *h_gcx_merge_raw = BUILD_EWIDTH_AVERAGE(vh_gcx_raw, vitag,
+		// 		"hgcx_raw_" + vmerge_tag.at(imerge), htitle);
+		// TH1D *h_prl_merge_raw = BUILD_EWIDTH_AVERAGE(vh_prl_raw, vitag,
+		// 		"hprl_raw_" + vmerge_tag.at(imerge), htitle);
+		// TH1D *hratio = BUILD_RATIO_MOVING_AVERAGE(h_gcx_merge_raw, h_prl_merge_raw,
+		// 		"hratio_" + vmerge_tag.at(imerge), xmin, xmax);
+		TH1D *hratio = BUILD_RATIO(h_gcx_merge, h_prl_merge,
+				"hratio_" + vmerge_tag.at(imerge), xmin, xmax);
 
-		if(!DRAW_COMPARE(fout, h_gcx_merge, h_prl_merge, vmerge_tag.at(imerge),
+		// old method:
+		// if(!DRAW_COMPARE(fout, h_gcx_merge, h_prl_merge, vmerge_tag.at(imerge),
+		// 			"flux_compare_" + vmerge_tag.at(imerge), xmin, xmax, outdir)){
+		if(!DRAW_COMPARE(fout, h_gcx_merge, h_prl_merge, hratio, vmerge_tag.at(imerge),
 					"flux_compare_" + vmerge_tag.at(imerge), xmin, xmax, outdir)){
+			// previous method:
+			// delete h_gcx_merge_raw;
+			// delete h_prl_merge_raw;
+			delete hratio;
 			return 4;
 		}
 
@@ -547,6 +697,9 @@ int main(){
 
 		delete h_gcx_merge;
 		delete h_prl_merge;
+		// previous method:
+		// delete h_gcx_merge_raw;
+		// delete h_prl_merge_raw;
 		for(size_t i=0; i<vh_gcx_ma.size(); i++){
 			delete vh_gcx_ma.at(i);
 			delete vh_prl_ma.at(i);
