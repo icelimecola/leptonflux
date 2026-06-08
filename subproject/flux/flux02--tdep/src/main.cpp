@@ -458,7 +458,7 @@ int CALC_Flux(const fluxconf &conf){
     vector<SeleffItem> seleff_items;
     seleff_items.push_back({"tof",   "seleff/hene_tofeff.root",   "hratio", "hseleff_tof_ene",   true });
     seleff_items.push_back({"trd",   "seleff/hene_trdeff.root",   "hratio", "hseleff_trd_ene",   false});
-    seleff_items.push_back({"trk",   "seleff/hene_trkeff.root",   "hratio", "hseleff_trk_ene",   true });
+    seleff_items.push_back({"trk",   "seleff/hene_trkeff.root",   "hratio", "hseleff_trk_ene",   false });
     seleff_items.push_back({"ecal",  "seleff/hene_ecaleff.root",  "hratio", "hseleff_ecal_ene",  true });
     seleff_items.push_back({"pat",   "seleff/hene_pateff.root",   "hratio", "hseleff_pat_ene",   true });
     seleff_items.push_back({"match", "seleff/hene_matcheff.root", "hratio", "hseleff_match_ene", true });
@@ -709,45 +709,46 @@ int CALC_Flux(const fluxconf &conf){
             <<endl;
 
         f_out->cd();
-        // hnum_pos_measure->Write();
-        // hnum_ele_measure->Write();
-        // hnumcorr->Write();
-        // hnum->Write();
-        // hexps->Write();
-        // htrdeff_time->Write();
-        // hflux_noacc->Write();
+        hnum_pos_measure->Write();
+        hnum_ele_measure->Write();
+        hnumcorr->Write();
+        hnum->Write();
+        hexps->Write();
+        htrdeff_time->Write();
+        hflux_noacc->Write();
         hcnt_rate->Write();
-        // hflux->Write();
-        // hnum_pos_measure_27d->Write();
-        // hnum_ele_measure_27d->Write();
-        // hnumcorr_27d->Write();
-        // hnum_27d->Write();
-        // hexps_27d->Write();
-        // htrdeff_time_27d->Write();
-        // hflux_noacc_27d->Write();
-        // hflux_27d->Write();
+        hflux->Write();
+        hnum_pos_measure_27d->Write();
+        hnum_ele_measure_27d->Write();
+        hnumcorr_27d->Write();
+        hnum_27d->Write();
+        hexps_27d->Write();
+        htrdeff_time_27d->Write();
+        hflux_noacc_27d->Write();
+        hflux_27d->Write();
 
-        // if(!DRAW_FluxTime(conf, ie, hflux, f_out)){
-        // if(!DRAW_FluxTime(conf, ie, hcnt_rate, f_out)){
-        //     delete hnum_pos_measure;
-        //     delete hnum_ele_measure;
-        //     delete hnumcorr;
-        //     delete hnum;
-        //     delete hexps;
-        //     delete htrdeff_time;
-        //     delete hflux_noacc;
-        //     delete hcnt_rate;
-        //     delete hflux;
-        //     delete hnum_pos_measure_27d;
-        //     delete hnum_ele_measure_27d;
-        //     delete hnumcorr_27d;
-        //     delete hnum_27d;
-        //     delete hexps_27d;
-        //     delete htrdeff_time_27d;
-        //     delete hflux_noacc_27d;
-        //     delete hflux_27d;
-        //     return 1;
-        // }
+        if(!DRAW_FluxTime(conf, ie, hflux, f_out)){
+        if(!DRAW_FluxTime(conf, ie, hcnt_rate, f_out)){
+            delete hnum_pos_measure;
+            delete hnum_ele_measure;
+            delete hnumcorr;
+            delete hnum;
+            delete hexps;
+            delete htrdeff_time;
+            delete hflux_noacc;
+            delete hcnt_rate;
+            delete hflux;
+            delete hnum_pos_measure_27d;
+            delete hnum_ele_measure_27d;
+            delete hnumcorr_27d;
+            delete hnum_27d;
+            delete hexps_27d;
+            delete htrdeff_time_27d;
+            delete hflux_noacc_27d;
+            delete hflux_27d;
+            return 1;
+        }
+        }
 
         delete hnum_pos_measure;
         delete hnum_ele_measure;
@@ -769,15 +770,15 @@ int CALC_Flux(const fluxconf &conf){
     }
 
     f_out->cd();
-    // h_acc->Write("hacc_cut15");
-    // h_cc->Write("hcc_ene");
-    // dynamic_cast<TH1*>(f_trig->Get("hene_iss"))->Write("htrig_ene");
-    // hseleff_total_input->Write();
-    // hseleff_total_manual->Write();
-    // for(size_t ieff=0; ieff<vhseleff_out.size(); ieff++){
-    //     vhseleff_out[ieff]->Write();
-    // }
-    // f_out->Write();
+    h_acc->Write("hacc_cut15");
+    h_cc->Write("hcc_ene");
+    dynamic_cast<TH1*>(f_trig->Get("hene_iss"))->Write("htrig_ene");
+    hseleff_total_input->Write();
+    hseleff_total_manual->Write();
+    for(size_t ieff=0; ieff<vhseleff_out.size(); ieff++){
+        vhseleff_out[ieff]->Write();
+    }
+    f_out->Write();
     f_out->Close();
 
     delete hseleff_total_input;
