@@ -34,8 +34,8 @@ class ExpsHist:virtual public VarMinitree{
 		TH2D *h2exp_ts05_TvE[nsf];
 		TH1D *h1exp_st_E[nfov][nsf];
 		TH1D *h1exp_igrf_E[nfov][nsf];
-		TH1D *h1exp_st_Efine[nfov][nsf];
-		TH1D *h1exp_igrf_Efine[nfov][nsf];
+		// TH1D *h1exp_st_Efine[nfov][nsf];
+		// TH1D *h1exp_igrf_Efine[nfov][nsf];
 		TH1D *h1exp_st_T[nfov][nsf][nenebin];
 		TH1D *h1exp_igrf_T[nfov][nsf][nenebin];
 		//---- func
@@ -154,10 +154,10 @@ void ExpsHist::HIST_FillExps_TvE(){
 				nenebin, energy_bins);
 			h1exp_igrf_E[ifov][isf] = new TH1D( Form("h1exp_igrf_E_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_igrf_E_fov%g_sf%g", fov[ifov], factor[isf]), 
 				nenebin, energy_bins);
-			h1exp_st_Efine[ifov][isf] = new TH1D( Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf]), 
-				nenebin_fine, energy_bins_fine);
-			h1exp_igrf_Efine[ifov][isf] = new TH1D( Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf]), 
-				nenebin_fine, energy_bins_fine);
+			// h1exp_st_Efine[ifov][isf] = new TH1D( Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_st_Efine_fov%g_sf%g", fov[ifov], factor[isf]), 
+			// 	nenebin_fine, energy_bins_fine);
+			// h1exp_igrf_Efine[ifov][isf] = new TH1D( Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf]), Form("h1exp_igrf_Efine_fov%g_sf%g", fov[ifov], factor[isf]), 
+			// 	nenebin_fine, energy_bins_fine);
 		}
 		}
 		//====h1t

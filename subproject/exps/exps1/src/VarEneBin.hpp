@@ -188,7 +188,7 @@ class VarEneBin{
         //     13.0, 16.6, 22.8, 41.9, 45.10
         // };
         //---- 260527 positron2
-        // int nenebin = 60;
+        // static const int nenebin = 60;
         // double *energy_bins = new double[nenebin+1]{
         //     0.80, 1.00, 1.16, 1.33, 1.51,
         //     1.71, 1.92, 2.15, 2.40, 2.67,
@@ -205,7 +205,7 @@ class VarEneBin{
         //     3300
         // };
         //---- 260608 electron1
-        int nenebin = 42;
+        static const int nenebin = 42;
         double *energy_bins = new double[nenebin+1]{
             0.80, 1, 1.16, 1.33, 1.51,
             1.71, 1.92, 2.15, 2.40, 2.67,
@@ -218,7 +218,7 @@ class VarEneBin{
             38.90, 41.90, 45.10
         };
         //---- 260608 electron2
-        // int nenebin = 73;
+        // static const int nenebin = 73;
         // double *energy_bins = new double[nenebin+1]{
         //     0.80, 1, 1.16, 1.33, 1.51,
         //     1.71, 1.92, 2.15, 2.40, 2.67,
