@@ -309,8 +309,8 @@ void ExpsHist::EXPSHIST_AddHist_dayVSene(vector<TString> fullfilename_vector,int
         for(int ifov=0;ifov<nfov;ifov++){
         for(int isf=0;isf<nsf;isf++){
         for(int iene=0;iene<nenebin;iene++){
-            h1exp_st_T[ifov][isf][iene]->Add((TH1D*)ins_filein->Get(Form("h1t/sf%g/h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", factor[isf], fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1])));
-            h1exp_igrf_T[ifov][isf][iene]->Add((TH1D*)ins_filein->Get(Form("h1t/sf%g/h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", factor[isf], fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1])));
+            h1exp_st_T[ifov][isf][iene]->Add((TH1D*)ins_filein->Get(Form("h1t/st/sf%g/h1exp_st_T_fov%g_sf%g_ene%gto%gGeV", factor[isf], fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1])));
+            h1exp_igrf_T[ifov][isf][iene]->Add((TH1D*)ins_filein->Get(Form("h1t/igrf/sf%g/h1exp_igrf_T_fov%g_sf%g_ene%gto%gGeV", factor[isf], fov[ifov], factor[isf],energy_bins[iene],energy_bins[iene+1])));
         }
         }
         }
@@ -351,17 +351,26 @@ void ExpsHist::EXPSHIST_WriteHist_dayVSene(){
     }
 	}
 	//====save--h1t
-        dir_top->cd();
-        TDirectory *dir_h1t = dir_top->GetDirectory("h1t");
-        if( !dir_h1t ) dir_h1t = dir_top->mkdir("h1t");
+	dir_top->cd();
+    TDirectory *dir_h1t = dir_top->GetDirectory("h1t");
+    if( !dir_h1t ) dir_h1t = dir_top->mkdir("h1t");
+	TDirectory *dir_h1t_st = dir_h1t->GetDirectory("st");
+	if( !dir_h1t_st ) dir_h1t_st = dir_h1t->mkdir("st");
+	TDirectory *dir_h1t_igrf = dir_h1t->GetDirectory("igrf");
+	if( !dir_h1t_igrf ) dir_h1t_igrf = dir_h1t->mkdir("igrf");
 	for(int ifov=0;ifov<nfov;ifov++){
     for(int isf=0;isf<nsf;isf++){
-            TDirectory *dir_sf = dir_h1t->GetDirectory(Form("sf%g", factor[isf]));
-            if( !dir_sf ) dir_sf = dir_h1t->mkdir(Form("sf%g", factor[isf]));
-            dir_sf->cd();
+		TDirectory *dir_st_sf = dir_h1t_st->GetDirectory(Form("sf%g", factor[isf]));
+		if( !dir_st_sf ) dir_st_sf = dir_h1t_st->mkdir(Form("sf%g", factor[isf]));
+		TDirectory *dir_igrf_sf = dir_h1t_igrf->GetDirectory(Form("sf%g", factor[isf]));
+		if( !dir_igrf_sf ) dir_igrf_sf = dir_h1t_igrf->mkdir(Form("sf%g", factor[isf]));
     for(int iene=0;iene<nenebin;iene++){
         if(h1exp_st_T[ifov][isf][iene]){
+			dir_st_sf->cd();
             h1exp_st_T[ifov][isf][iene]->Write();
+		}
+		if(h1exp_igrf_T[ifov][isf][iene]){
+			dir_igrf_sf->cd();
             h1exp_igrf_T[ifov][isf][iene]->Write();
         }
     }
