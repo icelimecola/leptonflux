@@ -47,6 +47,60 @@ TString FORMAT_ENE(double x){
 	return s;
 }
 
+bool HAS_NONZERO_HIST(TH1 *h){
+	if(h == nullptr) return false;
+	for(int ibin=1; ibin<=h->GetNbinsX(); ibin++){
+		if(h->GetBinContent(ibin) != 0.0) return true;
+		if(h->GetBinError(ibin) != 0.0) return true;
+	}
+	return false;
+}
+
+TString BUILD_GCX_EXPS_HNAME(int itag){
+	TString hname = Form("h1t/igrf/sf1/h1exp_igrf_T_fov25_sf1_ene%sto%sGeV",
+			FORMAT_ENE(energy_bins[itag]).Data(),
+			FORMAT_ENE(energy_bins[itag + 1]).Data());
+	return hname;
+}
+
+int FIND_LAST_NONZERO_TH2_ENEBIN(TH2 *h2){
+	if(h2 == nullptr) return 0;
+
+	int imax = min(nenebin, h2->GetNbinsY());
+	for(int itag=imax; itag>=1; itag--){
+		for(int ibin=1; ibin<=h2->GetNbinsX(); ibin++){
+			if(h2->GetBinContent(ibin, itag) != 0.0) return itag;
+			if(h2->GetBinError(ibin, itag) != 0.0) return itag;
+		}
+	}
+
+	return 0;
+}
+
+int FIND_LAST_NONZERO_GCX_FLUX_ENEBIN(TFile *f_gcx){
+	if(f_gcx == nullptr) return 0;
+
+	for(int itag=nenebin; itag>=1; itag--){
+		TString hname = Form("hflux_t_ene%02d", itag);
+		TH1D *h = dynamic_cast<TH1D*>(f_gcx->Get(hname));
+		if(HAS_NONZERO_HIST(h)) return itag;
+	}
+
+	return 0;
+}
+
+int FIND_LAST_NONZERO_GCX_EXPS_ENEBIN(TFile *f_gcx_exps){
+	if(f_gcx_exps == nullptr) return 0;
+
+	for(int itag=nenebin; itag>=1; itag--){
+		TString hname = BUILD_GCX_EXPS_HNAME(itag);
+		TH1D *h = dynamic_cast<TH1D*>(f_gcx_exps->Get(hname));
+		if(HAS_NONZERO_HIST(h)) return itag;
+	}
+
+	return 0;
+}
+
 double GET_HMAX(TH1 *h, double xmin, double xmax){
 	double hmax = 0.0;
 
@@ -611,8 +665,31 @@ int main(){
 		<<" ny="<<h2_tsu_exps->GetNbinsY()<<endl
 		<<endl;
 
+	int last_gcx_ene = FIND_LAST_NONZERO_GCX_FLUX_ENEBIN(f_gcx);
+	int last_tsu_ene = FIND_LAST_NONZERO_TH2_ENEBIN(h2_tsu);
+	int last_gcx_exps_ene = FIND_LAST_NONZERO_GCX_EXPS_ENEBIN(f_gcx_exps);
+	int last_tsu_exps_ene = FIND_LAST_NONZERO_TH2_ENEBIN(h2_tsu_exps);
+	int last_ene = min(nenebin, min(min(last_gcx_ene, last_tsu_ene), min(last_gcx_exps_ene, last_tsu_exps_ene)));
+	if(last_ene <= 0){
+		cerr<<"ERR MAIN ===== no common nonzero ene bin"
+			<<" last_gcx_ene="<<last_gcx_ene
+			<<" last_tsu_ene="<<last_tsu_ene
+			<<" last_gcx_exps_ene="<<last_gcx_exps_ene
+			<<" last_tsu_exps_ene="<<last_tsu_exps_ene
+			<<endl;
+		return 2;
+	}
+	cout<<"IN MAIN ===== ene loop"
+		<<" last_gcx_ene="<<last_gcx_ene
+		<<" last_tsu_ene="<<last_tsu_ene
+		<<" last_gcx_exps_ene="<<last_gcx_exps_ene
+		<<" last_tsu_exps_ene="<<last_tsu_exps_ene
+		<<" last_ene="<<last_ene
+		<<endl
+		<<endl;
+
 	// for(int itag=1; itag<=27; itag++){
-	for(int itag=1; itag<=nenebin; itag++){
+	for(int itag=1; itag<=last_ene; itag++){
 		TString hname_gcx = Form("hflux_t_ene%02d", itag);
 		TH1D *h_gcx = dynamic_cast<TH1D*>(f_gcx->Get(hname_gcx));
 		if(h_gcx == nullptr){
@@ -620,22 +697,19 @@ int main(){
 				<<" itag="<<itag
 				<<" hname="<<hname_gcx
 				<<endl;
-			return 2;
+			return 3;
 		}
 
 		TH1D *h_tsu_raw = BUILD_TSU_PROJECTION(h2_tsu, itag);
 		TH1D *h_tsu = BUILD_ON_REF_TIME_AXIS(h_gcx, h_tsu_raw, Form("htsu_aligned_ene%02d", itag));
-		// TString hname_gcx_exps = Form("h1t/sf1/h1exp_igrf_T_fov25_sf1_ene%sto%sGeV",
-		TString hname_gcx_exps = Form("h1t/igrf/sf1/h1exp_igrf_T_fov25_sf1_ene%sto%sGeV",
-				FORMAT_ENE(energy_bins[itag]).Data(),
-				FORMAT_ENE(energy_bins[itag + 1]).Data());
+		TString hname_gcx_exps = BUILD_GCX_EXPS_HNAME(itag);
 		TH1D *h_gcx_exps_raw = dynamic_cast<TH1D*>(f_gcx_exps->Get(hname_gcx_exps));
 		if(h_gcx_exps_raw == nullptr){
 			cerr<<"ERR MAIN ===== missing gcx exps hist"
 				<<" itag="<<itag
 				<<" hname="<<hname_gcx_exps
 				<<endl;
-			return 3;
+			return 4;
 		}
 		TH1D *h_tsu_exps_raw = BUILD_TSU_EXPS_PROJECTION(h2_tsu_exps, itag);
 		TH1D *h_gcx_exps = BUILD_ON_REF_TIME_AXIS(h_gcx, h_gcx_exps_raw, Form("hgcx_exps_aligned_ene%02d", itag));
@@ -647,7 +721,7 @@ int main(){
 			delete h_tsu_exps_raw;
 			delete h_gcx_exps;
 			delete h_tsu_exps;
-			return 4;
+			return 5;
 		}
 		delete h_tsu_raw;
 		delete h_tsu;
@@ -668,6 +742,14 @@ int main(){
 
 	for(size_t imerge=0; imerge<vmerge_itag.size(); imerge++){
 		vector<int> vitag = vmerge_itag.at(imerge);
+		if(vitag.back() > last_ene){
+			cerr<<"WARN MAIN ===== skip merge above common nonzero ene bin"
+				<<" tag="<<vmerge_tag.at(imerge)
+				<<" merge_last_ene="<<vitag.back()
+				<<" last_ene="<<last_ene
+				<<endl;
+			continue;
+		}
 		vector<TH1D*> vh_gcx_ma;
 		vector<TH1D*> vh_tsu_ma;
 		vector<TH1D*> vh_tmp;
@@ -685,15 +767,13 @@ int main(){
 					<<" itag="<<itag
 					<<" hname="<<hname_gcx
 					<<endl;
-				return 5;
+				return 6;
 			}
 
 			TH1D *h_tsu_raw = BUILD_TSU_PROJECTION(h2_tsu, itag);
 			TH1D *h_tsu = BUILD_ON_REF_TIME_AXIS(h_gcx, h_tsu_raw,
 					Form("htsu_merge_aligned_%s_ene%02d", vmerge_tag.at(imerge).Data(), itag));
-			TString hname_gcx_exps = Form("h1t/sf1/h1exp_igrf_T_fov25_sf1_ene%sto%sGeV",
-					FORMAT_ENE(energy_bins[itag]).Data(),
-					FORMAT_ENE(energy_bins[itag + 1]).Data());
+			TString hname_gcx_exps = BUILD_GCX_EXPS_HNAME(itag);
 			TH1D *h_gcx_exps_raw = dynamic_cast<TH1D*>(f_gcx_exps->Get(hname_gcx_exps));
 			if(h_gcx_exps_raw == nullptr){
 				cerr<<"ERR MAIN ===== missing merge gcx exps hist"
@@ -701,7 +781,7 @@ int main(){
 					<<" itag="<<itag
 					<<" hname="<<hname_gcx_exps
 					<<endl;
-				return 6;
+				return 7;
 			}
 			TH1D *h_tsu_exps_raw = BUILD_TSU_EXPS_PROJECTION(h2_tsu_exps, itag);
 			TH1D *h_gcx_exps = BUILD_ON_REF_TIME_AXIS(h_gcx, h_gcx_exps_raw,
@@ -716,7 +796,7 @@ int main(){
 					<<" tag="<<vmerge_tag.at(imerge)
 					<<" itag="<<itag
 					<<endl;
-				return 7;
+				return 8;
 			}
 			if(is_first){
 				xmin = xtmp_min;
@@ -749,7 +829,7 @@ int main(){
 				<<" xmin="<<xmin
 				<<" xmax="<<xmax
 				<<endl;
-			return 8;
+			return 9;
 		}
 
 		TString htitle = Form("flux time, %g to %g GeV",
@@ -760,7 +840,7 @@ int main(){
 		TH1D *h_tsu_merge = BUILD_EWIDTH_AVERAGE(vh_tsu_ma, vitag,
 				Form("htsu_ma_%s", vmerge_tag.at(imerge).Data()), htitle);
 		if(!DRAW_MERGE_PAIR(fout, h_gcx_merge, h_tsu_merge, vmerge_tag.at(imerge), outdir, xmin, xmax)){
-			return 9;
+			return 10;
 		}
 
 		delete h_gcx_merge;

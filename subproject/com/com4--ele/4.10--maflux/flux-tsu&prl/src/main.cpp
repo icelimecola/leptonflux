@@ -18,15 +18,52 @@ using namespace std;
 #include "TString.h"
 #include "TStyle.h"
 
-static const int nenebin = 29;
+//----positron
+// static const int nenebin = 29;
+// static const double energy_bins[nenebin + 1] = {
+// 	0.80, 1.00, 1.16, 1.33, 1.51,
+// 	1.71, 1.92, 2.15, 2.40, 2.67,
+// 	2.97, 3.29, 3.64, 4.02, 4.43,
+// 	4.88, 5.37, 5.90, 6.47, 7.09,
+// 	7.76, 8.48, 9.26, 10.10, 11.0,
+// 	13.0, 16.6, 22.8, 41.9, 45.10
+// };
+// ----electron
+static const int nenebin = 42;
 static const double energy_bins[nenebin + 1] = {
-	0.80, 1.00, 1.16, 1.33, 1.51,
+	0.80, 1, 1.16, 1.33, 1.51,
 	1.71, 1.92, 2.15, 2.40, 2.67,
 	2.97, 3.29, 3.64, 4.02, 4.43,
 	4.88, 5.37, 5.90, 6.47, 7.09,
-	7.76, 8.48, 9.26, 10.10, 11.0,
-	13.0, 16.6, 22.8, 41.9, 45.10
+	7.76, 8.48, 9.26, 10.10, 11,
+	12, 13, 14.10, 15.30, 16.60,
+	18, 19.50, 21.10, 22.80, 24.70,
+	26.70, 28.80, 31.10, 33.50, 36.10,
+	38.90, 41.90, 45.10
 };
+
+bool HAS_NONZERO_HIST(TH1 *h){
+	if(h == nullptr) return false;
+	for(int ibin=1; ibin<=h->GetNbinsX(); ibin++){
+		if(h->GetBinContent(ibin) != 0.0) return true;
+		if(h->GetBinError(ibin) != 0.0) return true;
+	}
+	return false;
+}
+
+int FIND_LAST_NONZERO_TH2_ENEBIN(TH2 *h2){
+	if(h2 == nullptr) return 0;
+
+	int imax = min(nenebin, h2->GetNbinsY());
+	for(int itag=imax; itag>=1; itag--){
+		for(int ibin=1; ibin<=h2->GetNbinsX(); ibin++){
+			if(h2->GetBinContent(ibin, itag) != 0.0) return itag;
+			if(h2->GetBinError(ibin, itag) != 0.0) return itag;
+		}
+	}
+
+	return 0;
+}
 
 double GET_HMAX(TH1 *h, double xmin, double xmax){
 	double hmax = 0.0;
@@ -367,8 +404,10 @@ bool DRAW_MERGE_PAIR(TFile *fout, TH1D *h_tsu, TH1D *h_prl,
 	hratio->GetYaxis()->SetLabelSize(0.085);
 	hratio->GetYaxis()->SetLabelOffset(0.012);
 	hratio->GetYaxis()->SetNdivisions(505);
-	hratio->SetMinimum(0.95);
-	hratio->SetMaximum(1.05);
+	// hratio->SetMinimum(0.95);
+	// hratio->SetMaximum(1.05);
+	hratio->SetMinimum(0.8);
+	hratio->SetMaximum(1.2);
 	STYLE_HIST(hratio, kBlack, 20);
 
 	TBox *box5 = new TBox(xmin, 0.97, xmax, 1.03);
@@ -509,8 +548,10 @@ bool DRAW_PAIR(TFile *fout, TH1 *h_tsu_in, TH1 *h_prl_in,
 	hratio->GetYaxis()->SetLabelSize(0.085);
 	hratio->GetYaxis()->SetLabelOffset(0.012);
 	hratio->GetYaxis()->SetNdivisions(505);
-	hratio->SetMinimum(is_ma ? 0.95 : 0.0);
-	hratio->SetMaximum(is_ma ? 1.05 : 2.0);
+	// hratio->SetMinimum(is_ma ? 0.95 : 0.0);
+	// hratio->SetMaximum(is_ma ? 1.05 : 2.0);
+	hratio->SetMinimum(is_ma ? 0.8 : 0.0);
+	hratio->SetMaximum(is_ma ? 1.2 : 2.0);
 	STYLE_HIST(hratio, kBlack, 20);
 
 	TBox *box5 = new TBox(xmin, 0.97, xmax, 1.03);
@@ -575,9 +616,11 @@ int main(){
 	TFile *fout = new TFile(outdir + "/flux_tsu_prl_compare.root", "recreate");
 
 	TH2D *h2_tsu = dynamic_cast<TH2D*>(f_tsu->Get("h2d_Flux_daily"));
-	TH2D *h2_prl = dynamic_cast<TH2D*>(f_prl->Get("hPosFluxDay"));
+	// TH2D *h2_prl = dynamic_cast<TH2D*>(f_prl->Get("hPosFluxDay"));
+	TH2D *h2_prl = dynamic_cast<TH2D*>(f_prl->Get("hflux"));
 	TH2D *h2_tsu_exps = dynamic_cast<TH2D*>(f_tsu->Get("h2d_exposure_daily"));
-	TH2D *h2_prl_exps = dynamic_cast<TH2D*>(f_prl->Get("hExpDay"));
+	// TH2D *h2_prl_exps = dynamic_cast<TH2D*>(f_prl->Get("hExpDay"));
+	TH2D *h2_prl_exps = dynamic_cast<TH2D*>(f_prl->Get("hexposure"));
 	if(h2_tsu == nullptr || h2_prl == nullptr || h2_tsu_exps == nullptr || h2_prl_exps == nullptr){
 		cerr<<"ERR MAIN ===== missing flux/exps daily hist"<<endl;
 		return 1;
@@ -603,7 +646,31 @@ int main(){
 		<<" ny="<<h2_prl_exps->GetNbinsY()<<endl
 		<<endl;
 
-	for(int itag=1; itag<=27; itag++){
+	int last_tsu_ene = FIND_LAST_NONZERO_TH2_ENEBIN(h2_tsu);
+	int last_prl_ene = FIND_LAST_NONZERO_TH2_ENEBIN(h2_prl);
+	int last_tsu_exps_ene = FIND_LAST_NONZERO_TH2_ENEBIN(h2_tsu_exps);
+	int last_prl_exps_ene = FIND_LAST_NONZERO_TH2_ENEBIN(h2_prl_exps);
+	int last_ene = min(nenebin, min(min(last_tsu_ene, last_prl_ene), min(last_tsu_exps_ene, last_prl_exps_ene)));
+	if(last_ene <= 0){
+		cerr<<"ERR MAIN ===== no common nonzero ene bin"
+			<<" last_tsu_ene="<<last_tsu_ene
+			<<" last_prl_ene="<<last_prl_ene
+			<<" last_tsu_exps_ene="<<last_tsu_exps_ene
+			<<" last_prl_exps_ene="<<last_prl_exps_ene
+			<<endl;
+		return 2;
+	}
+	cout<<"IN MAIN ===== ene loop"
+		<<" last_tsu_ene="<<last_tsu_ene
+		<<" last_prl_ene="<<last_prl_ene
+		<<" last_tsu_exps_ene="<<last_tsu_exps_ene
+		<<" last_prl_exps_ene="<<last_prl_exps_ene
+		<<" last_ene="<<last_ene
+		<<endl
+		<<endl;
+
+	// for(int itag=1; itag<=27; itag++){
+	for(int itag=1; itag<=last_ene; itag++){
 		TH1D *h_tsu = BUILD_PROJECTION(h2_tsu, itag, "htsu");
 		TH1D *h_prl_raw = BUILD_PROJECTION(h2_prl, itag, "hprl");
 		TH1D *h_prl = BUILD_ON_REF_TIME_AXIS(h_tsu, h_prl_raw, Form("hprl_aligned_ene%02d", itag));
@@ -618,7 +685,7 @@ int main(){
 			delete h_tsu_exps;
 			delete h_prl_exps_raw;
 			delete h_prl_exps;
-			return 2;
+			return 3;
 		}
 		if(!DRAW_PAIR(fout, h_tsu, h_prl, h_tsu_exps, h_prl_exps, itag, outdir, true)){
 			delete h_tsu;
@@ -627,7 +694,7 @@ int main(){
 			delete h_tsu_exps;
 			delete h_prl_exps_raw;
 			delete h_prl_exps;
-			return 3;
+			return 4;
 		}
 
 		delete h_tsu;
@@ -650,6 +717,14 @@ int main(){
 
 	for(size_t imerge=0; imerge<vmerge_itag.size(); imerge++){
 		vector<int> vitag = vmerge_itag.at(imerge);
+		if(vitag.back() > last_ene){
+			cerr<<"WARN MAIN ===== skip merge above common nonzero ene bin"
+				<<" tag="<<vmerge_tag.at(imerge)
+				<<" merge_last_ene="<<vitag.back()
+				<<" last_ene="<<last_ene
+				<<endl;
+			continue;
+		}
 		vector<TH1D*> vh_tsu_ma;
 		vector<TH1D*> vh_prl_ma;
 		vector<TH1D*> vh_tmp;
@@ -677,7 +752,7 @@ int main(){
 					<<" tag="<<vmerge_tag.at(imerge)
 					<<" itag="<<itag
 					<<endl;
-				return 4;
+				return 5;
 			}
 			if(is_first){
 				xmin = xtmp_min;
@@ -711,7 +786,7 @@ int main(){
 				<<" xmin="<<xmin
 				<<" xmax="<<xmax
 				<<endl;
-			return 5;
+			return 6;
 		}
 
 		TString htitle = Form("flux time, %g to %g GeV",
@@ -722,7 +797,7 @@ int main(){
 		TH1D *h_prl_merge = BUILD_EWIDTH_AVERAGE(vh_prl_ma, vitag,
 				Form("hprl_ma_%s", vmerge_tag.at(imerge).Data()), htitle);
 		if(!DRAW_MERGE_PAIR(fout, h_tsu_merge, h_prl_merge, vmerge_tag.at(imerge), outdir, xmin, xmax)){
-			return 6;
+			return 7;
 		}
 
 		delete h_tsu_merge;

@@ -42,6 +42,65 @@ static const double energy_bins[nenebin + 1] = {
 	38.90, 41.90, 45.10
 };
 
+TString FORMAT_ENE(double x){
+	TString s = Form("%g", x);
+	return s;
+}
+
+bool HAS_NONZERO_HIST(TH1 *h){
+	if(h == nullptr) return false;
+	for(int ibin=1; ibin<=h->GetNbinsX(); ibin++){
+		if(h->GetBinContent(ibin) != 0.0) return true;
+		if(h->GetBinError(ibin) != 0.0) return true;
+	}
+	return false;
+}
+
+TString BUILD_GCX_EXPS_HNAME(int itag){
+	TString hname = Form("h1t/igrf/sf1/h1exp_igrf_T_fov25_sf1_ene%sto%sGeV",
+			FORMAT_ENE(energy_bins[itag]).Data(),
+			FORMAT_ENE(energy_bins[itag + 1]).Data());
+	return hname;
+}
+
+int FIND_LAST_NONZERO_TH2_ENEBIN(TH2 *h2){
+	if(h2 == nullptr) return 0;
+
+	int imax = min(nenebin, h2->GetNbinsY());
+	for(int itag=imax; itag>=1; itag--){
+		for(int ibin=1; ibin<=h2->GetNbinsX(); ibin++){
+			if(h2->GetBinContent(ibin, itag) != 0.0) return itag;
+			if(h2->GetBinError(ibin, itag) != 0.0) return itag;
+		}
+	}
+
+	return 0;
+}
+
+int FIND_LAST_NONZERO_GCX_FLUX_ENEBIN(TFile *f_gcx){
+	if(f_gcx == nullptr) return 0;
+
+	for(int itag=nenebin; itag>=1; itag--){
+		TString hname = Form("hflux_t_ene%02d", itag);
+		TH1D *h = dynamic_cast<TH1D*>(f_gcx->Get(hname));
+		if(HAS_NONZERO_HIST(h)) return itag;
+	}
+
+	return 0;
+}
+
+int FIND_LAST_NONZERO_GCX_EXPS_ENEBIN(TFile *f_gcx_exps){
+	if(f_gcx_exps == nullptr) return 0;
+
+	for(int itag=nenebin; itag>=1; itag--){
+		TString hname = BUILD_GCX_EXPS_HNAME(itag);
+		TH1D *h = dynamic_cast<TH1D*>(f_gcx_exps->Get(hname));
+		if(HAS_NONZERO_HIST(h)) return itag;
+	}
+
+	return 0;
+}
+
 double GET_HMAX(TH1 *h, double xmin, double xmax){
 	double hmax = 0.0;
 
@@ -85,7 +144,8 @@ TH1D *BUILD_RATIO(TH1 *h_gcx, TH1 *h_prl, const TString &hname, double xmin, dou
 	return hratio;
 }
 
-void BUILD_PAIR_MOVING_AVERAGE_EQUAL(TH1 *h_gcx, TH1 *h_prl,
+void BUILD_PAIR_MOVING_AVERAGE_EXPS(TH1 *h_gcx, TH1 *h_prl,
+		TH1 *h_gcx_exps, TH1 *h_prl_exps,
 		TH1D *&h_gcx_ma, TH1D *&h_prl_ma,
 		const TString &hname_gcx, const TString &hname_prl,
 		double xmin, double xmax){
@@ -112,30 +172,48 @@ void BUILD_PAIR_MOVING_AVERAGE_EQUAL(TH1 *h_gcx, TH1 *h_prl,
 		if(jmin < 1) jmin = 1;
 		if(jmax > nbin) jmax = nbin;
 
-		double sum_gcx = 0.0;
-		double sum_prl = 0.0;
+		double sum_gcx_yw = 0.0;
+		double sum_prl_yw = 0.0;
+		double sum_gcx_w = 0.0;
+		double sum_prl_w = 0.0;
 		int nsum = 0;
 		for(int jbin=jmin; jbin<=jmax; jbin++){
 			double xj = h_gcx->GetBinCenter(jbin);
 			if(xj < xmin || xj > xmax) continue;
 			double y_gcx = h_gcx->GetBinContent(jbin);
 			double y_prl = h_prl->GetBinContent(jbin);
+			double w_gcx = h_gcx_exps->GetBinContent(jbin);
+			double w_prl = h_prl_exps->GetBinContent(jbin);
 			if(y_gcx == 0.0 || y_prl == 0.0) continue;
-			sum_gcx += y_gcx;
-			sum_prl += y_prl;
+			if(w_gcx <= 0.0 || w_prl <= 0.0) continue;
+			sum_gcx_yw += y_gcx * w_gcx;
+			sum_prl_yw += y_prl * w_prl;
+			sum_gcx_w += w_gcx;
+			sum_prl_w += w_prl;
 			nsum++;
+
+			// Previous equal-weight version kept for comparison:
+			// sum_gcx += y_gcx;
+			// sum_prl += y_prl;
+			// nsum++;
 		}
 		if(nsum <= 0) continue;
+		if(sum_gcx_w <= 0.0 || sum_prl_w <= 0.0) continue;
 
-		h_gcx_ma->SetBinContent(ibin, sum_gcx / nsum);
-		h_prl_ma->SetBinContent(ibin, sum_prl / nsum);
+		h_gcx_ma->SetBinContent(ibin, sum_gcx_yw / sum_gcx_w);
+		h_prl_ma->SetBinContent(ibin, sum_prl_yw / sum_prl_w);
 		h_gcx_ma->SetBinError(ibin, 0.0);
 		h_prl_ma->SetBinError(ibin, 0.0);
+
+		// Previous equal-weight output kept for comparison:
+		// h_gcx_ma->SetBinContent(ibin, sum_gcx / nsum);
+		// h_prl_ma->SetBinContent(ibin, sum_prl / nsum);
 	}
 
-	cout<<"======== clac pair ma equal ======== "<<endl
+	cout<<"======== clac pair ma exps ======== "<<endl
 		<<"hname_gcx="<<hname_gcx<<endl
 		<<"hname_prl="<<hname_prl<<endl
+		<<"weight=exps"<<endl
 		<<"nside="<<nside<<endl
 		<<"nbin="<<nbin<<endl
 		<<"xmin="<<xmin<<endl
@@ -362,8 +440,10 @@ bool DRAW_MERGE_PAIR(TFile *fout, TH1D *h_gcx, TH1D *h_prl,
 	hratio->GetYaxis()->SetLabelSize(0.085);
 	hratio->GetYaxis()->SetLabelOffset(0.012);
 	hratio->GetYaxis()->SetNdivisions(505);
-	hratio->SetMinimum(0.95);
-	hratio->SetMaximum(1.05);
+	// hratio->SetMinimum(0.95);
+	// hratio->SetMaximum(1.05);
+	hratio->SetMinimum(0.8);
+	hratio->SetMaximum(1.2);
 	STYLE_HIST(hratio, kBlack, 20);
 
 	TBox *box5 = new TBox(xmin, 0.97, xmax, 1.03);
@@ -409,6 +489,7 @@ bool DRAW_MERGE_PAIR(TFile *fout, TH1D *h_gcx, TH1D *h_prl,
 }
 
 bool DRAW_PAIR(TFile *fout, TH1 *h_gcx_in, TH1 *h_prl_in,
+		TH1 *h_gcx_exps_in, TH1 *h_prl_exps_in,
 		int itag, const TString &outdir, bool is_ma){
 	double xmin = 0.0;
 	double xmax = 0.0;
@@ -423,7 +504,8 @@ bool DRAW_PAIR(TFile *fout, TH1 *h_gcx_in, TH1 *h_prl_in,
 	if(is_ma){
 		TH1D *h_gcx_ma = nullptr;
 		TH1D *h_prl_ma = nullptr;
-		BUILD_PAIR_MOVING_AVERAGE_EQUAL(h_gcx_in, h_prl_in, h_gcx_ma, h_prl_ma,
+		BUILD_PAIR_MOVING_AVERAGE_EXPS(h_gcx_in, h_prl_in,
+				h_gcx_exps_in, h_prl_exps_in, h_gcx_ma, h_prl_ma,
 				Form("hgcx_ma_ene%02d", itag), Form("hprl_ma_ene%02d", itag),
 				xmin, xmax);
 		h_gcx = h_gcx_ma;
@@ -502,8 +584,10 @@ bool DRAW_PAIR(TFile *fout, TH1 *h_gcx_in, TH1 *h_prl_in,
 	hratio->GetYaxis()->SetLabelSize(0.085);
 	hratio->GetYaxis()->SetLabelOffset(0.012);
 	hratio->GetYaxis()->SetNdivisions(505);
-	hratio->SetMinimum(is_ma ? 0.95 : 0.0);
-	hratio->SetMaximum(is_ma ? 1.05 : 2.0);
+	// hratio->SetMinimum(is_ma ? 0.95 : 0.0);
+	// hratio->SetMaximum(is_ma ? 1.05 : 2.0);
+	hratio->SetMinimum(is_ma ? 0.8 : 0.0);
+	hratio->SetMaximum(is_ma ? 1.2 : 2.0);
 	STYLE_HIST(hratio, kBlack, 20);
 
 	TBox *box5 = new TBox(xmin, 0.97, xmax, 1.03);
@@ -560,30 +644,62 @@ int main(){
 	TGaxis::SetMaxDigits(3);
 
 	TString fpath_gcx = "datain/hflux_gcx.root";
+	TString fpath_gcx_exps = "../flux-gcx&tsu/datain/hflux_gcx/hexps_gcx.root";
 	TString fpath_prl = "datain/hflux_prl.root";
 	TString outdir = "dataout";
 
 	TFile *f_gcx = new TFile(fpath_gcx, "read");
+	TFile *f_gcx_exps = new TFile(fpath_gcx_exps, "read");
 	TFile *f_prl = new TFile(fpath_prl, "read");
 	TFile *fout = new TFile(outdir + "/flux_gcx_prl_compare.root", "recreate");
 
 	// TH2D *h2_prl = dynamic_cast<TH2D*>(f_prl->Get("hPosFluxDay"));
 	TH2D *h2_prl = dynamic_cast<TH2D*>(f_prl->Get("hflux"));
-	if(h2_prl == nullptr){
-		cerr<<"ERR MAIN ===== missing hPosFluxDay"<<endl;
+	// TH2D *h2_prl_exps = dynamic_cast<TH2D*>(f_prl->Get("hExpDay"));
+	TH2D *h2_prl_exps = dynamic_cast<TH2D*>(f_prl->Get("hexposure"));
+	if(h2_prl == nullptr || h2_prl_exps == nullptr){
+		cerr<<"ERR MAIN ===== missing prl flux/exps daily hist"<<endl;
 		return 1;
 	}
 
 	cout<<"IN MAIN ===== input gcx: "<<fpath_gcx<<endl
+		<<"IN MAIN ===== input gcx exps: "<<fpath_gcx_exps<<endl
 		<<"IN MAIN ===== input prl: "<<fpath_prl<<endl
 		<<"IN MAIN ===== prl hist: "<<h2_prl->GetName()
 		<<" class="<<h2_prl->ClassName()
 		<<" nx="<<h2_prl->GetNbinsX()
 		<<" ny="<<h2_prl->GetNbinsY()<<endl
+		<<"IN MAIN ===== prl exps hist: "<<h2_prl_exps->GetName()
+		<<" class="<<h2_prl_exps->ClassName()
+		<<" nx="<<h2_prl_exps->GetNbinsX()
+		<<" ny="<<h2_prl_exps->GetNbinsY()<<endl
+		<<endl;
+
+	int last_gcx_ene = FIND_LAST_NONZERO_GCX_FLUX_ENEBIN(f_gcx);
+	int last_prl_ene = FIND_LAST_NONZERO_TH2_ENEBIN(h2_prl);
+	int last_gcx_exps_ene = FIND_LAST_NONZERO_GCX_EXPS_ENEBIN(f_gcx_exps);
+	int last_prl_exps_ene = FIND_LAST_NONZERO_TH2_ENEBIN(h2_prl_exps);
+	int last_ene = min(nenebin, min(min(last_gcx_ene, last_prl_ene), min(last_gcx_exps_ene, last_prl_exps_ene)));
+	if(last_ene <= 0){
+		cerr<<"ERR MAIN ===== no common nonzero ene bin"
+			<<" last_gcx_ene="<<last_gcx_ene
+			<<" last_prl_ene="<<last_prl_ene
+			<<" last_gcx_exps_ene="<<last_gcx_exps_ene
+			<<" last_prl_exps_ene="<<last_prl_exps_ene
+			<<endl;
+		return 2;
+	}
+	cout<<"IN MAIN ===== ene loop"
+		<<" last_gcx_ene="<<last_gcx_ene
+		<<" last_prl_ene="<<last_prl_ene
+		<<" last_gcx_exps_ene="<<last_gcx_exps_ene
+		<<" last_prl_exps_ene="<<last_prl_exps_ene
+		<<" last_ene="<<last_ene
+		<<endl
 		<<endl;
 
 	// for(int itag=1; itag<=27; itag++){
-	for(int itag=1; itag<=nenebin; itag++){
+	for(int itag=1; itag<=last_ene; itag++){
 		TString hname_gcx = Form("hflux_t_ene%02d", itag);
 		TH1D *h_gcx = dynamic_cast<TH1D*>(f_gcx->Get(hname_gcx));
 		if(h_gcx == nullptr){
@@ -591,25 +707,46 @@ int main(){
 				<<" itag="<<itag
 				<<" hname="<<hname_gcx
 				<<endl;
-			return 2;
+			return 3;
 		}
 
 		TH1D *h_prl_raw = BUILD_PROJECTION(h2_prl, itag, "hprl");
 		TH1D *h_prl = BUILD_ON_REF_TIME_AXIS(h_gcx, h_prl_raw, Form("hprl_aligned_ene%02d", itag));
-
-		if(!DRAW_PAIR(fout, h_gcx, h_prl, itag, outdir, false)){
-			delete h_prl_raw;
-			delete h_prl;
-			return 3;
-		}
-		if(!DRAW_PAIR(fout, h_gcx, h_prl, itag, outdir, true)){
-			delete h_prl_raw;
-			delete h_prl;
+		TString hname_gcx_exps = BUILD_GCX_EXPS_HNAME(itag);
+		TH1D *h_gcx_exps_raw = dynamic_cast<TH1D*>(f_gcx_exps->Get(hname_gcx_exps));
+		if(h_gcx_exps_raw == nullptr){
+			cerr<<"ERR MAIN ===== missing gcx exps hist"
+				<<" itag="<<itag
+				<<" hname="<<hname_gcx_exps
+				<<endl;
 			return 4;
+		}
+		TH1D *h_prl_exps_raw = BUILD_PROJECTION(h2_prl_exps, itag, "hprl_exps");
+		TH1D *h_gcx_exps = BUILD_ON_REF_TIME_AXIS(h_gcx, h_gcx_exps_raw, Form("hgcx_exps_aligned_ene%02d", itag));
+		TH1D *h_prl_exps = BUILD_ON_REF_TIME_AXIS(h_gcx, h_prl_exps_raw, Form("hprl_exps_aligned_ene%02d", itag));
+
+		if(!DRAW_PAIR(fout, h_gcx, h_prl, h_gcx_exps, h_prl_exps, itag, outdir, false)){
+			delete h_prl_raw;
+			delete h_prl;
+			delete h_prl_exps_raw;
+			delete h_gcx_exps;
+			delete h_prl_exps;
+			return 5;
+		}
+		if(!DRAW_PAIR(fout, h_gcx, h_prl, h_gcx_exps, h_prl_exps, itag, outdir, true)){
+			delete h_prl_raw;
+			delete h_prl;
+			delete h_prl_exps_raw;
+			delete h_gcx_exps;
+			delete h_prl_exps;
+			return 6;
 		}
 
 		delete h_prl_raw;
 		delete h_prl;
+		delete h_prl_exps_raw;
+		delete h_gcx_exps;
+		delete h_prl_exps;
 	}
 
 	//======== enebin merge ========
@@ -624,6 +761,14 @@ int main(){
 
 	for(size_t imerge=0; imerge<vmerge_itag.size(); imerge++){
 		vector<int> vitag = vmerge_itag.at(imerge);
+		if(vitag.back() > last_ene){
+			cerr<<"WARN MAIN ===== skip merge above common nonzero ene bin"
+				<<" tag="<<vmerge_tag.at(imerge)
+				<<" merge_last_ene="<<vitag.back()
+				<<" last_ene="<<last_ene
+				<<endl;
+			continue;
+		}
 		vector<TH1D*> vh_gcx_ma;
 		vector<TH1D*> vh_prl_ma;
 		vector<TH1D*> vh_tmp;
@@ -641,12 +786,28 @@ int main(){
 					<<" itag="<<itag
 					<<" hname="<<hname_gcx
 					<<endl;
-				return 5;
+				return 7;
 			}
 
 			TH1D *h_prl_raw = BUILD_PROJECTION(h2_prl, itag, Form("hprl_merge_%s", vmerge_tag.at(imerge).Data()));
 			TH1D *h_prl = BUILD_ON_REF_TIME_AXIS(h_gcx, h_prl_raw,
 					Form("hprl_merge_aligned_%s_ene%02d", vmerge_tag.at(imerge).Data(), itag));
+			TString hname_gcx_exps = BUILD_GCX_EXPS_HNAME(itag);
+			TH1D *h_gcx_exps_raw = dynamic_cast<TH1D*>(f_gcx_exps->Get(hname_gcx_exps));
+			if(h_gcx_exps_raw == nullptr){
+				cerr<<"ERR MAIN ===== missing merge gcx exps hist"
+					<<" tag="<<vmerge_tag.at(imerge)
+					<<" itag="<<itag
+					<<" hname="<<hname_gcx_exps
+					<<endl;
+				return 8;
+			}
+			TH1D *h_prl_exps_raw = BUILD_PROJECTION(h2_prl_exps, itag,
+					Form("hprl_merge_exps_%s", vmerge_tag.at(imerge).Data()));
+			TH1D *h_gcx_exps = BUILD_ON_REF_TIME_AXIS(h_gcx, h_gcx_exps_raw,
+					Form("hgcx_merge_exps_aligned_%s_ene%02d", vmerge_tag.at(imerge).Data(), itag));
+			TH1D *h_prl_exps = BUILD_ON_REF_TIME_AXIS(h_gcx, h_prl_exps_raw,
+					Form("hprl_merge_exps_aligned_%s_ene%02d", vmerge_tag.at(imerge).Data(), itag));
 
 			double xtmp_min = 0.0;
 			double xtmp_max = 0.0;
@@ -655,7 +816,7 @@ int main(){
 					<<" tag="<<vmerge_tag.at(imerge)
 					<<" itag="<<itag
 					<<endl;
-				return 6;
+				return 9;
 			}
 			if(is_first){
 				xmin = xtmp_min;
@@ -669,7 +830,8 @@ int main(){
 
 			TH1D *h_gcx_ma = nullptr;
 			TH1D *h_prl_ma = nullptr;
-			BUILD_PAIR_MOVING_AVERAGE_EQUAL(h_gcx, h_prl, h_gcx_ma, h_prl_ma,
+			BUILD_PAIR_MOVING_AVERAGE_EXPS(h_gcx, h_prl,
+					h_gcx_exps, h_prl_exps, h_gcx_ma, h_prl_ma,
 					Form("hgcx_ma_%s_srcene%02d", vmerge_tag.at(imerge).Data(), itag),
 					Form("hprl_ma_%s_srcene%02d", vmerge_tag.at(imerge).Data(), itag),
 					xtmp_min, xtmp_max);
@@ -677,6 +839,9 @@ int main(){
 			vh_prl_ma.push_back(h_prl_ma);
 			vh_tmp.push_back(h_prl_raw);
 			vh_tmp.push_back(h_prl);
+			vh_tmp.push_back(h_prl_exps_raw);
+			vh_tmp.push_back(h_gcx_exps);
+			vh_tmp.push_back(h_prl_exps);
 		}
 		if(xmin >= xmax){
 			cerr<<"ERR MAIN ===== bad merge x range"
@@ -684,7 +849,7 @@ int main(){
 				<<" xmin="<<xmin
 				<<" xmax="<<xmax
 				<<endl;
-			return 7;
+			return 10;
 		}
 
 		TString htitle = Form("flux time, %g to %g GeV",
@@ -695,7 +860,7 @@ int main(){
 		TH1D *h_prl_merge = BUILD_EWIDTH_AVERAGE(vh_prl_ma, vitag,
 				Form("hprl_ma_%s", vmerge_tag.at(imerge).Data()), htitle);
 		if(!DRAW_MERGE_PAIR(fout, h_gcx_merge, h_prl_merge, vmerge_tag.at(imerge), outdir, xmin, xmax)){
-			return 8;
+			return 11;
 		}
 
 		delete h_gcx_merge;
@@ -708,6 +873,7 @@ int main(){
 	fout->Write();
 	fout->Close();
 	f_gcx->Close();
+	f_gcx_exps->Close();
 	f_prl->Close();
 
 	cout<<"IN MAIN ===== output root: "<<outdir + "/flux_gcx_prl_compare.root"<<endl;
