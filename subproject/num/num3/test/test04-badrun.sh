@@ -1,17 +1,20 @@
+# default
 tbin01->GetEntries()
-tbin01->GetEntries("((lvl1_PhysBPatt&62)!=0) && rig>0 && trdlkhdnew<0.7 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00 && beta>0.8 && tofqup>0. && tofqup<2. && tofqlow>0. && tofqlow<5. && trdnhits2>=12 && trdlkhde2<1.5 && trdlkhde2_ehe<0.8 && ((pat&259)!=0) && ((trkecalmatch&12)==12) && chi2x<20 && chi2y<20 && qin>0. && qin<1.5 && ntrk==1 && hadflag==0 && EmBDT>-0.995")
-tbin01->GetEntries("((lvl1_PhysBPatt&62)==0) && rig>0 && trdlkhdnew<0.7 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00 && beta>0.8 && tofqup>0. && tofqup<2. && tofqlow>0. && tofqlow<5. && trdnhits2>=12 && trdlkhde2<1.5 && trdlkhde2_ehe<0.8 && ((pat&259)!=0) && ((trkecalmatch&12)==12) && chi2x<20 && chi2y<20 && qin>0. && qin<1.5 && ntrk==1 && hadflag==0 && EmBDT>-0.995")
+tbin01->Show(0)
+tbin01->GetEntries("isbadrun")
+tbin01->GetEntries("!isbadrun")
+# gcx
+tbin01->GetEntries("isbadrun_daq || isbadrun_fov || isbadrun_ecal || isbadrun_trk")
+tbin01->GetEntries("utime>=1305417600 && utime<=1307750400")
+tbin01->GetEntries("utime>=1305417600 && utime<=1307750400 && isbadrun")
+tbin01->GetEntries("utime>=1305417600 && utime<=1307750400 && !isbadrun")
+tbin01->GetEntries("utime>=1305417600 && utime<=1307750400 && isbadrun_general")
+# ====2
+tbin01->Scan("run:event","utime>=1305417600 && utime<=1307750400 && !isbadrun")
 
-tbin01->GetEntries("bdt_chargepid >= 0 && ((inecal&3)==3) && theta<0.436 && ((lvl1_PhysBPatt&62)!=0) && rig>0 && trdlkhdnew<0.7 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00 && beta>0.8 && tofqup>0. && tofqup<2. && tofqlow>0. && tofqlow<5. && trdnhits2>=12 && trdlkhde2<1.5 && trdlkhde2_ehe<0.8 && ((pat&259)!=0) && ((trkecalmatch&12)==12) && chi2x<20 && chi2y<20 && qin>0. && qin<1.5 && ntrk==1 && hadflag==0 && EmBDT>-0.995")
-tbin01->GetEntries("bdt_chargepid >= 0 && ((inecal&3)==3) && theta<0.436 && ((lvl1_PhysBPatt&62)==0) && rig>0 && trdlkhdnew<0.7 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00 && beta>0.8 && tofqup>0. && tofqup<2. && tofqlow>0. && tofqlow<5. && trdnhits2>=12 && trdlkhde2<1.5 && trdlkhde2_ehe<0.8 && ((pat&259)!=0) && ((trkecalmatch&12)==12) && chi2x<20 && chi2y<20 && qin>0. && qin<1.5 && ntrk==1 && hadflag==0 && EmBDT>-0.995")
-
-tbin01->GetEntries("bdt_chargepid >= 0 && theta<0.436 && ((lvl1_PhysBPatt&62)!=0) && rig>0 && trdlkhdnew<0.7 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00 && beta>0.8 && tofqup>0. && tofqup<2. && tofqlow>0. && tofqlow<5. && trdnhits2>=12 && trdlkhde2<1.5 && trdlkhde2_ehe<0.8 && ((pat&259)!=0) && ((trkecalmatch&12)==12) && chi2x<20 && chi2y<20 && qin>0. && qin<1.5 && ntrk==1 && hadflag==0 && EmBDT>-0.995")
-tbin01->GetEntries("bdt_chargepid >= 0 && theta<0.436 && ((lvl1_PhysBPatt&62)==0) && rig>0 && trdlkhdnew<0.7 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00 && beta>0.8 && tofqup>0. && tofqup<2. && tofqlow>0. && tofqlow<5. && trdnhits2>=12 && trdlkhde2<1.5 && trdlkhde2_ehe<0.8 && ((pat&259)!=0) && ((trkecalmatch&12)==12) && chi2x<20 && chi2y<20 && qin>0. && qin<1.5 && ntrk==1 && hadflag==0 && EmBDT>-0.995")
-
-
-
-# tb->GetEntries("bdt_chargepid >= 0 && theta<0.436 && ((lvl1_PhysBPatt&62)!=0) && rig>0 && trdlkhdnew<0.7 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00 && beta>0.8 && tofqup>0. && tofqup<2. && tofqlow>0. && tofqlow<5. && trdnhits2>=12 && trdlkhde2<1.5 && trdlkhde2_ehe<0.8 && ((pat&259)!=0) && ((trkecalmatch&12)==12) && chi2x<20 && chi2y<20 && qin>0. && qin<1.5 && ntrk==1 && hadflag==0 && EmBDT>-0.995")
-# tb->GetEntries("bdt_chargepid >= 0 && theta<0.436 && ((lvl1_PhysBPatt&62)==0) && rig>0 && trdlkhdnew<0.7 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00 && beta>0.8 && tofqup>0. && tofqup<2. && tofqlow>0. && tofqlow<5. && trdnhits2>=12 && trdlkhde2<1.5 && trdlkhde2_ehe<0.8 && ((pat&259)!=0) && ((trkecalmatch&12)==12) && chi2x<20 && chi2y<20 && qin>0. && qin<1.5 && ntrk==1 && hadflag==0 && EmBDT>-0.995")
-
-tb->GetEntries("bdt_chargepid >= 0 && ((inecal&3)==3) && theta<0.436 && ((lvl1_PhysBPatt&62)!=0) && rig>0 && trdlkhdnew<0.7 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00 && beta>0.8 && tofqup>0. && tofqup<2. && tofqlow>0. && tofqlow<5. && trdnhits2>=12 && trdlkhde2<1.5 && trdlkhde2_ehe<0.8 && ((pat&259)!=0) && ((trkecalmatch&12)==12) && chi2x<20 && chi2y<20 && qin>0. && qin<1.5 && ntrk==1 && hadflag==0 && EmBDT>-0.995")
-tb->GetEntries("bdt_chargepid >= 0 && ((inecal&3)==3) && theta<0.436 && ((lvl1_PhysBPatt&62)==0) && rig>0 && trdlkhdnew<0.7 && TMath::Abs(Ene/rig)>0.65 && TMath::Abs(Ene/rig)<5.00 && beta>0.8 && tofqup>0. && tofqup<2. && tofqlow>0. && tofqlow<5. && trdnhits2>=12 && trdlkhde2<1.5 && trdlkhde2_ehe<0.8 && ((pat&259)!=0) && ((trkecalmatch&12)==12) && chi2x<20 && chi2y<20 && qin>0. && qin<1.5 && ntrk==1 && hadflag==0 && EmBDT>-0.995")
+# ======== tsu ========
+# ====cd
+cd /eos/ams/user/t/tsu/ECAL_buffer_pass8
+# ====1
+tb->GetEntries()
+tb->GetEntries("!isbadrun")
