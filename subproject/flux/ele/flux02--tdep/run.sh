@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ============ init ============
 # ==== for main.cpp
-SPECIES="npos"
+SPECIES="nele"
 DATADIR="datain"
 FOUTNAME="hflux_gcx.root"
 EXPS_MODE="igrf"
