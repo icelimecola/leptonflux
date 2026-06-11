@@ -54,7 +54,7 @@ void FitRun::FIT_RUN_iene(int i_enebin,vector<int>bin_division,int printlv){
     // bool saveall=1;
     bool saveall=0;
     int it_save=0;
-    if(ins_fit.wt==60*60*24) it_save=3000;   //----for 1 day
+    if(ins_fit.wt==60*60*24) it_save=2455;   //----for 1 day
     else if(ins_fit.wt==60*60*24*27) it_save=80;    //----for 27 days
     else if(ins_fit.wt==60*60*24*6000) it_save=0;    //----for notbin
     int ilat_save=0;
