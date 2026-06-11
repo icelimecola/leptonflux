@@ -17,7 +17,6 @@ YMAX="15"
 THIS_DIR="$(cd "$(dirname "$0")" && pwd)"
 SRCDIR="${THIS_DIR}/src"
 SRCFILE="${SRCDIR}/main.cpp"
-EXEFILE="${SRCDIR}/flux_tdep.exe"
 
 #====================================================
 #---- cmdline override
@@ -67,11 +66,6 @@ if [[ $# -ge 9 ]]; then
 fi
 
 #====================================================
-BUILD_EXE(){
-    echo "IN RUN_ROOT ===== build ${EXEFILE}"
-    g++ -std=c++17 -O2 "${SRCFILE}" -o "${EXEFILE}" $(root-config --cflags --libs)
-}
-
 RUN_ONE(){
     local foutname_now="$1"
     local datadir_now="$2"
@@ -95,7 +89,7 @@ RUN_ONE(){
     echo "IN RUN_ROOT ===== time-bin default in source = 1day"
     echo "IN RUN_ROOT ===== 27day option kept commented in src/main.cpp"
 
-    "${EXEFILE}" "${foutname_now}" "${datadir_now}" "${species_now}" "${exps_mode_now}" "${exps_sf_now}" "${xmin_now}" "${xmax_now}" "${ymin_now}" "${ymax_now}"
+    root -l -b -q -e "gROOT->LoadMacro(\"${SRCFILE}\"); main02(\"${foutname_now}\",\"${datadir_now}\",\"${species_now}\",\"${exps_mode_now}\",\"${exps_sf_now}\",\"${xmin_now}\",\"${xmax_now}\",\"${ymin_now}\",\"${ymax_now}\");"
 }
 
 #====================================================
@@ -103,9 +97,7 @@ cd "${THIS_DIR}"
 echo "IN RUN_ROOT ===== start"
 echo "IN RUN_ROOT ===== THIS_DIR=${THIS_DIR}"
 echo "IN RUN_ROOT ===== SRCFILE=${SRCFILE}"
-echo "IN RUN_ROOT ===== EXEFILE=${EXEFILE}"
-
-BUILD_EXE
+echo "IN RUN_ROOT ===== use root macro directly"
 
 if [[ "${RUN_ALL}" -eq 1 ]]; then
     RUN_ONE "hflux_t_${EXPS_MODE}_sf${EXPS_SF}.root" "${DATADIR}" "npos" "${EXPS_MODE}" "${EXPS_SF}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}"

@@ -798,3 +798,34 @@ int main(int argc, char *argv[]){
     init(argc, argv, conf);
     return CALC_Flux(conf);
 }
+
+int main02(
+    const char *foutname = "hflux_t_igrf.root",
+    const char *findir = "datain",
+    const char *particle = "npos",
+    const char *exps_geomagmode = "igrf",
+    const char *exps_sf = "1",
+    const char *xmin = "",
+    const char *xmax = "",
+    const char *ymin = "0",
+    const char *ymax = "15"
+){
+    //======== init pass var ========
+    char arg0[] = "main.cpp";
+    char *argv[] = {
+        arg0,
+        const_cast<char*>(foutname),
+        const_cast<char*>(findir),
+        const_cast<char*>(particle),
+        const_cast<char*>(exps_geomagmode),
+        const_cast<char*>(exps_sf),
+        const_cast<char*>(xmin),
+        const_cast<char*>(xmax),
+        const_cast<char*>(ymin),
+        const_cast<char*>(ymax)
+    };
+    //======== main ========
+    fluxconf conf{};
+    init(sizeof(argv) / sizeof(argv[0]), argv, conf);
+    return CALC_Flux(conf);
+}
