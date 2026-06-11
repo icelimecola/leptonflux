@@ -441,7 +441,25 @@ void Analysis::LoopChain(){
 		// cut[14] = trd_new<0.7;
 		// cut[15] = rigidity<0;
 		// cut[16] = rigidity>0;
-		//----260531
+		//----260531--positron
+		// cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
+		// cut[1] = (inecal&3)==3;
+		// cut[2] = (trkecalmatch&12)==12;
+		// cut[3] = tof_qup >0. && tof_qup < 2.0;
+		// cut[4] = tof_qlow>0. && tof_qlow< 5.0;
+		// cut[5] = trk_qin > 0. && trk_qin < 1.5; 
+		// cut[6] = EmBDT>-0.995;
+		// cut[7] = (trk_pat&259) && (lvl1_PhysBPatt&62);
+		// cut[8] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
+		// cut[9] = bdt_chargepid>=0;
+		// cut[10] = trk_ntrk==1 && trd_nhits[2]>=12;	//*
+		// cut[11] = trd_klkhd[2][0]<1.5 ;
+		// cut[12] = trd_klkhd[2][1]<0.8;
+		// cut[13] = TMath::Abs(Ene/rigidity)>0.65&&TMath::Abs(Ene/rigidity)<5.00;
+		// cut[14] = trd_new<0.7;
+		// cut[15] = rigidity<0;
+		// cut[16] = rigidity>0;
+		//----260610--electron
 		cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
 		cut[1] = (inecal&3)==3;
 		cut[2] = (trkecalmatch&12)==12;
@@ -452,11 +470,11 @@ void Analysis::LoopChain(){
 		cut[7] = (trk_pat&259) && (lvl1_PhysBPatt&62);
 		cut[8] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
 		cut[9] = bdt_chargepid>=0;
-		cut[10] = trk_ntrk==1 && trd_nhits[2]>=12;	//*
+		cut[10] = trk_ntrk<=2 && trd_nhits[2]>=12;	//*
 		cut[11] = trd_klkhd[2][0]<1.5 ;
 		cut[12] = trd_klkhd[2][1]<0.8;
-		cut[13] = TMath::Abs(Ene/rigidity)>0.65&&TMath::Abs(Ene/rigidity)<5.00;
-		cut[14] = trd_new<0.7; // eff = 0.96
+		cut[13] = trd_new<0.8;
+		cut[14] = trd_new<0.8;
 		cut[15] = rigidity<0;
 		cut[16] = rigidity>0;
 		//========fill hist
