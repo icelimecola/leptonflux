@@ -18,20 +18,89 @@ using namespace std;
 #include "TROOT.h"
 #include "TString.h"
 #include "TStyle.h"
+#include "TSystem.h"
 
-static const int nenebin = 29;
+//----positron
+// static const int nenebin = 29;
+// static const double energy_bins[nenebin + 1] = {
+// 	0.80, 1.00, 1.16, 1.33, 1.51,
+// 	1.71, 1.92, 2.15, 2.40, 2.67,
+// 	2.97, 3.29, 3.64, 4.02, 4.43,
+// 	4.88, 5.37, 5.90, 6.47, 7.09,
+// 	7.76, 8.48, 9.26, 10.10, 11.0,
+// 	13.0, 16.6, 22.8, 41.9, 45.10
+// };
+// ----electron
+static const int nenebin = 42;
 static const double energy_bins[nenebin + 1] = {
-	0.80, 1.00, 1.16, 1.33, 1.51,
+	0.80, 1, 1.16, 1.33, 1.51,
 	1.71, 1.92, 2.15, 2.40, 2.67,
 	2.97, 3.29, 3.64, 4.02, 4.43,
 	4.88, 5.37, 5.90, 6.47, 7.09,
-	7.76, 8.48, 9.26, 10.10, 11.0,
-	13.0, 16.6, 22.8, 41.9, 45.10
+	7.76, 8.48, 9.26, 10.10, 11,
+	12, 13, 14.10, 15.30, 16.60,
+	18, 19.50, 21.10, 22.80, 24.70,
+	26.70, 28.80, 31.10, 33.50, 36.10,
+	38.90, 41.90, 45.10
 };
 
 TString FORMAT_ENE(double x){
 	TString s = Form("%g", x);
 	return s;
+}
+
+TString BUILD_GCX_PATH(const TString &eff_tag, int itag){
+	TString fpath = Form("datain/seleff_gcx/%s/htime_tfit%02d_%sGeV_%s.root",
+			eff_tag.Data(), itag, FORMAT_ENE(energy_bins[itag]).Data(), eff_tag.Data());
+	return fpath;
+}
+
+bool HAS_NONZERO_HIST(TH1 *h){
+	if(h == nullptr) return false;
+	for(int ibin=1; ibin<=h->GetNbinsX(); ibin++){
+		if(h->GetBinContent(ibin) != 0.0) return true;
+		if(h->GetBinError(ibin) != 0.0) return true;
+	}
+	return false;
+}
+
+int FIND_LAST_NONZERO_TSU_ENEBIN(TH2 *h2_tsu){
+	if(h2_tsu == nullptr) return 0;
+
+	int imax = min(nenebin, h2_tsu->GetNbinsY());
+	for(int itag=imax; itag>=1; itag--){
+		for(int ibin=1; ibin<=h2_tsu->GetNbinsX(); ibin++){
+			if(h2_tsu->GetBinContent(ibin, itag) != 0.0) return itag;
+			if(h2_tsu->GetBinError(ibin, itag) != 0.0) return itag;
+		}
+	}
+
+	return 0;
+}
+
+int FIND_LAST_NONZERO_GCX_ENEBIN(const TString &eff_tag){
+	for(int itag=nenebin; itag>=1; itag--){
+		TString fpath = BUILD_GCX_PATH(eff_tag, itag);
+		if(gSystem->AccessPathName(fpath)) continue;
+
+		TFile *f_gcx = new TFile(fpath, "read");
+		if(f_gcx == nullptr || f_gcx->IsZombie()){
+			if(f_gcx != nullptr){
+				f_gcx->Close();
+				delete f_gcx;
+			}
+			continue;
+		}
+
+		TH1D *h_gcx = dynamic_cast<TH1D*>(f_gcx->Get("hratio"));
+		bool is_nonzero = HAS_NONZERO_HIST(h_gcx);
+		f_gcx->Close();
+		delete f_gcx;
+
+		if(is_nonzero) return itag;
+	}
+
+	return 0;
 }
 
 double GET_HMAX(TH1 *h, double xmin, double xmax){
@@ -109,7 +178,7 @@ TH1D *BUILD_TSU_PROJECTION(TH2 *h2_tsu, int itag, const TString &eff_tag, const 
 	return h_tsu;
 }
 
-TH1D *BUILD_ON_REF_TIME_AXIS(TH1 *h_ref, TH1 *h_src, const TString &hname, int ibin_shift = 0){
+TH1D *BUILD_ON_REF_TIME_AXIS(TH1 *h_ref, TH1 *h_src, const TString &hname){
 	int nbin = h_ref->GetNbinsX();
 	vector<double> xbins;
 	for(int ibin=1; ibin<=nbin + 1; ibin++){
@@ -124,9 +193,6 @@ TH1D *BUILD_ON_REF_TIME_AXIS(TH1 *h_ref, TH1 *h_src, const TString &hname, int i
 	for(int ibin=1; ibin<=nbin; ibin++){
 		double x = h_ref->GetBinCenter(ibin);
 		int jbin = h_src->GetXaxis()->FindFixBin(x);
-		// Temporary TRD-only fix: shift TSU content by one bin on GCX time axis.
-		// Previous same-day center match kept by using ibin_shift = 0.
-		jbin += ibin_shift;
 		if(jbin < 1 || jbin > h_src->GetNbinsX()) continue;
 		h_new->SetBinContent(ibin, h_src->GetBinContent(jbin));
 		h_new->SetBinError(ibin, h_src->GetBinError(jbin));
@@ -163,7 +229,6 @@ TH1D *BUILD_ON_REF_TIME_AXIS(TH1 *h_ref, TH1 *h_src, const TString &hname, int i
 	cout<<"======== align time axis ======== "<<endl
 		<<"hname="<<hname<<endl
 		<<"method=same-day center match"<<endl
-		<<"ibin_shift="<<ibin_shift<<endl
 		<<"src_xmin="<<Form("%.0f", h_src->GetXaxis()->GetXmin())<<endl
 		<<"ref_xmin="<<Form("%.0f", h_ref->GetXaxis()->GetXmin())<<endl
 		<<"nmatch="<<nmatch<<endl
@@ -371,9 +436,30 @@ int main(){
 			<<" ny="<<h2_tsu->GetNbinsY()<<endl
 			<<endl;
 
-		for(int itag=1; itag<=27; itag++){
-			TString fpath_gcx = Form("datain/seleff_gcx/%s/htime_tfit%02d_%sGeV_%s.root",
-					eff_tag.Data(), itag, FORMAT_ENE(energy_bins[itag]).Data(), eff_tag.Data());
+		int last_tsu_ene = FIND_LAST_NONZERO_TSU_ENEBIN(h2_tsu);
+		int last_gcx_ene = FIND_LAST_NONZERO_GCX_ENEBIN(eff_tag);
+		int last_ene = min(nenebin, min(last_tsu_ene, last_gcx_ene));
+		if(last_ene <= 0){
+			cerr<<"WARN MAIN ===== skip eff without common nonzero ene bin"
+				<<" eff="<<eff_tag
+				<<" last_tsu_ene="<<last_tsu_ene
+				<<" last_gcx_ene="<<last_gcx_ene
+				<<endl;
+			fout->Close();
+			f_tsu->Close();
+			continue;
+		}
+
+		cout<<"IN MAIN ===== ene loop"
+			<<" eff="<<eff_tag
+			<<" last_tsu_ene="<<last_tsu_ene
+			<<" last_gcx_ene="<<last_gcx_ene
+			<<" last_ene="<<last_ene
+			<<endl
+			<<endl;
+
+		for(int itag=1; itag<=last_ene; itag++){
+			TString fpath_gcx = BUILD_GCX_PATH(eff_tag, itag);
 			TFile *f_gcx = new TFile(fpath_gcx, "read");
 			TH1D *h_gcx = dynamic_cast<TH1D*>(f_gcx->Get("hratio"));
 			if(h_gcx == nullptr){
@@ -386,9 +472,8 @@ int main(){
 			}
 
 			TH1D *h_tsu_raw = BUILD_TSU_PROJECTION(h2_tsu, itag, eff_tag, eff_label);
-			int ibin_shift_tsu = eff_tag == "trdeff" ? -1 : 0;
 			TH1D *h_tsu = BUILD_ON_REF_TIME_AXIS(h_gcx, h_tsu_raw,
-					Form("htsu_%s_aligned_ene%02d", eff_tag.Data(), itag), ibin_shift_tsu);
+					Form("htsu_%s_aligned_ene%02d", eff_tag.Data(), itag));
 
 			cout<<"IN MAIN ===== eff="<<eff_tag
 				<<" ene"<<Form("%02d", itag)<<endl
