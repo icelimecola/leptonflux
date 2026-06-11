@@ -429,36 +429,17 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 	giss = new TGraphErrors(vx_iss.size(), &vx_iss[0], &vy_iss[0], &vex_iss[0], &vey_iss[0]);
 	giss->SetName("giss");
 	//----trd
-	// // spfit_iss = new SplineFit(4, "b1e1",
-	// spfit_iss = new SplineFit(7, "b2e1",
-	// 		SplineFit::LinearXY | SplineFit::ExtrapolateLB | SplineFit::ExtrapolateLE);
-	// spfit_iss->SetRange(xdrawmin, xdrawmax);
-	// spfit_iss->BuildTF1("spfit_iss");
-	// spfit_iss->SetGraph(giss);
-	// // double xnode_iss[8] = {1308916800, 1318248000, 1325246400, 1332244800, 1336910400, 1343908800, 1514203200, 1759147200};
-	// // double xnode_iss[7] = {1308916800, 1318248000, 1325246400, 1332244800, 1343908800, 1514203200, 1759147200};
-	// double xnode_iss[7] = {1308916800, 1318248000, 1325246400, 1334577600, 1367236800, 1514203200, 1759147200};
-	// double ynode_iss[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-	// if(!GET_NEAREST_ISS_YNODE(iss, xnode_iss, ynode_iss, 7)){
-	// 	delete spfit_iss;
-	// 	delete giss;
-	// 	delete c;
-	// 	fout->Close();
-	// 	delete fout;
-	// 	return false;
-	// }
-	//----ntrk
-	spfit_iss = new SplineFit(4, "b1e1",
-	// spfit_iss = new SplineFit(7, "b2e1",
+	// spfit_iss = new SplineFit(4, "b1e1",
+	spfit_iss = new SplineFit(7, "b2e1",
 			SplineFit::LinearXY | SplineFit::ExtrapolateLB | SplineFit::ExtrapolateLE);
 	spfit_iss->SetRange(xdrawmin, xdrawmax);
 	spfit_iss->BuildTF1("spfit_iss");
 	spfit_iss->SetGraph(giss);
-	// double xnode_iss[7] = {1308916800, 1318248000, 1325246400, 1334577600, 1367236800, 1514203200, 1759147200};
-	// double ynode_iss[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-	double xnode_iss[4] = {1308916800, 1396400000, 1618000000, 1759147200};
-	double ynode_iss[4] = {0.0, 0.0, 0.0, 0.0};
-	if(!GET_NEAREST_ISS_YNODE(iss, xnode_iss, ynode_iss, 4)){
+	// double xnode_iss[8] = {1308916800, 1318248000, 1325246400, 1332244800, 1336910400, 1343908800, 1514203200, 1759147200};
+	// double xnode_iss[7] = {1308916800, 1318248000, 1325246400, 1332244800, 1343908800, 1514203200, 1759147200};
+	double xnode_iss[7] = {1308916800, 1318248000, 1325246400, 1334577600, 1367236800, 1514203200, 1759147200};
+	double ynode_iss[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	if(!GET_NEAREST_ISS_YNODE(iss, xnode_iss, ynode_iss, 7)){
 		delete spfit_iss;
 		delete giss;
 		delete c;
@@ -466,6 +447,26 @@ bool DRAW(const VarConf &var, const VarDataSeries &iss, const VarDataSeries &mc,
 		delete fout;
 		return false;
 	}
+	//----ntrk
+	// spfit_iss = new SplineFit(4, "b1e1",
+	// // spfit_iss = new SplineFit(7, "b2e1",
+	// 		SplineFit::LinearXY | SplineFit::ExtrapolateLB | SplineFit::ExtrapolateLE);
+	// spfit_iss->SetRange(xdrawmin, xdrawmax);
+	// spfit_iss->BuildTF1("spfit_iss");
+	// spfit_iss->SetGraph(giss);
+	// // double xnode_iss[7] = {1308916800, 1318248000, 1325246400, 1334577600, 1367236800, 1514203200, 1759147200};
+	// // double ynode_iss[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+	// double xnode_iss[4] = {1308916800, 1396400000, 1618000000, 1759147200};
+	// double ynode_iss[4] = {0.0, 0.0, 0.0, 0.0};
+	// if(!GET_NEAREST_ISS_YNODE(iss, xnode_iss, ynode_iss, 4)){
+	// 	delete spfit_iss;
+	// 	delete giss;
+	// 	delete c;
+	// 	fout->Close();
+	// 	delete fout;
+	// 	return false;
+	// }
+	//----end
 	spfit_iss->SetNodesByX(xnode_iss);
 	spfit_iss->SetYnode(ynode_iss);
 	spfit_iss->SetXnodeLimits(0);

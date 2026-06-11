@@ -5,8 +5,13 @@ FPATH="datain/hene_*eff.root"
 FOUTNAME="hene_combine"
 XMIN=""
 XMAX=""
-YMIN=0.83
+# ----positron
+# YMIN=0.83
+# YMAX=1.02
+# ----positron
+YMIN=0.90
 YMAX=1.02
+
 
 if [[ $# -ge 1 ]]; then
     FPATH="$1"
