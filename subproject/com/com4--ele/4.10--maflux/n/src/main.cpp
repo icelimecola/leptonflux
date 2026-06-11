@@ -19,14 +19,28 @@ using namespace std;
 #include "TString.h"
 #include "TStyle.h"
 
-static const int nenebin = 29;
+//----positron
+// static const int nenebin = 29;
+// static const double energy_bins[nenebin + 1] = {
+// 	0.80, 1.00, 1.16, 1.33, 1.51,
+// 	1.71, 1.92, 2.15, 2.40, 2.67,
+// 	2.97, 3.29, 3.64, 4.02, 4.43,
+// 	4.88, 5.37, 5.90, 6.47, 7.09,
+// 	7.76, 8.48, 9.26, 10.10, 11.0,
+// 	13.0, 16.6, 22.8, 41.9, 45.10
+// };
+// ----electron
+static const int nenebin = 42;
 static const double energy_bins[nenebin + 1] = {
-	0.80, 1.00, 1.16, 1.33, 1.51,
+	0.80, 1, 1.16, 1.33, 1.51,
 	1.71, 1.92, 2.15, 2.40, 2.67,
 	2.97, 3.29, 3.64, 4.02, 4.43,
 	4.88, 5.37, 5.90, 6.47, 7.09,
-	7.76, 8.48, 9.26, 10.10, 11.0,
-	13.0, 16.6, 22.8, 41.9, 45.10
+	7.76, 8.48, 9.26, 10.10, 11,
+	12, 13, 14.10, 15.30, 16.60,
+	18, 19.50, 21.10, 22.80, 24.70,
+	26.70, 28.80, 31.10, 33.50, 36.10,
+	38.90, 41.90, 45.10
 };
 
 TString FORMAT_ENE(double x){
@@ -423,7 +437,7 @@ TH1D *READ_GCX_HIST(int itag, const TString &species){
 }
 
 bool DRAW_SPECIES(TFile *fout, TH2D *h2_tsu, const TString &species, const TString &outdir){
-	for(int itag=1; itag<=27; itag++){
+	for(int itag=1; itag<=nenebin - 1; itag++){
 		TH1D *h_gcx = READ_GCX_HIST(itag, species);
 		if(h_gcx == nullptr) return false;
 
@@ -454,9 +468,8 @@ int main(){
 	TFile *f_tsu = new TFile(fpath_tsu, "read");
 
 	TH2D *h2_tsu_ele = dynamic_cast<TH2D*>(f_tsu->Get("h2d_event_ele_raw_daily"));
-	TH2D *h2_tsu_pos = dynamic_cast<TH2D*>(f_tsu->Get("h2d_event_pos_raw_daily"));
-	if(h2_tsu_ele == nullptr || h2_tsu_pos == nullptr){
-		cerr<<"ERR MAIN ===== missing tsu raw daily hist"<<endl;
+	if(h2_tsu_ele == nullptr){
+		cerr<<"ERR MAIN ===== missing tsu ele raw daily hist"<<endl;
 		return 1;
 	}
 
@@ -465,10 +478,6 @@ int main(){
 		<<" class="<<h2_tsu_ele->ClassName()
 		<<" nx="<<h2_tsu_ele->GetNbinsX()
 		<<" ny="<<h2_tsu_ele->GetNbinsY()<<endl
-		<<"IN MAIN ===== tsu pos hist: "<<h2_tsu_pos->GetName()
-		<<" class="<<h2_tsu_pos->ClassName()
-		<<" nx="<<h2_tsu_pos->GetNbinsX()
-		<<" ny="<<h2_tsu_pos->GetNbinsY()<<endl
 		<<endl;
 
 	TFile *fout_ele = new TFile("dataout/nele/man_compare.root", "recreate");
@@ -480,18 +489,8 @@ int main(){
 	fout_ele->Write();
 	fout_ele->Close();
 
-	TFile *fout_pos = new TFile("dataout/npos/man_compare.root", "recreate");
-	if(!DRAW_SPECIES(fout_pos, h2_tsu_pos, "npos", "dataout/npos")){
-		fout_pos->Close();
-		f_tsu->Close();
-		return 3;
-	}
-	fout_pos->Write();
-	fout_pos->Close();
-
 	f_tsu->Close();
 
 	cout<<"IN MAIN ===== output root: dataout/nele/man_compare.root"<<endl;
-	cout<<"IN MAIN ===== output root: dataout/npos/man_compare.root"<<endl;
 	return 0;
 }
