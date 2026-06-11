@@ -210,16 +210,16 @@ FluxBin TOOL_CalcFluxBin(
     }
 
     if(conf.particle == "npos"){
-        // out.num = npos_measure;
-        // out.num_err = npos_measure_err;
-        out.num = TOOL_CalcNCorrPos(npos_measure, nele_measure, cc.value);
-        out.num_err = TOOL_CalcNCorrPosErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
+        out.num = npos_measure;
+        out.num_err = npos_measure_err;
+        // out.num = TOOL_CalcNCorrPos(npos_measure, nele_measure, cc.value);
+        // out.num_err = TOOL_CalcNCorrPosErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
     }
     else{
-        // out.num = nele_measure;
-        // out.num_err = nele_measure_err;
-        out.num = TOOL_CalcNCorrEle(npos_measure, nele_measure, cc.value);
-        out.num_err = TOOL_CalcNCorrEleErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
+        out.num = nele_measure;
+        out.num_err = nele_measure_err;
+        // out.num = TOOL_CalcNCorrEle(npos_measure, nele_measure, cc.value);
+        // out.num_err = TOOL_CalcNCorrEleErr(npos_measure, npos_measure_err, nele_measure, nele_measure_err, cc.value, cc.error);
     }
 
     out.good = TOOL_IsPositive(out.num)
