@@ -11,7 +11,7 @@ EXPS_SF="1"
 XMIN="1305849600"
 XMAX="1761955200"
 YMIN="0"
-YMAX="15"
+YMAX="50"
 
 # ==== for run.sh
 THIS_DIR="$(cd "$(dirname "$0")" && pwd)"
