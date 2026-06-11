@@ -20,14 +20,28 @@ using namespace std;
 #include "TString.h"
 #include "TStyle.h"
 
-static const int nenebin = 29;
+//----positron
+// static const int nenebin = 29;
+// static const double energy_bins[nenebin + 1] = {
+// 	0.80, 1.00, 1.16, 1.33, 1.51,
+// 	1.71, 1.92, 2.15, 2.40, 2.67,
+// 	2.97, 3.29, 3.64, 4.02, 4.43,
+// 	4.88, 5.37, 5.90, 6.47, 7.09,
+// 	7.76, 8.48, 9.26, 10.10, 11.0,
+// 	13.0, 16.6, 22.8, 41.9, 45.10
+// };
+// ----electron
+static const int nenebin = 42;
 static const double energy_bins[nenebin + 1] = {
-	0.80, 1.00, 1.16, 1.33, 1.51,
+	0.80, 1, 1.16, 1.33, 1.51,
 	1.71, 1.92, 2.15, 2.40, 2.67,
 	2.97, 3.29, 3.64, 4.02, 4.43,
 	4.88, 5.37, 5.90, 6.47, 7.09,
-	7.76, 8.48, 9.26, 10.10, 11.0,
-	13.0, 16.6, 22.8, 41.9, 45.10
+	7.76, 8.48, 9.26, 10.10, 11,
+	12, 13, 14.10, 15.30, 16.60,
+	18, 19.50, 21.10, 22.80, 24.70,
+	26.70, 28.80, 31.10, 33.50, 36.10,
+	38.90, 41.90, 45.10
 };
 
 TString FORMAT_ENE(double x){
@@ -427,8 +441,9 @@ int main(){
 		<<" ny="<<h2_tsu->GetNbinsY()<<endl
 		<<endl;
 
-	for(int itag=1; itag<=27; itag++){
-		TString hname_gcx = Form("h1t/sf1/h1exp_igrf_T_fov25_sf1_ene%sto%sGeV",
+	// for(int itag=1; itag<=27; itag++){
+	for(int itag=1; itag<=nenebin; itag++){
+		TString hname_gcx = Form("h1t/igrf/sf1/h1exp_igrf_T_fov25_sf1_ene%sto%sGeV",
 				FORMAT_ENE(energy_bins[itag]).Data(),
 				FORMAT_ENE(energy_bins[itag + 1]).Data());
 		TH1D *h_gcx = dynamic_cast<TH1D*>(f_gcx->Get(hname_gcx));
