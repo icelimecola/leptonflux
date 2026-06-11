@@ -3,7 +3,7 @@ set -euo pipefail
 
 # ============ init ============
 # ==== for main.cpp
-SPECIES="npos"
+SPECIES="nele"
 DATADIR="datain"
 FOUTNAME="hflux_gcx.root"
 EXPS_MODE="igrf"
@@ -11,7 +11,7 @@ EXPS_SF="1"
 XMIN="1305849600"
 XMAX="1761955200"
 YMIN="0"
-YMAX="15"
+YMAX="50"
 
 # ==== for run.sh
 THIS_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -23,9 +23,8 @@ SRCFILE="${SRCDIR}/main.cpp"
 #---- $1: foutname
 #---- $2: datadir
 #---- $3:
-#     1) npos
-#     2) nele
-#     3) ALL -> run npos + nele
+#     1) nele
+#     2) ALL -> run nele
 #---- $4: exps_mode (igrf/st)
 #---- $5: exps_sf (1/1.1/1.2/...)
 #---- $6: xmin
@@ -100,7 +99,6 @@ echo "IN RUN_ROOT ===== SRCFILE=${SRCFILE}"
 echo "IN RUN_ROOT ===== use root macro directly"
 
 if [[ "${RUN_ALL}" -eq 1 ]]; then
-    RUN_ONE "hflux_t_${EXPS_MODE}_sf${EXPS_SF}.root" "${DATADIR}" "npos" "${EXPS_MODE}" "${EXPS_SF}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}"
     RUN_ONE "hflux_t_${EXPS_MODE}_sf${EXPS_SF}_nele.root" "${DATADIR}" "nele" "${EXPS_MODE}" "${EXPS_SF}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}"
 else
     RUN_ONE "${FOUTNAME}" "${DATADIR}" "${SPECIES}" "${EXPS_MODE}" "${EXPS_SF}" "${XMIN}" "${XMAX}" "${YMIN}" "${YMAX}"
