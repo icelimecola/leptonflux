@@ -34,8 +34,8 @@ LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-list/num3
 # LISTNAME=tbin.txt
 # LISTNAME=tbinmc-nele.txt
 # ----npos
-# LISTNAME=tbin-npos.txt
-# LISTNAME=tbinmc-npos.txt
+# LISTNAME=tbin-n.txt
+# LISTNAME=tbinmc-n.txt
 # ----seleff
 # LISTNAME=tbin-seleff.txt
 LISTNAME=tbinmc-seleff.txt
@@ -85,6 +85,11 @@ i0=0
 loop0=0
 loopmax=1
 n=29
+i0=0
+# ---------- 260610
+loop0=0
+loopmax=1
+n=42
 i0=0
 
 

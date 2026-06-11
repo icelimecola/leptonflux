@@ -33,7 +33,7 @@ LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-list/num2
 # LISTNAME=tbuffer.txt
 # LISTNAME=tbuffermc.txt
 # ----npos
-LISTNAME=tbuffer-npos.txt
+LISTNAME=tbuffer-n.txt
 # LISTNAME=tbuffermc.txt
 # ----seleff
 # LISTNAME=tbuffer-seleff.txt
@@ -50,8 +50,10 @@ NFPJ=576
 
 
 # ==============================================
-# for ENEBIN in $(seq 50 50); do
-for ENEBIN in $(seq 28 28); do
+# ----positron
+# for ENEBIN in $(seq 28 28); do    
+# ----electron
+for ENEBIN in $(seq 40 40); do
     echo "===== TEST START ====="
     echo "Transferring ENEBIN=$ENEBIN ..."
     echo "----------------------"

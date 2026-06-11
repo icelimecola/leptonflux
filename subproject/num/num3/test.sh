@@ -33,8 +33,8 @@ LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-list/num3
 # LISTNAME=tbin.txt
 # LISTNAME=tbinmc-nele.txt
 # ----npos
-LISTNAME=tbin-npos.txt
-# LISTNAME=tbinmc-npos.txt
+LISTNAME=tbin-n.txt
+# LISTNAME=tbinmc-n.txt
 # ----seleff
 # LISTNAME=tbin-seleff.txt
 # LISTNAME=tbinmc-seleff.txt
@@ -44,7 +44,7 @@ LIST=$LISTDIR/$LISTNAME
 # for ENEBIN in $(seq 18 18); do
 # for ENEBIN in $(seq 52 52); do
 # for ENEBIN in $(seq 28 28); do
-for ENEBIN in $(seq 1 1); do
+for ENEBIN in $(seq 41 41); do
     echo "===== TEST START ====="
     echo "Transferring ENEBIN=$ENEBIN ..."
     echo "----------------------"

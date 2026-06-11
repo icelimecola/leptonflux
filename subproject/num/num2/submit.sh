@@ -34,7 +34,7 @@ LISTDIR=/eos/ams/user/c/chguan/public/260428.01--POSIFLUX/00.1-list/num2
 # LISTNAME=tbuffer.txt
 # LISTNAME=tbuffermc.txt
 # ----npos
-LISTNAME=tbuffer-npos.txt
+LISTNAME=tbuffer-n.txt
 # LISTNAME=tbuffermc.txt
 # ----seleff
 # LISTNAME=tbuffer-seleff.txt
@@ -109,6 +109,12 @@ loop0=0
 loopmax=1
 n=29
 i0=0
+# ---------- 260610
+loop0=0
+loopmax=1
+n=42
+i0=0
+
 
 # ==============================================
 for ((i=loop0; i<loopmax; i++)); do
