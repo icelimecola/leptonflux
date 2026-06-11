@@ -229,25 +229,47 @@ void ReweightMCMatrix(TH2F *hmatrix, TH1D *hflux, TH1F *hgen, double xmin, doubl
 	}
 }
 
-double fluxmodel_positron(double *x, double *par){
-	// par[0]=phi_e+ [GeV], par[1]=Cd, par[2]=gamma_d, par[3]=Cs, par[4]=gamma_s, par[5]=1/Es [TeV^-1]
+// double fluxmodel_positron(double *x, double *par){
+// 	// par[0]=phi_e+ [GeV], par[1]=Cd, par[2]=gamma_d, par[3]=Cs, par[4]=gamma_s, par[5]=1/Es [TeV^-1]
+// 	//====constant
+// 	const double E1 = 7.0;   // GeV
+// 	const double E2 = 60.0;  // GeV
+// 	double invEs_GeVinv = par[5]*1e-3; // convert TeV^-1 to GeV^-1
+// 	//====E
+// 	double E = x[0];
+// 	double Ehat = E + par[0];
+// 	if( E<=0 || Ehat<=0 ) return 0;
+// 	//====model
+// 	double diffuse = par[1]*pow(Ehat/E1, par[2]);
+// 	double source = par[3]*pow(Ehat/E2, par[4])*exp(-Ehat*invEs_GeVinv);
+// 	return (E*E)/(Ehat*Ehat)*(diffuse + source);
+// }
+//
+// double fluxmodel_positron_e3(double *x, double *par){
+// 	double E = x[0];
+// 	return E*E*E*fluxmodel_positron(x, par);
+// }
+
+double fluxmodel_electron(double *x, double *par){
+	// par[0]=phi_e- [GeV], par[1]=Et [GeV], par[2]=Dgamma_t
+	// par[3]=Ca, par[4]=gamma_a, par[5]=Cb, par[6]=gamma_b
 	//====constant
-	const double E1 = 7.0;   // GeV
-	const double E2 = 60.0;  // GeV
-	double invEs_GeVinv = par[5]*1e-3; // convert TeV^-1 to GeV^-1
+	const double Ea = 20.0;   // GeV
+	const double Eb = 300.0;  // GeV
 	//====E
 	double E = x[0];
 	double Ehat = E + par[0];
-	if( E<=0 || Ehat<=0 ) return 0;
+	if( E<=0 || Ehat<=0 || par[1]<=0 ) return 0;
 	//====model
-	double diffuse = par[1]*pow(Ehat/E1, par[2]);
-	double source = par[3]*pow(Ehat/E2, par[4])*exp(-Ehat*invEs_GeVinv);
-	return (E*E)/(Ehat*Ehat)*(diffuse + source);
+	double transition = 1.0/(1.0 + pow(Ehat/par[1], par[2]));
+	double term_a = par[3]*pow(Ehat/Ea, par[4]);
+	double term_b = par[5]*pow(Ehat/Eb, par[6]);
+	return (E*E)/(Ehat*Ehat)*transition*(term_a + term_b);
 }
 
-double fluxmodel_positron_e3(double *x, double *par){
+double fluxmodel_electron_e3(double *x, double *par){
 	double E = x[0];
-	return E*E*E*fluxmodel_positron(x, par);
+	return E*E*E*fluxmodel_electron(x, par);
 }
 
 double get_lw_center(double elow, double eup, double gamma=3.0){
@@ -356,7 +378,7 @@ void draw_flux_fit(TGraphAsymmErrors *graw_e3, TGraphAsymmErrors *gprl_e3, TF1 *
 	ffit_e3->SetLineColor(kBlack);
 	ffit_e3->SetLineWidth(2);
 	graw_e3->SetMinimum(0);
-	graw_e3->SetMaximum(30);
+	graw_e3->SetMaximum(300);
 	graw_e3->SetTitle("");
 	graw_e3->Draw("AP");
 	if( fitxmin>0 && fitxmax>fitxmin ) graw_e3->GetXaxis()->SetLimits(fitxmin, fitxmax);
@@ -426,18 +448,33 @@ TF1* fit_flux(TH1D *hflux, double xmin=0.5, double xmax=1000.0, bool is_draw_fit
 		if( fprl ) fprl->Close();
 		return 0;
 	}
+	//---- old positron fit
 	//======== init fit function
-	TF1 *fflux_fit_e3 = new TF1("fflux_fit_e3", fluxmodel_positron_e3, fitxmin, fitxmax, 6);
-	fflux_fit_e3->SetNpx(10000);
-	fflux_fit_e3->SetParNames("phi_eplus", "Cd", "gamma_d", "Cs", "gamma_s", "invEs");
-	fflux_fit_e3->SetParameters(1.10, 6.51e-2, -4.07, 6.80e-5, -2.58, 1.23);
+	// TF1 *fflux_fit_e3 = new TF1("fflux_fit_e3", fluxmodel_positron_e3, fitxmin, fitxmax, 6);
+	// fflux_fit_e3->SetParNames("phi_eplus", "Cd", "gamma_d", "Cs", "gamma_s", "invEs");
+	// fflux_fit_e3->SetParameters(1.10, 6.51e-2, -4.07, 6.80e-5, -2.58, 1.23);
 	//======== parameter limits
-	fflux_fit_e3->SetParLimits(0, 0.0, 5.0);        // phi_e+ [GeV]
-	fflux_fit_e3->SetParLimits(1, 1e-6, 1.0);       // Cd
-	fflux_fit_e3->SetParLimits(2, -8.0, -0.5);      // gamma_d
-	fflux_fit_e3->SetParLimits(3, 1e-8, 1.0);       // Cs
-	fflux_fit_e3->SetParLimits(4, -8.0, -0.5);      // gamma_s
-	fflux_fit_e3->SetParLimits(5, 1e-4, 20.0);      // 1/Es [TeV^-1]
+	// fflux_fit_e3->SetParLimits(0, 0.0, 5.0);        // phi_e+ [GeV]
+	// fflux_fit_e3->SetParLimits(1, 1e-6, 1.0);       // Cd
+	// fflux_fit_e3->SetParLimits(2, -8.0, -0.5);      // gamma_d
+	// fflux_fit_e3->SetParLimits(3, 1e-8, 1.0);       // Cs
+	// fflux_fit_e3->SetParLimits(4, -8.0, -0.5);      // gamma_s
+	// fflux_fit_e3->SetParLimits(5, 1e-4, 20.0);      // 1/Es [TeV^-1]
+	//---- electron fit
+	//======== init fit function
+	TF1 *fflux_fit_e3 = new TF1("fflux_fit_e3", fluxmodel_electron_e3, fitxmin, fitxmax, 7);
+	fflux_fit_e3->SetNpx(10000);
+	fflux_fit_e3->SetParNames("phi_eminus", "Et", "Dgamma_t", "Ca", "gamma_a", "Cb", "gamma_b");
+	fflux_fit_e3->SetParameters(0.87, 3.94, -2.14, 1.13e-2, -4.31, 3.96e-6, -3.14);
+	//======== parameter limits
+	//---- PRL2019 electron fit center +/- about 5 sigma
+	fflux_fit_e3->SetParLimits(0, 0.27, 1.47);       // phi_e- [GeV] = 0.87 +/- 0.12
+	fflux_fit_e3->SetParLimits(1, 2.89, 4.99);       // Et [GeV] = 3.94 +/- 0.21
+	fflux_fit_e3->SetParLimits(2, -2.59, -1.69);     // Dgamma_t = -2.14 +/- 0.09
+	fflux_fit_e3->SetParLimits(3, 0.73e-2, 1.53e-2); // Ca = (1.13 +/- 0.08)e-2
+	fflux_fit_e3->SetParLimits(4, -4.96, -3.66);     // gamma_a = -4.31 +/- 0.13
+	fflux_fit_e3->SetParLimits(5, 3.76e-6, 4.16e-6); // Cb = (3.96 +/- 0.04)e-6
+	fflux_fit_e3->SetParLimits(6, -3.24, -3.04);     // gamma_b = -3.14 +/- 0.02
 	//======== fit
 	int fit_status = gfit->Fit(fflux_fit_e3, "RQM0");
 	if( fit_status!=0 ){
@@ -446,10 +483,10 @@ TF1* fit_flux(TH1D *hflux, double xmin=0.5, double xmax=1000.0, bool is_draw_fit
 	if( is_draw_fit ) write_fit_gae(graw_e3, gprl_e3, gfit, htag, fout);
 	if( is_draw_fit && graw_e3 && gprl_e3 && fflux_fit_e3 ) draw_flux_fit(graw_e3, gprl_e3, fflux_fit_e3, fitxmin, fitxmax, htag, fout);
 
-	TF1 *fflux_fit = new TF1("fflux_fit", fluxmodel_positron, 0.8, fitxmax, 6);
+	TF1 *fflux_fit = new TF1("fflux_fit", fluxmodel_electron, 0.8, fitxmax, 7);
 	fflux_fit->SetNpx(10000);
-	fflux_fit->SetParNames("phi_eplus", "Cd", "gamma_d", "Cs", "gamma_s", "invEs");
-	for(int ipar=0; ipar<6; ipar++){
+	fflux_fit->SetParNames("phi_eminus", "Et", "Dgamma_t", "Ca", "gamma_a", "Cb", "gamma_b");
+	for(int ipar=0; ipar<7; ipar++){
 		fflux_fit->SetParameter(ipar, fflux_fit_e3->GetParameter(ipar));
 		fflux_fit->SetParError(ipar, fflux_fit_e3->GetParError(ipar));
 	}
