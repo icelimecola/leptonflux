@@ -32,14 +32,28 @@ using namespace std;
 //     56.10, 60.30, 64.80, 69.70, 74.90,
 //     80.50, 86.50, 93, 100, 108
 // };
-static const int nenebin = 29;
+//----positron
+// static const int nenebin = 29;
+// static const double energy_bins[nenebin + 1] = {
+//     0.80, 1.00, 1.16, 1.33, 1.51,
+//     1.71, 1.92, 2.15, 2.40, 2.67,
+//     2.97, 3.29, 3.64, 4.02, 4.43,
+//     4.88, 5.37, 5.90, 6.47, 7.09,
+//     7.76, 8.48, 9.26, 10.10, 11.0,
+//     13.0, 16.6, 22.8, 41.9, 45.10
+// };
+//----electron 260611
+static const int nenebin = 42;
 static const double energy_bins[nenebin + 1] = {
     0.80, 1.00, 1.16, 1.33, 1.51,
     1.71, 1.92, 2.15, 2.40, 2.67,
     2.97, 3.29, 3.64, 4.02, 4.43,
     4.88, 5.37, 5.90, 6.47, 7.09,
     7.76, 8.48, 9.26, 10.10, 11.0,
-    13.0, 16.6, 22.8, 41.9, 45.10
+    12.0, 13.0, 14.10, 15.30, 16.60,
+    18.0, 19.50, 21.10, 22.80, 24.70,
+    26.70, 28.80, 31.10, 33.50, 36.10,
+    38.90, 41.90, 45.10
 };
 
 struct fluxconf{
@@ -504,7 +518,8 @@ int CALC_Flux(const fluxconf &conf){
         EneValue eff_total_manual{};
         //====read--exps
         TString hname_exps = Form(
-            "h1t/sf%s/h1exp_%s_T_fov25_sf%s_ene%sto%sGeV",
+            "h1t/%s/sf%s/h1exp_%s_T_fov25_sf%s_ene%sto%sGeV",
+            conf.exps_geomagmode.Data(),
             conf.exps_sf.Data(),
             conf.exps_geomagmode.Data(),
             conf.exps_sf.Data(),
@@ -523,7 +538,17 @@ int CALC_Flux(const fluxconf &conf){
         TH1 *h_trdeff_1d = dynamic_cast<TH1*>(f_trdeff->Get("hratio1"));
         TH1 *h_trdeff_27d = dynamic_cast<TH1*>(f_trdeff->Get("hratio27"));
         //====check--read
-        if(h_nele == nullptr || h_exps == nullptr || h_trdeff_1d == nullptr || h_trdeff_27d == nullptr) return 1;
+        if(h_nele == nullptr || h_exps == nullptr || h_trdeff_1d == nullptr || h_trdeff_27d == nullptr){
+            cerr<<"ERR CALC_Flux ===== failed to read time hist"
+                <<" i_enebin="<<ie
+                <<" h_nele="<<h_nele
+                <<" h_exps="<<h_exps
+                <<" hname_exps="<<hname_exps
+                <<" h_trdeff_1d="<<h_trdeff_1d
+                <<" h_trdeff_27d="<<h_trdeff_27d
+                <<endl;
+            return 1;
+        }
         //====check--tbin
         // if(!READ_CheckTimeShape(h_npos, h_exps, ie)) return 1;
         if(!READ_CheckTimeShape(h_nele, h_exps, ie)) return 1;
