@@ -460,21 +460,65 @@ void Analysis::LoopChain(){
 		// cut[15] = rigidity<0;
 		// cut[16] = rigidity>0;
 		//----260610--electron
-		cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
-		cut[1] = (inecal&3)==3;
-		cut[2] = (trkecalmatch&12)==12;
-		cut[3] = tof_qup >0. && tof_qup < 2.0;
-		cut[4] = tof_qlow>0. && tof_qlow< 5.0;
-		cut[5] = trk_qin > 0. && trk_qin < 1.5; 
-		cut[6] = EmBDT>-0.995;
-		cut[7] = (trk_pat&259) && (lvl1_PhysBPatt&62);
-		cut[8] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
-		cut[9] = bdt_chargepid>=0;
-		cut[10] = trk_ntrk<=2 && trd_nhits[2]>=12;	//*
-		cut[11] = trd_klkhd[2][0]<1.5 ;
-		cut[12] = trd_klkhd[2][1]<0.8;
-		cut[13] = trd_new<0.8;
-		cut[14] = trd_new<0.8;
+		// cut[0] = tof_betah > 0.8 && hadflag==0; //----260324发现并修正
+		// cut[1] = (inecal&3)==3;
+		// cut[2] = (trkecalmatch&12)==12;
+		// cut[3] = tof_qup >0. && tof_qup < 2.0;
+		// cut[4] = tof_qlow>0. && tof_qlow< 5.0;
+		// cut[5] = trk_qin > 0. && trk_qin < 1.5; 
+		// cut[6] = EmBDT>-0.995;
+		// cut[7] = (trk_pat&259) && (lvl1_PhysBPatt&62);
+		// cut[8] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
+		// cut[9] = bdt_chargepid>=0;
+		// cut[10] = trk_ntrk<=2 && trd_nhits[2]>=12;	//*
+		// cut[11] = trd_klkhd[2][0]<1.5 ;
+		// cut[12] = trd_klkhd[2][1]<0.8;
+		// cut[13] = trd_new<0.8;
+		// cut[14] = trd_new<0.8;
+		// cut[15] = rigidity<0;
+		// cut[16] = rigidity>0;
+		//----260612--electron fortest tsu
+		// cut[0] = tof_betah > 0.8 && tof_qup >0. && tof_qup < 2.0;
+		// cut[1] = tof_qlow>0. && tof_qlow< 5.0;
+		// cut[2] = trd_nhits[2]>=12 && trd_klkhd[2][0]<1.5 ;
+		// cut[3] = trd_klkhd[2][1]<0.8;
+		// cut[4] = trk_qin > 0. && trk_qin < 1.5 && rigidity<0;
+		// cut[5] = (trk_pat&259) && trk_theta < 0.436;
+		// cut[6] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
+		// cut[7] = (trkecalmatch&12)==12;
+		// cut[8] = trk_ntrk<3&&trk_ntrk>0;
+		// cut[9] = (inecal&3)==3;
+		// cut[10] = EmBDT>-0.995;
+		// cut[11] = bdt_chargepid>=0 && hadflag==0;
+		// cut[12] = trd_new<0.8;
+		// cut[13] = trk_ntrk==1;
+		// // cut[13] = (lvl1_PhysBPatt&62);
+		// cut[14] = TMath::Abs(Ene/rigidity)>0.65&&TMath::Abs(Ene/rigidity)<5.00;
+		// cut[15] = trd_new<0.7;
+		// cut[16] = trd_new<0.6;
+		//----260612--electron
+		//----tof
+		cut[0] = tof_betah > 0.8 && tof_qup >0. && tof_qup < 2.0;
+		cut[1] = tof_qlow>0. && tof_qlow< 5.0;
+		//----trd
+		cut[2] = trd_nhits[2]>=12 && trd_klkhd[2][0]<1.5 ;
+		cut[3] = trd_klkhd[2][1]<0.8;
+		//----trk
+		cut[4] = trk_qin > 0. && trk_qin < 1.5 && rigidity<0;
+		cut[5] = (trk_pat&259) && trk_theta < 0.436;
+		cut[6] = trk_chi2x[1] < 20. && trk_chi2y[1]<20.0 && trk_theta < 0.436;
+		cut[7] = (trkecalmatch&12)==12;
+		cut[8] = trk_ntrk<3&&trk_ntrk>0;
+		//----ecal
+		cut[9] = (inecal&3)==3;
+		cut[10] = EmBDT>-0.995;
+		cut[11] = bdt_chargepid>=0 && hadflag==0;
+		//----test
+		cut[12] = trd_new<0.8;
+		cut[13] = trk_ntrk==1;
+		// cut[13] = (lvl1_PhysBPatt&62);
+		// cut[14] = TMath::Abs(Ene/rigidity)>0.65&&TMath::Abs(Ene/rigidity)<5.00;
+		cut[14] = trk_ntrk==1;
 		cut[15] = rigidity<0;
 		cut[16] = rigidity>0;
 		//========fill hist
